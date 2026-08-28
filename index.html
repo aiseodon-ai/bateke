@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vendeur Bateke V2</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial;margin:0;background:#f5f5f5}
+header{background:#0b5e2f;color:white;padding:15px;text-align:center;position:sticky;top:0}
+.boutique{display:flex;gap:8px;justify-content:center;margin:10px;flex-wrap:wrap}
+.boutique button{padding:10px 14px;border:2px solid #0b5e2f;background:white;border-radius:20px;font-weight:bold}
+.boutique button.active{background:#0b5e2f;color:white}
+.search{padding:10px}.search input{width:100%;padding:14px;border-radius:10px;border:1px solid #ccc;font-size:16px}
+.product{background:white;margin:8px 10px;padding:12px;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
+.price{color:#0b5e2f;font-weight:bold}
+.product button{background:#FFD700;border:none;padding:8px 14px;border-radius:8px;font-weight:bold}
+.cart{position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;color:white;padding:12px 15px;display:flex;justify-content:space-between;align-items:center}
+.cart button{background:#25D366;color:white;border:none;padding:12px 20px;border-radius:10px;font-weight:bold}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}.modal-box{background:white;width:100%;max-width:400px;border-radius:15px;padding:20px}
+.modal-box input,.modal-box select{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #ccc}
+.btn{width:100%;padding:13px;border:none;border-radius:10px;font-weight:bold;margin-top:8px}
+.btn-green{background:#0b5e2f;color:white}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<header><h3 style="margin:0">🏪 BATEKE - VENTE</h3><small id="info">Importe ton Excel pour commencer</small></header>
+<div style="padding:10px;text-align:center">
+<input type="file" id="excelFile" accept=".xlsx,.xls" />
+<p class="small">Fichier: mkao1_avec_prix_achat_COMPLET.xlsx</p>
+</div>
+<div class="boutique">
+<button class="active" onclick="setBoutique('Menkao1',this)">Menkao1</button>
+<button onclick="setBoutique('Menkao2',this)">Menkao2</button>
+<button onclick="setBoutique('Mbakana',this)">Mbakana</button>
+</div>
+<div class="search"><input id="search" placeholder="🔍 Chercher produit..." oninput="render()"></div>
+<div id="list"></div><div style="height:80px"></div>
+<div class="cart"><div><span id="cartCount">0 article</span> - <b id="cartTotal">0 FC</b></div><button onclick="openCheckout()">VENDRE 🛒</button></div>
+
+<div class="modal" id="checkoutModal"><div class="modal-box">
+<h3>Finaliser vente</h3><div id="cartDetail"></div>
+<select id="clientType" onchange="toggleClient()"><option value="anonyme">Client Anonyme</option><option value="nouveau">Nouveau Client (avec téléphone)</option></select>
+<div id="clientFields" style="display:none"><input id="clientNom" placeholder="Nom client *"><input id="clientPhone" placeholder="Téléphone WhatsApp *"></div>
+<select id="paiement"><option value="paye">✅ Payé</option><option value="credit">⏳ Crédit</option></select>
+<div id="creditFields" style="display:none"><input id="creditMontant" type="number" placeholder="Montant payé (0 si rien)"></div>
+<button class="btn btn-green" onclick="validerVente()">VALIDER VENTE</button>
+<button class="btn" style="background:#eee" onclick="closeCheckout()">Annuler</button>
+</div></div>
+
+<script>
+let BOUTIQUE='Menkao1', PRODUCTS=[], CART=[];
+function setBoutique(n,el){BOUTIQUE=n;document.querySelectorAll('.boutique button').forEach(b=>b.classList.remove('active'));el.classList.add('active');}
+document.getElementById('excelFile').addEventListener('change', e=>{
+ let file=e.target.files[0]; let reader=new FileReader();
+ reader.onload=function(ev){
+   let data=new Uint8Array(ev.target.result);
+   let wb=XLSX.read(data,{type:'array'});
+   let sheet=wb.Sheets[wb.SheetNames[0]];
+   let json=XLSX.utils.sheet_to_json(sheet);
+   PRODUCTS=json.map(r=>({CODE:r.CODE, Designation:r.Designation, 'Prix Unit':r['Prix Unit']||r['Prix Unit '], 'Prix Achat':r['Prix Achat']||0, Quantite:r.Quantite}));
+   document.getElementById('info').innerText=PRODUCTS.length+' produits chargés - Vendeur ne voit jamais Prix Achat';
+   localStorage.setItem('products_bateke', JSON.stringify(PRODUCTS));
+   render();
+ };
+ reader.readAsArrayBuffer(file);
+});
+let saved=localStorage.getItem('products_bateke');
+if(saved){PRODUCTS=JSON.parse(saved);document.getElementById('info').innerText=PRODUCTS.length+' produits chargés';}
+
+function render(){
+ let q=document.getElementById('search').value.toLowerCase();
+ let f=PRODUCTS.filter(p=>(p.Designation||'').toLowerCase().includes(q)||(p.CODE||'').toLowerCase().includes(q)).slice(0,80);
+ document.getElementById('list').innerHTML=f.map(p=>`<div class="product"><div><b>${p.CODE} - ${p.Designation}</b><div class="price">${(p['Prix Unit']||0).toLocaleString()} FC | Stock ${p.Quantite}</div></div><button onclick="addToCart('${p.CODE}')">+</button></div>`).join('');
+}
+function addToCart(c){let p=PRODUCTS.find(x=>x.CODE===c);if(p.Quantite<=0){alert('Stock 0');return;}let i=CART.find(x=>x.CODE===c);if(i)i.qty++;else CART.push({CODE:p.CODE,Designation:p.Designation,Prix:p['Prix Unit'],PrixAchat:p['Prix Achat'],qty:1});updateCart();}
+function updateCart(){let t=CART.reduce((s,i)=>s+i.Prix*i.qty,0);document.getElementById('cartCount').innerText=CART.reduce((s,i)=>s+i.qty,0)+' art';document.getElementById('cartTotal').innerText=t.toLocaleString()+' FC';}
+function openCheckout(){if(!CART.length){alert('Vide');return;}document.getElementById('cartDetail').innerHTML=CART.map(c=>`${c.qty}x ${c.Designation}`).join('<br>');document.getElementById('checkoutModal').classList.add('show');}
+function closeCheckout(){document.getElementById('checkoutModal').classList.remove('show');}
+function toggleClient(){document.getElementById('clientFields').style.display=document.getElementById('clientType').value!=='anonyme'?'block':'none';}
+document.getElementById('paiement').addEventListener('change',e=>{document.getElementById('creditFields').style.display=e.target.value==='credit'?'block':'none';});
+function validerVente(){
+ let type=document.getElementById('clientType').value, pay=document.getElementById('paiement').value;
+ let nom=document.getElementById('clientNom').value.trim(), phone=document.getElementById('clientPhone').value.trim();
+ if(type!=='anonyme'&&(!nom||!phone)){alert('Nom et tel requis');return;}
+ let total=CART.reduce((s,i)=>s+i.Prix*i.qty,0), totalAchat=CART.reduce((s,i)=>s+i.PrixAchat*i.qty,0);
+ let payePartiel=parseInt(document.getElementById('creditMontant').value)||0, dette=pay==='credit'?total-payePartiel:0;
+ let vente={id:Date.now(),date:new Date().toISOString(),boutique:BOUTIQUE,items:[...CART],total,totalAchat,benefice:total-totalAchat,payement:pay,dette,client:type==='anonyme'?{nom:'Anonyme',phone:''}:{nom,phone}};
+ let V=JSON.parse(localStorage.getItem('ventes_bateke_v2')||'[]');V.push(vente);localStorage.setItem('ventes_bateke_v2',JSON.stringify(V));
+ let C=JSON.parse(localStorage.getItem('clients_bateke_v2')||'[]');
+ if(type!=='anonyme'){let cli=C.find(x=>x.phone===phone);if(!cli)C.push({nom,phone,dette,achats:total,last:new Date().toISOString()});else{cli.dette+=dette;cli.achats+=total;}localStorage.setItem('clients_bateke_v2',JSON.stringify(C));}
+ CART.forEach(ci=>{let p=PRODUCTS.find(pr=>pr.CODE===ci.CODE);if(p)p.Quantite-=ci.qty;});
+ localStorage.setItem('products_bateke', JSON.stringify(PRODUCTS));
+ CART=[];updateCart();render();closeCheckout();alert('✅ Vente OK'+(dette?' Crédit '+dette:''));
+}
+render();
+</script>
+</body>
+</html>
