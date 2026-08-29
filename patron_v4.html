@@ -1,133 +1,50 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BATEKE V4 - Patron</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, writeBatch, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC-V7h2Uve6FUSY2sBo7Rq-a3O0Qbm0W0o",
-  authDomain: "bateke-v4.firebaseapp.com",
-  projectId: "bateke-v4",
-};
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const firebaseConfig = { apiKey: "AIzaSyC-V7h2Uve6FUSY2sBo7Rq-a3O0Qbm0W0o", authDomain: "bateke-v4.firebaseapp.com", projectId: "bateke-v4" };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 let currentShop = "Menkao1";
-
-window.changeShop = async () => {
-  currentShop = document.getElementById("shopSelect").value;
-  document.getElementById("shopName").innerText = currentShop;
-  loadStock();
-}
-
+window.changeShop = async () => { currentShop = document.getElementById("shopSelect").value; document.getElementById("shopName").innerText = currentShop; loadStock(); }
 window.loadStock = async () => {
   const snap = await getDocs(collection(db, "shops", currentShop, "stock"));
-  let html = `<tr><th>Code</th><th>Designation</th><th>Qte</th><th>Achat</th><th>Vente</th></tr>`;
-  let total = 0;
-  snap.forEach(d=>{
-    const p = d.data();
-    html += `<tr><td>${p.code||''}</td><td>${p.designation||''}</td><td>${p.quantite||0}</td><td>${p.prix_achat||0}</td><td>${p.prix_vente||0}</td></tr>`;
-    total++;
-  });
-  document.getElementById("stockTable").innerHTML = html;
-  document.getElementById("count").innerText = total + " produits dans " + currentShop;
+  let html=`<tr><th>Code</th><th>Designation</th><th>Qte</th><th>Achat</th><th>Vente</th></tr>`; let t=0;
+  snap.forEach(d=>{const p=d.data(); html+=`<tr><td>${p.code||''}</td><td>${p.designation}</td><td>${p.quantite}</td><td>${p.prix_achat}</td><td>${p.prix_vente}</td></tr>`; t++;});
+  document.getElementById("stockTable").innerHTML=html; document.getElementById("count").innerText=t+" produits dans "+currentShop;
 }
-
 window.importFile = async (e) => {
-  const file = e.target.files[0];
-  if(!file) return;
-  document.getElementById("status").innerText = "Lecture en cours...";
-  let data = [];
-  try {
-    if(file.name.endsWith(".json")){
-      const txt = await file.text();
-      const j = JSON.parse(txt);
-      data = Array.isArray(j)? j : (j.stock || j.produits || []);
-    } else {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf);
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      data = XLSX.utils.sheet_to_json(sheet);
-    }
-    console.log("Fichier brut:", data.length, data[0]);
-
-    // MODE TOLERANT V3 + V4
-    const cleaned = data.map((p,i)=>{
-      const vente = parseFloat(p["Prix Unit"] || p.prix_vente || p.PrixVente || p.prix || p.Prix || 0);
-      const achat = parseFloat(p.prix_achat || p.PrixAchat || p.Achat || (vente*0.7) || 0);
-      return {
-        code: (p.C0DE || p.code || p.Code || "CODE"+i).toString().trim(),
-        designation: (p.Designation || p.designation || p.Nom || p.nom || "").toString().trim(),
-        quantite: parseInt(p.Quantite || p.quantite || p.Qte || p.qte || p.stock || 0),
-        prix_vente: vente,
-        prix_achat: achat,
-        categorie: (p.categorie || p.Categorie || "General").toString()
-      };
-    }).filter(p=>p.designation);
-
-    if(cleaned.length==0) throw new Error("Aucun produit détecté - vérifie les en-têtes");
-
-    // Supprimer ancien stock puis importer
-    document.getElementById("status").innerText = "Suppression ancien stock "+currentShop+"...";
-    const oldSnap = await getDocs(collection(db, "shops", currentShop, "stock"));
-    let batchDel = writeBatch(db);
-    let c=0;
-    for(const d of oldSnap.docs){ batchDel.delete(d.ref); c++; if(c%400==0){ await batchDel.commit(); batchDel = writeBatch(db);} }
-    if(c>0) await batchDel.commit();
-
-    document.getElementById("status").innerText = "Import "+cleaned.length+" produits vers "+currentShop+"...";
-    let batch = writeBatch(db);
-    let count=0;
-    for(const p of cleaned){
-      const ref = doc(collection(db, "shops", currentShop, "stock"));
-      batch.set(ref, p);
-      count++;
-      if(count%400==0){ await batch.commit(); batch = writeBatch(db); }
-    }
-    await batch.commit();
-    document.getElementById("status").innerText = "✅ "+count+" produits importés dans "+currentShop;
-    loadStock();
-
-  } catch(err){
-    console.error(err);
-    document.getElementById("status").innerText = "❌ Erreur: "+err.message;
-    alert("Erreur import: "+err.message+"\nOuvre F12 pour voir");
-  }
+  const file=e.target.files[0]; if(!file) return;
+  let data=[];
+  if(file.name.endsWith(".json")){ const txt=await file.text(); const j=JSON.parse(txt); data=Array.isArray(j)?j:(j.stock||[]); }
+  else{ const buf=await file.arrayBuffer(); const wb=XLSX.read(buf); const sheet=wb.Sheets[wb.SheetNames[0]]; data=XLSX.utils.sheet_to_json(sheet); }
+  const cleaned=data.map((p,i)=>({
+    code:(p.C0DE||p.code||"C"+i).toString(), designation:(p.Designation||p.designation||"").toString().trim(),
+    prix_vente:parseFloat(p["Prix Unit"]||p.prix_vente||0), prix_achat:parseFloat(p.prix_achat||p["Prix Unit"]*0.7||0),
+    quantite:parseInt(p.Quantite||p.quantite||0), categorie:"General"
+  })).filter(p=>p.designation);
+  document.getElementById("status").innerText="Suppression ancien stock...";
+  const oldSnap=await getDocs(collection(db,"shops",currentShop,"stock"));
+  for(const d of oldSnap.docs){ await deleteDoc(d.ref); }
+  document.getElementById("status").innerText="Import "+cleaned.length+" produits... Patiente 30 sec";
+  let ok=0;
+  for(const p of cleaned){ await setDoc(doc(collection(db,"shops",currentShop,"stock")), p); ok++; if(ok%50==0){ document.getElementById("status").innerText=ok+"/"+cleaned.length+" importés..."; } }
+  document.getElementById("status").innerText="✅ "+ok+" produits importés dans "+currentShop+"!";
+  loadStock();
 }
-
-window.onload = () => { loadStock(); }
+window.onload=()=>loadStock();
 </script>
-<style>
-body{font-family:Arial;background:#0f172a;color:white;padding:20px}
-h1{color:#facc15}
-select,input{background:#1e293b;color:white;padding:10px;border-radius:8px;border:1px solid #334155}
-table{width:100%;background:#1e293b;border-collapse:collapse;margin-top:15px;border-radius:10px;overflow:hidden}
-th,td{padding:8px;border-bottom:1px solid #334155;text-align:left;font-size:13px}
-#status{margin:15px 0;padding:12px;background:#1e293b;border-radius:8px;border-left:4px solid #22c55e}
-</style>
+<style>body{font-family:Arial;background:#0f172a;color:white;padding:20px}h1{color:#facc15}select,input{background:#1e293b;color:white;padding:10px;border-radius:8px;border:1px solid #334155}table{width:100%;background:#1e293b;border-collapse:collapse;margin-top:15px;border-radius:10px;overflow:hidden}th,td{padding:8px;border-bottom:1px solid #334155;text-align:left;font-size:13px}#status{margin:15px 0;padding:12px;background:#1e293b;border-radius:8px;border-left:4px solid #22c55e}</style>
 </head>
 <body>
 <h1>👑 BATEKE V4 - PATRON <span id="shopName" style="color:#22c55e">Menkao1</span></h1>
-
 <label>Boutique :</label>
-<select id="shopSelect" onchange="changeShop()">
-<option value="Menkao1">Menkao1</option>
-<option value="Menkao2">Menkao2</option>
-<option value="Mbakana">Mbakana</option>
-</select>
-
-<div style="margin-top:20px">
-<input type="file" accept=".xlsx,.xls,.json" onchange="importFile(event)">
-<div id="status">Prêt à importer - Compatible V3 (C0DE, Prix Unit)</div>
-<div id="count"></div>
-</div>
-
+<select id="shopSelect" onchange="changeShop()"><option value="Menkao1">Menkao1</option><option value="Menkao2">Menkao2</option><option value="Mbakana">Mbakana</option></select>
+<div style="margin-top:20px"><input type="file" accept=".xlsx,.json" onchange="importFile(event)"><div id="status">Prêt - Glisse ton fichier menkao2.xlsx</div><div id="count"></div></div>
 <table id="stockTable"></table>
-<p><a href="index.html" style="color:#facc15">← Retour accueil</a> | <a href="vendeur_v4.html?shop=Menkao1" style="color:#22c55e">Voir caisse</a></p>
-</body>
-</html>
+</body></html>
