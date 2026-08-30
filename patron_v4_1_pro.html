@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE V4.1.2 PRO - Patron FIX</title>
+<title>BATEKE V4.1.2 PRO - PATRON FIX</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -19,7 +19,7 @@ th{background:#0f172a;color:white;padding:8px;font-size:12px} td{padding:6px;bor
 </style></head>
 <body>
 <header>
-<div><h1>👑 BATEKE V4.1.2 PRO - PATRON FIX</h1><small>Seuil 3 + Import XLSX/JSON 100% fonctionnel</small></div>
+<div><h1>👑 BATEKE V4.1.2 PRO - PATRON FIX</h1><small>bateke-v4 connecté - Seuil 3</small></div>
 <div>
 <select id="magasin"><option value="mbakana">Mbakana</option><option value="menkao1">Menkao1</option><option value="menkao2">Menkao2</option></select>
 <input type="file" id="fileInput" accept=".xlsx,.xls,.json">
@@ -27,35 +27,32 @@ th{background:#0f172a;color:white;padding:8px;font-size:12px} td{padding:6px;bor
 <button class="btn-green" onclick="exportJSON()">💾 Export JSON</button>
 </div>
 </header>
-<div id="log" class="log">Prêt. Choisissez un fichier XLSX ou JSON...</div>
+<div id="log" class="log">Prêt. Firebase bateke-v4...</div>
 <div class="card">
-<h3>📦 STOCK - Seuil défaut 3 (Bénéfice Patron seul) - <span id="count">0 produits</span></h3>
+<h3>📦 STOCK - Seuil 3 - <span id="count">0 produits</span></h3>
 <table id="stockTable"><thead><tr><th>Code</th><th>Designation</th><th>Qté</th><th>Seuil</th><th>Achat</th><th>Vente</th><th>Bénéf/Unit</th><th>Action</th></tr></thead><tbody></tbody></table>
 </div>
 <div class="card">
 <h3>📊 RAPPORTS PATRON</h3>
 <div>Du: <input type="date" id="du" value="2026-08-01"> Au: <input type="date" id="au" value="2026-08-30">
-<select id="typeRapport"><option>Meilleurs Produits Vendus</option><option>Chiffre Affaire</option><option>Bénéfice</option><option>Rupture Stock</option></select>
 <button class="btn-green" onclick="genererRapport()">Générer</button> <button class="btn-yellow" onclick="window.print()">📄 Export PDF</button>
 </div>
-<div id="rapport" style="background:white;color:black;padding:15px;border-radius:8px;margin-top:10px;min-height:60px">Top 10 Meilleurs Produits Vendus - En attente</div>
+<div id="rapport" style="background:white;color:black;padding:15px;border-radius:8px;margin-top:10px">Rapport en attente</div>
 </div>
 <script>
-// PRENDS LA CONFIG DE TON ANCIEN FICHIER V4
 const firebaseConfig = {
-  apiKey: "AIzaSyDummy",
-  authDomain: "bateke-stock.firebaseapp.com",
-  databaseURL: "https://bateke-stock-default-rtdb.firebaseio.com",
-  projectId: "bateke-stock"
+  apiKey: "AIzaSyB0D421bg7tGVafz44cwCyIOCujgAn5MNY",
+  authDomain: "bateke-v4.firebaseapp.com",
+  databaseURL: "https://bateke-v4-default-rtdb.firebaseio.com",
+  projectId: "bateke-v4",
+  storageBucket: "bateke-v4.firebasestorage.app",
+  messagingSenderId: "321333206282",
+  appId: "1:321333206282:web:6d1603446be3d195de6ef3"
 };
-// Si tu as déjà la config en localStorage on l'utilise
-let cfg = null;
-try{ cfg = JSON.parse(localStorage.getItem('firebaseConfig_v4')); }catch(e){}
-if(cfg){ firebase.initializeApp(cfg); } else { try{firebase.initializeApp(firebaseConfig);}catch(e){} }
-let db = null;
-try{ db = firebase.database(); }catch(e){ log("Firebase non connecté - MODE LOCAL activé"); }
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 let stock = [];
-function log(t){ document.getElementById('log').innerHTML += "<br>> "+t; document.getElementById('log').scrollTop=9999; }
+function log(t){ document.getElementById('log').innerHTML += "<br>> "+t; document.getElementById('log').scrollTop=9999; console.log(t); }
 function importer(){
   const f = document.getElementById('fileInput').files[0];
   const mag = document.getElementById('magasin').value;
@@ -78,27 +75,33 @@ function importer(){
         if(typeof qte==='string') qte = parseInt(qte.replace(/[^0-9]/g,''))||0;
         return {code:String(code).trim(), designation:String(des).trim(), prix_vente:parseFloat(pu)||0, prix_achat:Math.round((parseFloat(pu)||0)*0.7*100)/100, quantite:parseInt(qte)||0, seuil:3};
       }).filter(x=>x.designation);
-      log("Mappé: "+mapped.length+" produits valides"); traiterDonnees(mapped, mag);
+      log("Mappé: "+mapped.length+" produits"); traiterDonnees(mapped, mag);
     }; r.readAsArrayBuffer(f);
   }
 }
 function traiterDonnees(data, magasin){
-  stock=data; afficher(); log("Import OK: "+data.length+" produits");
-  if(!db){ localStorage.setItem('stock_'+magasin, JSON.stringify(data)); log("✅ Sauvé LOCAL"); return; }
-  let count=0; data.forEach(p=>{ db.ref('magasins/'+magasin+'/stock/'+p.code).set(p).then(()=>{ count++; if(count==data.length) log("✅ "+count+" envoyés à Firebase"); }); });
+  stock=data; afficher(); log("Import OK: "+data.length);
+  let count=0;
+  log("Envoi vers Firebase /magasins/"+magasin+"/stock...");
+  data.forEach(p=>{
+    db.ref('magasins/'+magasin+'/stock/'+p.code).set(p).then(()=>{
+      count++; if(count%100==0) log(count+"/"+data.length);
+      if(count==data.length) log("✅ FINI "+count+" produits dans Firebase!");
+    }).catch(e=>log("Erreur "+e.message));
+  });
   localStorage.setItem('stock_'+magasin, JSON.stringify(data));
 }
 function afficher(){
   const tbody=document.querySelector('#stockTable tbody'); tbody.innerHTML='';
-  stock.forEach(p=>{ const tr=document.createElement('tr'); if(p.quantite<=p.seuil) tr.className='rouge'; tr.innerHTML=`<td>${p.code}</td><td>${p.designation}</td><td>${p.quantite}</td><td>${p.seuil}</td><td>${p.prix_achat}</td><td>${p.prix_vente}</td><td>${p.prix_vente-p.prix_achat}</td><td><button onclick="vendre('${p.code}')">Vendre</button></td>`; tbody.appendChild(tr); });
-  document.getElementById('count').textContent=stock.length+" produits - Seuil alerte: 3";
+  stock.forEach(p=>{ const tr=document.createElement('tr'); if(p.quantite<=p.seuil) tr.className='rouge'; tr.innerHTML=`<td>${p.code}</td><td>${p.designation}</td><td>${p.quantite}</td><td>${p.seuil}</td><td>${p.prix_achat}</td><td>${p.prix_vente}</td><td>${(p.prix_vente-p.prix_achat).toFixed(0)}</td><td><button onclick="vendre('${p.code}')">Vendre</button></td>`; tbody.appendChild(tr); });
+  document.getElementById('count').textContent=stock.length+" produits";
 }
-function vendre(code){ const p=stock.find(x=>x.code==code); if(!p||p.quantite<=0){alert("Rupture");return;} p.quantite--; const mag=document.getElementById('magasin').value; if(db) db.ref('magasins/'+mag+'/stock/'+code+'/quantite').set(p.quantite); localStorage.setItem('stock_'+mag, JSON.stringify(stock)); afficher(); }
-function exportJSON(){ const mag=document.getElementById('magasin').value; const blob=new Blob([JSON.stringify(stock,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=mag+'_fixed_v4_1_2.json'; a.click(); log("Export JSON OK"); }
-function genererRapport(){ const du=document.getElementById('du').value; const au=document.getElementById('au').value; document.getElementById('rapport').innerHTML=`<b>Rapport du ${du} au ${au}</b><br>${stock.length} produits. Faible stock: ${stock.filter(s=>s.quantite<=3).slice(0,5).map(s=>s.designation).join(', ')}`; log("Rapport généré"); }
+function vendre(code){ const p=stock.find(x=>x.code==code); if(!p||p.quantite<=0){alert("Rupture");return;} p.quantite--; const mag=document.getElementById('magasin').value; db.ref('magasins/'+mag+'/stock/'+code+'/quantite').set(p.quantite); localStorage.setItem('stock_'+mag, JSON.stringify(stock)); afficher(); }
+function exportJSON(){ const mag=document.getElementById('magasin').value; const blob=new Blob([JSON.stringify(stock,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=mag+'_fixed.json'; a.click(); }
+function genererRapport(){ const du=document.getElementById('du').value; const au=document.getElementById('au').value; document.getElementById('rapport').innerHTML=`<b>Rapport du ${du} au ${au}</b><br>${stock.length} produits. Rupture: ${stock.filter(s=>s.quantite<=3).map(s=>s.designation).slice(0,10).join(', ')}`; }
 window.onload=()=>{
-  const mag=document.getElementById('magasin').value; const saved=localStorage.getItem('stock_'+mag); if(saved){ stock=JSON.parse(saved); afficher(); log("Stock local restauré: "+stock.length); }
-  log("XLSX Lib: "+(typeof XLSX!=='undefined'?'OK':'ERREUR'));
-  document.getElementById('magasin').addEventListener('change', e=>{ const s=localStorage.getItem('stock_'+e.target.value); if(s){ stock=JSON.parse(s); afficher(); log("Switch "+e.target.value+" "+stock.length); } else { stock=[]; afficher(); log("Aucun stock pour "+e.target.value); } });
+  log("Firebase connecté: bateke-v4");
+  log("XLSX: "+(typeof XLSX!=='undefined'?'OK':'ERREUR'));
+  const mag=document.getElementById('magasin').value; const saved=localStorage.getItem('stock_'+mag); if(saved){ stock=JSON.parse(saved); afficher(); log("Restauré local: "+stock.length); }
 }
 </script></body></html>
