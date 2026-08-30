@@ -1,41 +1,24 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - Gestion Boutiques</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BATEKE - Accueil</title>
 <style>
-body{font-family:Arial;background:#0f172a;color:white;text-align:center;padding:30px}
-h1{color:#facc15;font-size:32px}
-.card{background:#1e293b;padding:20px;margin:15px auto;max-width:400px;border-radius:15px;box-shadow:0 4px 10px rgba(0,0,0,0.3)}
-a.btn{display:block;background:#facc15;color:#000;padding:12px;margin:10px 0;border-radius:10px;text-decoration:none;font-weight:bold}
-a.btn-patron{background:#22c55e;color:white}
+body{font-family:Arial;background:#0f172a;color:white;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0}
+.box{background:#1e293b;padding:30px;border-radius:16px;text-align:center;max-width:400px;width:90%}
+h1{color:#facc15} button{width:100%;padding:15px;margin:10px 0;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer}
+.patron{background:#facc15;color:black} .super{background:#38bdf8;color:black} .vend{background:#22c55e;color:black}
+small{color:#94a3b8}
 </style>
 </head>
 <body>
-<h1>🏪 BATEKE GESTION</h1>
-<p>Système V4 - Temps Réel</p>
-
-<div class="card">
-<h2>👑 DIRECTION</h2>
-<a class="btn btn-patron" href="patron_v4.html">Ouvrir Tableau de Bord Patron</a>
+<div class="box">
+<h1>🏪 BATEKE V4.1 PRO</h1>
+<p>Choisis ton accès</p>
+<button class="patron" onclick="location.href='patron_v4_1_pro.html'">👑 PATRON<br><small>Seuil 3 + Bénéfice + Rapports PDF</small></button>
+<button class="super" onclick="location.href='superviseur_v4_1.html'">🧑‍💼 SUPERVISEUR<br><small>Modifie Qté/Prix Vente, pas achat</small></button>
+<button class="vend" onclick="location.href='vendeur_v4_1.html'">🛍️ VENDEUR<br><small>Vente seulement</small></button>
+<p><small>Menkao1 | Menkao2 | Mbakana<br>Version 4.1 PRO - 30/08/2026</small></p>
 </div>
-
-<div class="card">
-<h2>🏬 MENKAO 1</h2>
-<a class="btn" href="vendeur_v4.html?shop=Menkao1">Ouvrir Caisse Menkao1</a>
-</div>
-
-<div class="card">
-<h2>🏬 MENKAO 2</h2>
-<a class="btn" href="vendeur_v4.html?shop=Menkao2">Ouvrir Caisse Menkao2</a>
-</div>
-
-<div class="card">
-<h2>🏬 MBAKANA</h2>
-<a class="btn" href="vendeur_v4.html?shop=Mbakana">Ouvrir Caisse Mbakana</a>
-</div>
-
-<p style="margin-top:30px;opacity:0.6">bateke-v4 LIVE • 2026</p>
 </body>
 </html>
