@@ -1,0 +1,80 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BATEKE V4.1 - SUPERVISEUR FIX</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>body{background:#0f172a;color:white;font-family:Arial;padding:12px}h1{color:#38bdf8}select,button{padding:8px;border-radius:6px;border:none;font-weight:bold;margin:2px}table{width:100%;background:white;color:black;border-collapse:collapse;margin-top:10px;border-radius:8px;overflow:hidden}th{background:#1e293b;color:white;padding:8px;font-size:11px}td{padding:6px;text-align:center;border-bottom:1px solid #ddd;font-size:12px}.rouge{background:#fecaca;font-weight:bold}.log{background:#000;color:#0f0;padding:8px;border-radius:6px;font-family:monospace;margin-top:10px;font-size:12px}.card{background:#1e293b;padding:12px;border-radius:10px;margin-top:10px}</style></head><body>
+<h1>👁️ BATEKE V4.1 - SUPERVISEUR FIX</h1>
+<div class="card">
+Magasin: <select id="magasin" onchange="charger()"><option value="mbakana">Mbakana</option><option value="menkao1">Menkao1</option><option value="menkao2">Menkao2</option><option value="tous">TOUS les magasins</option></select>
+<button onclick="charger()" style="background:#38bdf8">🔄 Actualiser</button>
+<button onclick="window.print()" style="background:#facc15">📄 PDF</button>
+<span id="count">0 produits</span>
+</div>
+<div id="log" class="log">Connexion bateke-v4...</div>
+
+<div class="card">
+<h3>📦 Stock temps réel - Lecture seule (pas de prix achat)</h3>
+<table id="t"><thead><tr><th>Magasin</th><th>Produit</th><th>Qté</th><th>Seuil</th><th>Prix Vente</th><th>Statut</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="card">
+<h3>🚨 Alertes Rupture Seuil 3</h3>
+<div id="alertes" style="background:white;color:black;padding:10px;border-radius:6px">Chargement alertes...</div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyB0D421bg7tGVafz44cwCyIOCujgAn5MNY",
+  authDomain: "bateke-v4.firebaseapp.com",
+  databaseURL: "https://bateke-v4-default-rtdb.firebaseio.com",
+  projectId: "bateke-v4",
+  storageBucket: "bateke-v4.firebasestorage.app",
+  messagingSenderId: "321333206282",
+  appId: "1:321333206282:web:6d1603446be3d195de6ef3"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+function log(t){document.getElementById('log').innerHTML+="<br>> "+t;}
+function charger(){
+  const magSel = document.getElementById('magasin').value;
+  const tbody=document.querySelector('#t tbody'); tbody.innerHTML="<tr><td colspan=6>Chargement...</td></tr>";
+
+  if(magSel==='tous'){
+    db.ref('magasins').once('value').then(snap=>{
+      const all = snap.val()||{}; let total=0; let ruptures=[];
+      tbody.innerHTML="";
+      Object.keys(all).forEach(mag=>{
+        const stock = all[mag].stock? Object.values(all[mag].stock) : [];
+        stock.forEach(p=>{
+          total++;
+          const tr=document.createElement('tr'); if(p.quantite<=p.seuil) tr.className='rouge';
+          const statut = p.quantite<=0?'RUPTURE':(p.quantite<=p.seuil?'ALERTE':'OK');
+          tr.innerHTML=`<td>${mag}</td><td>${p.designation}</td><td>${p.quantite}</td><td>${p.seuil}</td><td>${p.prix_vente}</td><td>${statut}</td>`;
+          tbody.appendChild(tr);
+          if(p.quantite<=3) ruptures.push(`[${mag}] ${p.designation} (${p.quantite})`);
+        });
+      });
+      document.getElementById('count').textContent=total+" produits total";
+      document.getElementById('alertes').innerHTML = ruptures.length? ruptures.join('<br>') : 'Aucune alerte - tout OK';
+      log("TOUS: "+total+" produits, "+ruptures.length+" alertes");
+    });
+  } else {
+    db.ref('magasins/'+magSel+'/stock').once('value').then(snap=>{
+      const data = snap.val(); tbody.innerHTML="";
+      if(!data){ tbody.innerHTML="<tr><td colspan=6>Vide - importe d'abord dans PATRON pour "+magSel+"</td></tr>"; document.getElementById('count').textContent="0 produits"; return; }
+      const list=Object.values(data); let ruptures=[];
+      list.forEach(p=>{
+        const tr=document.createElement('tr'); if(p.quantite<=p.seuil) tr.className='rouge';
+        const statut = p.quantite<=0?'RUPTURE':(p.quantite<=p.seuil?'ALERTE':'OK');
+        tr.innerHTML=`<td>${magSel}</td><td>${p.designation}</td><td>${p.quantite}</td><td>${p.seuil}</td><td>${p.prix_vente}</td><td>${statut}</td>`;
+        tbody.appendChild(tr);
+        if(p.quantite<=3) ruptures.push(`${p.designation} (${p.quantite})`);
+      });
+      document.getElementById('count').textContent=list.length+" produits";
+      document.getElementById('alertes').innerHTML = ruptures.length? ruptures.join('<br>') : 'Aucune alerte';
+      log(magSel+" : "+list.length+" produits");
+    });
+  }
+}
+window.onload=charger;
+</script></body></html>
