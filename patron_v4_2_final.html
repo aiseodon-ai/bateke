@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V4.5</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V4.6 EDIT FIX</title>
 <style>body{margin:0;font-family:Arial;background:#f0f2f5}header{background:#111;color:#fff;padding:10px;text-align:center;position:sticky;top:0;z-index:30}
 .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px}.card{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
 .kpi{font-size:18px;font-weight:bold;color:#0b5e2f}.red{color:red}
@@ -7,11 +7,11 @@
 .subtabs{display:flex;gap:5px;margin:8px 0}.subtabs button{padding:8px 12px;border:1px solid #0b5e2f;border-radius:20px;background:#fff;cursor:pointer}.subtabs button.active{background:#0b5e2f;color:#fff}
 table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:6px;border:1px solid #ddd;text-align:left}th{background:#1e293b;color:#fff}tr:nth-child(even){background:#f8fafc}
 input,select{padding:8px;border-radius:6px;border:1px solid #ccc;width:100%;margin:3px 0;box-sizing:border-box}
-.btn{padding:8px 12px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;margin:2px;font-size:12px}.btn-g{background:#0b5e2f;color:#fff}.btn-y{background:#facc15}.btn-b{background:#0ea5e9;color:#fff}.btn-r{background:#ef4444;color:#fff}
+.btn{padding:8px 12px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;margin:2px;font-size:12px}.btn-g{background:#0b5e2f;color:#fff}.btn-y{background:#facc15}.btn-b{background:#0ea5e9;color:#fff}.btn-r{background:#ef4444;color:#fff}.editable{background:#fffde7;cursor:pointer;border:1px dashed #facc15!important}
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:99;align-items:center;justify-content:center}.modal.active{display:flex}.modalBox{background:#fff;padding:20px;border-radius:12px;width:90%;max-width:500px}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head><body>
-<header><h3 style="margin:0">👑 PATRON V4.5 DG - Double Synthèse Vente</h3><small>● Vendeur sans bénéfice / Patron avec bénéfice</small>
+<header><h3 style="margin:0">👑 PATRON V4.6 DG - EDIT FIX</h3><small>● Clique sur Qté / Seuil / PV / PA / Désignation pour modifier</small>
 <div style="margin-top:6px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap">
 <select id="shopSel" onchange="switchShop()" style="width:110px"><option>Menkao1</option><option>Menkao2</option><option>Mbakana</option><option value="ALL">TOUTES</option></select>
 <input type="file" id="excelIn" accept=".xlsx,.xls" style="width:110px"><button class="btn btn-b" onclick="openNewArt()">+ Article</button>
@@ -19,20 +19,20 @@ input,select{padding:8px;border-radius:6px;border:1px solid #ccc;width:100%;marg
 <div class="grid"><div class="card">💰 CA Jour<br><span class="kpi" id="caJour">0</span></div><div class="card">📈 Bénéf Net<br><span class="kpi" id="benefJour">0</span></div><div class="card">🏦 À Verser<br><span class="kpi red" id="aVerser">0</span></div></div>
 <div class="tabs"><button id="btn-ventes" class="active" onclick="switchTab('ventes')">🔴 Ventes</button><button id="btn-stock" onclick="switchTab('stock')">📦 Stock</button><button id="btn-rapport" onclick="switchTab('rapport')">📊 Rapport</button><button id="btn-crm" onclick="switchTab('crm')">👥 CRM</button><button id="btn-caisse" onclick="switchTab('caisse')">💰 Caisse</button></div>
 <div id="ventes" class="sec active"><div class="card"><h4>🔴 Ventes Live</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>CODE</th><th>Désignation</th><th>Qté</th><th>Total</th><th>Client</th></tr></thead><tbody id="ventesList"></tbody></table></div></div></div>
-<div id="stock" class="sec"><div class="card"><div style="display:flex;justify-content:space-between;flex-wrap:wrap"><h4>📦 Stock</h4><div><button class="btn btn-y" onclick="pdfStockTotal()">📦 PDF Stock</button><button class="btn btn-r" onclick="pdfRequisition()">📋 Réquisition</button></div></div><input id="searchS" placeholder="CODE ou Nom" oninput="renderStock()"><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation</th><th>Qté</th><th>Seuil</th><th>PV</th><th>PA</th><th>Bénéf</th><th>Act</th></tr></thead><tbody id="stockT"></tbody></table></div></div></div>
+<div id="stock" class="sec"><div class="card"><div style="display:flex;justify-content:space-between;flex-wrap:wrap"><h4>📦 Stock - Clique cellule jaune pour éditer</h4><div><button class="btn btn-y" onclick="pdfStockTotal()">📦 PDF Stock</button><button class="btn btn-r" onclick="pdfRequisition()">📋 Réquisition</button></div></div><input id="searchS" placeholder="CODE ou Nom" oninput="renderStock()"><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation ✏️</th><th>Qté ✏️</th><th>Seuil ✏️</th><th>PV ✏️</th><th>PA ✏️</th><th>Bénéf</th><th>Act</th></tr></thead><tbody id="stockT"></tbody></table></div></div></div>
 <div id="rapport" class="sec"><div class="card"><h4>📊 Rapport DG</h4>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">Du: <input type="date" id="du">Au: <input type="date" id="au">
 Type: <select id="typeRapport" onchange="onTypeChange()">
-<option value="synthese">⭐ SYNTHESE PERIODE COMPLETE (Patron)</option>
-<option value="synthese_ventes_vendeur">⭐ SYNTHESE VENTES / SORTIES (VENDEUR - sans bénéfice) - à envoyer vendeurs</option>
-<option value="synthese_ventes_patron">⭐ SYNTHESE VENTES / SORTIES (PATRON - avec bénéfice)</option>
-<option value="synthese_entrees">⭐ SYNTHESE ENTREES par Article</option>
-<option value="synthese_depenses">⭐ SYNTHESE DEPENSES par Type</option>
+<option value="synthese">⭐ SYNTHESE PERIODE COMPLETE</option>
+<option value="synthese_ventes_vendeur">⭐ SYNTHESE VENTES (VENDEUR sans bénéf)</option>
+<option value="synthese_ventes_patron">⭐ SYNTHESE VENTES (PATRON avec bénéf)</option>
+<option value="synthese_entrees">⭐ SYNTHESE ENTREES</option>
+<option value="synthese_depenses">⭐ SYNTHESE DEPENSES</option>
 <option value="ca">CA Global</option>
 <option value="ventes">Ventes Détaillées</option>
 <option value="benef">Bénéfice Net</option>
 <option value="article">Vente par ARTICLE</option>
-<option value="entrees">Entrées Stock liste</option>
+<option value="entrees">Entrées liste</option>
 <option value="entree_article">Entrée par ARTICLE</option>
 <option value="depenses">Dépenses Liste</option>
 <option value="top">Top Produits</option>
@@ -64,32 +64,43 @@ function getStockMap(){let data=getFiltered();let nameMap={},fullMap={};data.sto
 function updateKPIs(){let data=getFiltered();let today=new Date().toDateString();let vToday=data.ventes.filter(v=>new Date(v.date).toDateString()===today);let caJ=vToday.reduce((s,v)=>s+v.total,0);let benJ=vToday.reduce((s,v)=>s+(v.benefice||0),0);let depJ=data.dep.filter(d=>new Date(d.date).toDateString()===today).reduce((s,d)=>s+d.montant,0);document.getElementById('caJour').innerText=caJ.toLocaleString()+' FC';document.getElementById('benefJour').innerText=(benJ-depJ).toLocaleString()+' FC';document.getElementById('aVerser').innerText=(caJ-depJ-data.vers.filter(v=>new Date(v.date).toDateString()===today).reduce((s,v)=>s+v.montant,0)).toLocaleString()+' FC';}
 function renderVentes(){let data=getFiltered();let rows=[];data.ventes.sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,100).forEach(v=>{(v.items||[]).forEach(i=>{rows.push(`<tr><td>${new Date(v.date).toLocaleString()}</td><td>${i.CODE}</td><td>${i.Designation}</td><td>${i.qty}</td><td>${(i.qty*i.Prix).toLocaleString()}</td><td>${v.client?.nom||'Comptoir'}</td></tr>`);});});document.getElementById('ventesList').innerHTML=rows.join('')||'<tr><td colspan=6>Aucune</td></tr>';}
 function renderCaisse(){let data=getFiltered();let all=[];data.ventes.forEach(v=>all.push({date:v.date,type:'Vente',motif:(v.items||[]).map(i=>i.CODE).join(','),montant:v.total}));data.dep.forEach(d=>all.push({date:d.date,type:'Dépense',motif:d.motif||'',montant:-d.montant}));all.sort((a,b)=>new Date(b.date)-new Date(a.date));document.getElementById('caisseList').innerHTML=all.slice(0,100).map(a=>`<tr><td>${new Date(a.date).toLocaleString()}</td><td>${a.type}</td><td>${a.motif}</td><td style="color:${a.montant<0?'red':'green'}">${a.montant.toLocaleString()}</td></tr>`).join('');}
-function renderStock(){let data=getFiltered();let q=(document.getElementById('searchS').value||'').toLowerCase();let f=data.stock.filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).slice(0,250);document.getElementById('stockT').innerHTML=f.map(p=>`<tr><td>${p.CODE}</td><td class="editable" onclick="editField('${p.CODE}','Designation','${(p.Designation||'').replace(/'/g,"\\'")}')">${p.Designation}</td><td>${p.Quantite}</td><td>${p.seuil||3}</td><td>${p['Prix Unit']?.toLocaleString()}</td><td>${p['Prix Achat']?.toLocaleString()}</td><td>${(p['Prix Unit']-p['Prix Achat']).toLocaleString()}</td><td><button onclick="entree('${p.CODE}')">+</button></td></tr>`).join('');}
+function renderStock(){
+ let data=getFiltered();let q=(document.getElementById('searchS').value||'').toLowerCase();
+ let f=data.stock.filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).slice(0,300);
+ document.getElementById('stockT').innerHTML=f.map(p=>`
+ <tr>
+  <td>${p.CODE}</td>
+  <td class="editable" onclick="editField('${p.CODE}','Designation','${(p.Designation||'').replace(/'/g,"\\'")}')">${p.Designation} ✏️</td>
+  <td class="editable" onclick="editField('${p.CODE}','Quantite',${p.Quantite||0})">${p.Quantite} ✏️</td>
+  <td class="editable" onclick="editField('${p.CODE}','seuil',${p.seuil||3})">${p.seuil||3} ✏️</td>
+  <td class="editable" onclick="editField('${p.CODE}','Prix Unit',${p['Prix Unit']||0})">${(p['Prix Unit']||0).toLocaleString()} ✏️</td>
+  <td class="editable" onclick="editField('${p.CODE}','Prix Achat',${p['Prix Achat']||0})">${(p['Prix Achat']||0).toLocaleString()} ✏️</td>
+  <td>${((p['Prix Unit']||0)-(p['Prix Achat']||0)).toLocaleString()}</td>
+  <td><button class="btn btn-g" onclick="entree('${p.CODE}')">+ Entrée</button> <button class="btn btn-r" onclick="supp('${p.CODE}')">X</button></td>
+ </tr>`).join('');
+}
 function renderCRM(){let data=getFiltered();let q=(document.getElementById('searchCli').value||'').toLowerCase();let clis=Object.values(data.clients).filter(c=>(c.nom||'').toLowerCase().includes(q));document.getElementById('crmList').innerHTML=clis.map(c=>`<tr><td>${c.nom}</td><td>${c.tel||''}</td><td>${(c.totalAchat||0).toLocaleString()}</td><td>${(c.dette||0).toLocaleString()}</td></tr>`).join('')||'<tr><td colspan=4>Aucun</td></tr>';}
-function editField(code,field,oldVal){let nv=prompt('Nouvelle valeur '+field+'?');if(nv===null)return;let val=field==='Designation'?nv:Number(nv);let target=SHOP==='ALL'?prompt('Boutique?'):SHOP;if(!target)return;db.ref('shops/'+target+'/stock/'+code).update({[field]:val});}
-function entree(code){let qty=parseInt(prompt('Qté entrée '+code+'?'));if(!qty)return;let s=SHOP==='ALL'?prompt('Boutique?'):SHOP;if(!s)return;db.ref('shops/'+s+'/stock/'+code).once('value').then(snap=>{let p=snap.val();if(p){db.ref('shops/'+s+'/stock/'+code).update({Quantite:p.Quantite+qty});db.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:code,Designation:p.Designation||code,boutique:s,qty:qty});}});}
+function editField(code,field,oldVal){
+ let label=field==='Designation'?'Nom':field;
+ let nv=prompt(`Modifier ${label} pour ${code}\nAncien: ${oldVal}\nNouveau:`, oldVal);
+ if(nv===null||nv==='')return;
+ let val=field==='Designation'?nv.trim():Number(nv);
+ if(field!=='Designation' && isNaN(val)){alert('Nombre invalide');return;}
+ let target=SHOP==='ALL'?prompt('Boutique? Menkao1 / Menkao2 / Mbakana','Menkao1'):SHOP;
+ if(!target)return;
+ db.ref('shops/'+target+'/stock/'+code).update({[field]:val}).then(()=>{console.log('Updated',code,field,val);});
+}
+function entree(code){let qty=parseInt(prompt('Qté entrée '+code+'?'));if(!qty)return;let s=SHOP==='ALL'?prompt('Boutique?'):SHOP;if(!s)return;db.ref('shops/'+s+'/stock/'+code).once('value').then(snap=>{let p=snap.val();if(p){db.ref('shops/'+s+'/stock/'+code).update({Quantite:(p.Quantite||0)+qty});db.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:code,Designation:p.Designation||code,boutique:s,qty:qty});}});}
+function supp(code){if(!confirm('Supprimer '+code+'?'))return;let s=SHOP==='ALL'?prompt('Boutique?'):SHOP;db.ref('shops/'+s+'/stock/'+code).remove();}
 function saveNewArt(){let code=document.getElementById('newCode').value.trim();if(!code)return;let des=document.getElementById('newDes').value;let pv=Number(document.getElementById('newPV').value)||0;let pa=Number(document.getElementById('newPA').value)||Math.round(pv*0.7);let qte=Number(document.getElementById('newQte').value)||0;let seuil=Number(document.getElementById('newSeuil').value)||3;let s=SHOP==='ALL'?prompt('Boutique cible?'):SHOP;if(!s)return;db.ref('shops/'+s+'/stock/'+code).set({CODE:code,Designation:des,'Prix Unit':pv,'Prix Achat':pa,Quantite:qte,seuil:seuil});closeModal('modalArt');}
 function onTypeChange(){let t=document.getElementById('typeRapport').value;let extra=document.getElementById('filtreExtra');if(t==='article'||t==='entree_article')extra.innerHTML=`<input id="fCode" placeholder="CODE">`;else if(t==='depenses')extra.innerHTML=`<select id="fDep"><option value="">Tous</option><option>ration</option><option>transport</option><option>achat stock</option><option>loyer</option><option>electricite</option><option>credit</option></select>`;else extra.innerHTML='';}
 function genRapport(){
  let data=getFiltered();let {nameMap,fullMap}=getStockMap();let du=new Date(document.getElementById('du').value);let au=new Date(document.getElementById('au').value);au.setHours(23,59,59);
  let type=document.getElementById('typeRapport').value;let vPeriode=data.ventes.filter(v=>{let d=new Date(v.date);return d>=du&&d<=au;});let depPeriode=data.dep.filter(d=>{let dt=new Date(d.date);return dt>=du&&dt<=au;});let entPeriode=data.entrees.filter(e=>{let dt=new Date(e.date);return dt>=du&&dt<=au;});
  let html='';
- if(type==='synthese'){
-  let ca=vPeriode.reduce((s,v)=>s+v.total,0);let ben=vPeriode.reduce((s,v)=>s+(v.benefice||0),0);let dep=depPeriode.reduce((s,d)=>s+d.montant,0);let qteV=vPeriode.reduce((s,v)=>s+(v.items||[]).reduce((a,i)=>a+i.qty,0),0);let qteE=entPeriode.reduce((s,e)=>s+e.qty,0);
-  html=`<h3>⭐ SYNTHESE PERIODE ${SHOP} - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3><table><tr><th>Indicateur</th><th>Valeur</th><th>Détail</th></tr><tr><td>CA</td><td><b>${ca.toLocaleString()} FC</b></td><td>${vPeriode.length} ventes / ${qteV} articles</td></tr><tr><td>Bénéf Brut</td><td>${ben.toLocaleString()} FC</td><td>${ca?((ben/ca)*100).toFixed(1):0}%</td></tr><tr><td>Dépenses</td><td style="color:red">${dep.toLocaleString()} FC</td><td>${depPeriode.length} ops</td></tr><tr><td>Bénéf Net</td><td style="color:green;font-weight:bold">${(ben-dep).toLocaleString()} FC</td><td>Brut - dépenses</td></tr><tr><td>Entrées</td><td>+${qteE}</td><td>${entPeriode.length} réappros</td></tr></table>`;
- }
- // FONCTION COMMUNE POUR VENTES
- function buildVentesTable(withBenef){
-   let byArt={};vPeriode.forEach(v=>{(v.items||[]).forEach(i=>{if(!byArt[i.CODE])byArt[i.CODE]={CODE:i.CODE,Designation:nameMap[i.CODE]||i.Designation||i.CODE,qty:0,ca:0,benef:0};byArt[i.CODE].qty+=i.qty;byArt[i.CODE].ca+=i.qty*i.Prix;byArt[i.CODE].benef+= i.qty*((i.Prix||0)-(fullMap[i.CODE]?.['Prix Achat']||0));});});
-   let totalQte=Object.values(byArt).reduce((s,a)=>s+a.qty,0);let totalCA=Object.values(byArt).reduce((s,a)=>s+a.ca,0);let totalBenef=Object.values(byArt).reduce((s,a)=>s+a.benef,0);
-   let header=`<tr><th>CODE</th><th>Désignation</th><th>Qté Sortie</th><th>CA</th>${withBenef?'<th>Bénéfice</th>':''}<th>Stock Actuel</th></tr>`;
-   let rows=Object.values(byArt).sort((a,b)=>b.qty-a.qty).map(r=>`<tr><td>${r.CODE}</td><td><b>${r.Designation}</b></td><td>${r.qty}</td><td>${r.ca.toLocaleString()} FC</td>${withBenef?`<td style="color:green">${r.benef.toLocaleString()} FC</td>`:''}<td>${fullMap[r.CODE]?.Quantite??''}</td></tr>`).join('');
-   let title=withBenef?`⭐ SYNTHESE VENTES / SORTIES (PATRON - avec bénéfice) - ${SHOP}`:`⭐ SYNTHESE VENTES / SORTIES (VENDEUR - sans bénéfice) - ${SHOP}`;
-   let summary=withBenef?`<p>Total: <b>${totalQte}</b> articles - CA: <b>${totalCA.toLocaleString()} FC</b> - Bénéf: <b>${totalBenef.toLocaleString()} FC</b></p>`:`<p>Total: <b>${totalQte}</b> articles - CA: <b>${totalCA.toLocaleString()} FC</b> - Période ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</p>`;
-   return `<h3>${title}</h3>${summary}<table>${header}${rows}</table>`;
- }
- if(type==='synthese_ventes_vendeur'){ html=buildVentesTable(false); }
- if(type==='synthese_ventes_patron'){ html=buildVentesTable(true); }
+ if(type==='synthese'){let ca=vPeriode.reduce((s,v)=>s+v.total,0);let ben=vPeriode.reduce((s,v)=>s+(v.benefice||0),0);let dep=depPeriode.reduce((s,d)=>s+d.montant,0);let qteV=vPeriode.reduce((s,v)=>s+(v.items||[]).reduce((a,i)=>a+i.qty,0),0);let qteE=entPeriode.reduce((s,e)=>s+e.qty,0);html=`<h3>⭐ SYNTHESE PERIODE ${SHOP} - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3><table><tr><th>Indicateur</th><th>Valeur</th><th>Détail</th></tr><tr><td>CA</td><td><b>${ca.toLocaleString()} FC</b></td><td>${vPeriode.length} ventes / ${qteV} articles</td></tr><tr><td>Bénéf Brut</td><td>${ben.toLocaleString()} FC</td><td>${ca?((ben/ca)*100).toFixed(1):0}%</td></tr><tr><td>Dépenses</td><td style="color:red">${dep.toLocaleString()} FC</td><td>${depPeriode.length} ops</td></tr><tr><td>Bénéf Net</td><td style="color:green;font-weight:bold">${(ben-dep).toLocaleString()} FC</td><td>Brut - dépenses</td></tr><tr><td>Entrées</td><td>+${qteE}</td><td>${entPeriode.length} réappros</td></tr></table>`;}
+ function buildVentesTable(withBenef){let byArt={};vPeriode.forEach(v=>{(v.items||[]).forEach(i=>{if(!byArt[i.CODE])byArt[i.CODE]={CODE:i.CODE,Designation:nameMap[i.CODE]||i.Designation||i.CODE,qty:0,ca:0,benef:0};byArt[i.CODE].qty+=i.qty;byArt[i.CODE].ca+=i.qty*i.Prix;byArt[i.CODE].benef+= i.qty*((i.Prix||0)-(fullMap[i.CODE]?.['Prix Achat']||0));});});let totalQte=Object.values(byArt).reduce((s,a)=>s+a.qty,0);let totalCA=Object.values(byArt).reduce((s,a)=>s+a.ca,0);let totalBenef=Object.values(byArt).reduce((s,a)=>s+a.benef,0);let header=`<tr><th>CODE</th><th>Désignation</th><th>Qté Sortie</th><th>CA</th>${withBenef?'<th>Bénéfice</th>':''}<th>Stock Actuel</th></tr>`;let rows=Object.values(byArt).sort((a,b)=>b.qty-a.qty).map(r=>`<tr><td>${r.CODE}</td><td><b>${r.Designation}</b></td><td>${r.qty}</td><td>${r.ca.toLocaleString()} FC</td>${withBenef?`<td style="color:green">${r.benef.toLocaleString()} FC</td>`:''}<td>${fullMap[r.CODE]?.Quantite??''}</td></tr>`).join('');let title=withBenef?`⭐ SYNTHESE VENTES (PATRON avec bénéf) - ${SHOP}`:`⭐ SYNTHESE VENTES (VENDEUR sans bénéf) - ${SHOP}`;let summary=withBenef?`<p>Total: <b>${totalQte}</b> articles - CA: <b>${totalCA.toLocaleString()} FC</b> - Bénéf: <b>${totalBenef.toLocaleString()} FC</b></p>`:`<p>Total: <b>${totalQte}</b> articles - CA: <b>${totalCA.toLocaleString()} FC</b> - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</p>`;return `<h3>${title}</h3>${summary}<table>${header}${rows}</table>`;}
+ if(type==='synthese_ventes_vendeur'){html=buildVentesTable(false);}if(type==='synthese_ventes_patron'){html=buildVentesTable(true);}
  if(type==='synthese_entrees'){let byArt={};entPeriode.forEach(e=>{if(!byArt[e.CODE])byArt[e.CODE]={CODE:e.CODE,Designation:nameMap[e.CODE]||e.Designation||e.CODE,qty:0,nb:0};byArt[e.CODE].qty+=e.qty;byArt[e.CODE].nb++;});let totalQte=Object.values(byArt).reduce((s,a)=>s+a.qty,0);html=`<h3>⭐ SYNTHESE ENTREES - Total +${totalQte}</h3><table><tr><th>CODE</th><th>Désignation</th><th>Nb</th><th>Qté Totale</th></tr>`+Object.values(byArt).sort((a,b)=>b.qty-a.qty).map(r=>`<tr><td>${r.CODE}</td><td><b>${r.Designation}</b></td><td>${r.nb}</td><td>+${r.qty}</td></tr>`).join('')+'</table>';}
  if(type==='synthese_depenses'){let byMot={};depPeriode.forEach(d=>{byMot[d.motif]=(byMot[d.motif]||0)+d.montant;});let totalDep=depPeriode.reduce((s,d)=>s+d.montant,0);let rows=Object.entries(byMot).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${k}</td><td>${v.toLocaleString()} FC</td><td>${totalDep? (v/totalDep*100).toFixed(1):0}%</td></tr>`).join('');html=`<h3>⭐ SYNTHESE DEPENSES - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3><table><tr><th>Type</th><th>Total</th><th>%</th></tr>${rows}</table><p><b>Total: ${totalDep.toLocaleString()} FC - ${depPeriode.length} ops</b></p>`;}
  if(type==='entrees'){html=`<h3>Entrées Stock - ${entPeriode.length} ops</h3><table><tr><th>Date</th><th>CODE</th><th>Désignation</th><th>Qté</th></tr>`+entPeriode.map(e=>`<tr><td>${new Date(e.date).toLocaleString()}</td><td>${e.CODE}</td><td><b>${nameMap[e.CODE]||e.Designation||e.CODE}</b></td><td>+${e.qty}</td></tr>`).join('')+'</table>';}
