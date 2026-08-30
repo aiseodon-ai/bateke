@@ -1,24 +1,73 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - Accueil</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>BATEKE - Gestion V4.7</title>
 <style>
-body{font-family:Arial;background:#0f172a;color:white;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0}
-.box{background:#1e293b;padding:30px;border-radius:16px;text-align:center;max-width:400px;width:90%}
-h1{color:#facc15} button{width:100%;padding:15px;margin:10px 0;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer}
-.patron{background:#facc15;color:black} .super{background:#38bdf8;color:black} .vend{background:#22c55e;color:black}
-small{color:#94a3b8}
+body{margin:0;font-family:Arial;background:#0b0f0d;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.box{background:#111827;border-radius:20px;padding:25px;max-width:480px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.5);text-align:center}
+h1{margin:0 0 5px;font-size:26px}small{color:#9ca3af}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+.card{background:#1f2937;border-radius:14px;padding:15px;cursor:pointer;transition:.2s;border:2px solid transparent}
+.card:hover{border-color:#0b5e2f;transform:scale(1.02)}
+.card.patron{background:linear-gradient(135deg,#0b5e2f,#16a34a)}
+.card.vendeur{background:linear-gradient(135deg,#1e3a8a,#0ea5e9)}
+.card b{display:block;font-size:16px;margin-bottom:4px}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-size:14px;margin-top:8px}
+.btn-g{background:#0b5e2f;color:#fff}.btn-b{background:#0ea5e9;color:#fff}.btn-y{background:#facc15;color:#111}
+select{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff;margin-top:10px}
+.shopLink{display:block;margin-top:10px;padding:10px;background:#0b5e2f;border-radius:8px;color:#fff;text-decoration:none;font-size:13px}
+.ver{font-size:11px;color:#6b7280;margin-top:15px}
 </style>
-</head>
-<body>
+</head><body>
 <div class="box">
-<h1>🏪 BATEKE V4.1 PRO</h1>
-<p>Choisis ton accès</p>
-<button class="patron" onclick="location.href='patron_v4_1_pro.html'">👑 PATRON<br><small>Seuil 3 + Bénéfice + Rapports PDF</small></button>
-<button class="super" onclick="location.href='superviseur_v4_1.html'">🧑‍💼 SUPERVISEUR<br><small>Modifie Qté/Prix Vente, pas achat</small></button>
-<button class="vend" onclick="location.href='vendeur_v4_1.html'">🛍️ VENDEUR<br><small>Vente seulement</small></button>
-<p><small>Menkao1 | Menkao2 | Mbakana<br>Version 4.1 PRO - 30/08/2026</small></p>
+<h1>👑 BATEKE V4.7</h1><small>Système Patron - Vendeur Lié</small>
+<div style="margin-top:15px;text-align:left;background:#0f172a;padding:12px;border-radius:10px;font-size:12px">
+✅ Fix: Synthèse Dépenses + Ventes (avec/sans bénéfice)<br>
+✅ Fix: Stock éditable PA/PV/Seuil/Qté/Désignation<br>
+✅ Fix: Vendeur champs vide après vente + Tél client + Remise 5% max
 </div>
-</body>
-</html>
+
+<div class="grid">
+<div class="card patron" onclick="location.href='patron_v4_2_final.html'">
+<b>👑 PATRON V4.7</b>
+<span style="font-size:12px">DG - Toutes boutiques<br>Synthèses complètes<br>CA / Bénéf / Dépenses</span>
+</div>
+<div class="card vendeur" onclick="document.getElementById('vendeurZone').style.display='block'">
+<b>🛒 VENDEUR V4.7</b>
+<span style="font-size:12px">Vente rapide<br>Remise 5% max<br>CRM avec Tél</span>
+</div>
+</div>
+
+<button class="btn btn-g" onclick="location.href='patron_v4_2_final.html'">👑 Ouvrir PATRON DG</button>
+
+<div id="vendeurZone" style="display:none;margin-top:15px;border-top:1px solid #333;padding-top:15px">
+<h4 style="margin:0 0 10px">Choisis ta boutique vendeur</h4>
+<select id="shopSel"><option value="Menkao1">Menkao1</option><option value="Menkao2">Menkao2</option><option value="Mbakana">Mbakana</option></select>
+<button class="btn btn-b" onclick="openVendeur()">🛒 Ouvrir VENDEUR</button>
+<div style="margin-top:10px;display:grid;gap:6px">
+<a class="shopLink" href="vendeur_v4_7_final.html" target="_blank">🔗 Lien direct vendeur générique</a>
+<a class="shopLink" id="linkM1" href="#">Menkao1 direct</a>
+<a class="shopLink" id="linkM2" href="#">Menkao2 direct</a>
+<a class="shopLink" id="linkMb" href="#">Mbakana direct</a>
+</div>
+</div>
+
+<div class="ver">
+Version 4.7 - 30/08/2026<br>
+Patron: patron_v4_2_final.html (contient V4.6 fix)<br>
+Vendeur: vendeur_v4_7_final.html<br>
+Firebase: bateke-v4 lié en temps réel
+</div>
+</div>
+<script>
+function openVendeur(){
+ let shop=document.getElementById('shopSel').value;
+ localStorage.setItem('vendeur_shop',shop);
+ location.href='vendeur_v4_7_final.html';
+}
+document.getElementById('shopSel').addEventListener('change',e=>{
+ let shop=e.target.value;
+ document.getElementById('linkM1').href='vendeur_v4_7_final.html?shop='+shop;
+});
+document.getElementById('linkM1').href='vendeur_v4_7_final.html?shop=Menkao1';
+document.getElementById('linkM2').href='vendeur_v4_7_final.html?shop=Menkao2';
+document.getElementById('linkMb').href='vendeur_v4_7_final.html?shop=Mbakana';
+</script>
+</body></html>
