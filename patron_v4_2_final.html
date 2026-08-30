@@ -1,0 +1,133 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V4.2 FINAL</title>
+<style>
+body{margin:0;font-family:Arial;background:#f0f2f5}header{background:#111;color:#fff;padding:12px;text-align:center;position:sticky;top:0;z-index:10}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px}.card{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.kpi{font-size:22px;font-weight:bold;color:#0b5e2f}.red{color:red}.tabs{display:flex;background:#fff;position:sticky;top:105px;z-index:5;overflow:auto}.tabs button{flex:1;padding:12px;border:none;font-weight:bold}.tabs button.active{border-bottom:3px solid #0b5e2f;color:#0b5e2f}
+.sec{display:none;padding:8px}.sec.active{display:block}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px;border-bottom:1px solid #eee}
+input,select{padding:8px;border-radius:6px;border:1px solid #ccc;width:100%;margin:3px 0}.btn{padding:10px;border:none;border-radius:8px;font-weight:bold;width:100%;margin-top:5px}.btn-g{background:#0b5e2f;color:#fff}.btn-y{background:#facc15;color:#000}.editable{background:#fffde7;border:1px dashed #d4a017}
+@media print{.tabs,.grid,header input{display:none}.sec{display:block!important}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body>
+<header><h3>👑 PATRON V4.2 FINAL - LIVE</h3><small id="live">● LIVE connecté bateke-v4</small>
+<div style="margin-top:6px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap">
+Boutique: <select id="shopSel" onchange="switchShop()" style="width:120px"><option>Menkao1</option><option>Menkao2</option><option>Mbakana</option><option value="ALL">TOUTES</option></select>
+<input type="file" id="excelIn" accept=".xlsx,.xls" style="width:160px"><span id="importLog" style="color:#0f0;font-size:11px"></span>
+</div></header>
+<div class="grid"><div class="card">💰 CA Jour<br><span class="kpi" id="caJour">0 FC</span><br><small id="caMois">Mois: 0</small></div><div class="card">📈 Bénéfice Réel<br><span class="kpi" id="benefJour">0</span><br><small id="benefMois">Mois: 0</small></div><div class="card">🏦 À Verser<br><span class="kpi red" id="aVerser">0</span><br><small id="detailCaisse">-</small></div></div>
+<div class="tabs"><button class="active" onclick="tab('ventes',this)">🔴 Live</button><button onclick="tab('stock',this)">📦 Stock EDIT</button><button onclick="tab('rapport',this)">📊 Rapport DU-AU</button><button onclick="tab('top',this)">🏆 Top</button><button onclick="tab('caisse',this)">💰 Caisse</button></div>
+
+<div id="ventes" class="sec active"><div class="card"><h4>Ventes Live</h4><div id="ventesList"></div></div></div>
+
+<div id="stock" class="sec"><div class="card"><h4>Stock & Entrées - Clique pour modifier Prix/Qté/Seuil/PA</h4>
+<div style="display:flex;gap:5px"><input id="searchS" placeholder="Chercher code ou désignation..." oninput="renderStock()"><select id="roleSel" style="width:140px"><option value="patron">Patron (voit tout)</option><option value="assistant">Assistant (modif avec code)</option><option value="vendeur">Vue Vendeur</option></select></div>
+<table><thead><tr><th>Code</th><th>Desig</th><th>Qte</th><th>Seuil</th><th>PV</th><th>PA</th><th>Benef</th><th>Actions</th></tr></thead><tbody id="stockT"></tbody></table>
+</div></div>
+
+<div id="rapport" class="sec"><div class="card"><h4>📊 Rapport DG Complet</h4>
+Du: <input type="date" id="du" value="2026-08-01" style="width:140px"> Au: <input type="date" id="au" value="2026-08-30" style="width:140px">
+<select id="typeRapport" style="width:200px"><option value="ca">Chiffre d'Affaires</option><option value="benef">Bénéfice Net</option><option value="entrees">Entrées Stock</option><option value="depenses">Dépenses</option><option value="invendus">Invendus / Dormants</option><option value="top">Meilleurs Produits Vendus</option><option value="versements">Versements</option></select>
+<button class="btn btn-g" onclick="genRapport()">Générer</button> <button class="btn btn-y" onclick="window.print()">📄 Export PDF</button>
+<div id="rapportC" style="background:#fff;padding:15px;margin-top:10px;border-radius:8px;min-height:100px"></div>
+</div></div>
+
+<div id="top" class="sec"><div class="card"><h4>Top 10 (période rapport)</h4><div id="topList"></div></div><div class="card"><h4>Flop 10 Dormants</h4><div id="flopList"></div></div></div>
+<div id="caisse" class="sec"><div class="card"><h4>Journal Caisse</h4><div id="caisseList"></div></div></div>
+
+<script>
+const firebaseConfig={apiKey:"AIzaSyB0D421bg7tGVafz44cwCyIOCUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
+firebase.initializeApp(firebaseConfig);const db=firebase.database();
+let SHOP=localStorage.getItem('patron_shop')||'Menkao1';document.getElementById('shopSel').value=SHOP;
+let PRODUCTS={},ALL_DATA={Menkao1:{ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{}},Menkao2:{ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{}},Mbakana:{ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{}}};
+const CODE_PATRON="1234"; // code pour assistant
+
+function switchShop(){SHOP=document.getElementById('shopSel').value;localStorage.setItem('patron_shop',SHOP);refreshAll();document.getElementById('live').innerText="● "+SHOP+" connecté";}
+function tab(id,el){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));el.classList.add('active');}
+
+// IMPORT FIX - Gère C0DE, Prix Unit avec espace, etc.
+document.getElementById('excelIn').addEventListener('change',e=>{
+ let f=e.target.files[0]; if(!f)return; document.getElementById('importLog').innerText="Lecture "+f.name+"...";
+ let r=new FileReader(); r.onload=ev=>{
+  try{
+   let wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'}); let sh=wb.Sheets[wb.SheetNames[0]]; let js=XLSX.utils.sheet_to_json(sh);
+   document.getElementById('importLog').innerText=js.length+" lignes lues Colonnes:"+Object.keys(js[0]||{}).join(",");
+   let c=0;
+   js.forEach((row,i)=>{
+    let code=String(row.CODE||row.C0DE||row.Code||row['C0DE']||'C'+i).trim(); if(!code||code=='C'+i &&!row.Designation)return;
+    let des=String(row.Designation||row.DESIGNATION||'').trim();
+    let pv=parseFloat(String(row['Prix Unit']||row['Prix Unit ']||row['PRIX UNIT']||row.Prix||0).replace(/[^0-9.]/g,''))||0;
+    let pa=parseFloat(String(row['Prix Achat']||row['PRIX ACHAT']||pv*0.7).replace(/[^0-9.]/g,''))||Math.round(pv*0.7);
+    let qte=parseInt(String(row.Quantite||row.QUANTITE||0).replace(/[^0-9-]/g,''))||0;
+    let seuil=parseInt(row.seuil||3)||3;
+    db.ref('shops/'+SHOP+'/stock/'+code).set({CODE:code,Designation:des,'Prix Unit':pv,'Prix Achat':pa,Quantite:qte,seuil:seuil});
+    c++;
+   });
+   alert('✅ '+c+' produits importés dans '+SHOP); document.getElementById('importLog').innerText='✅ '+c+' importés dans '+SHOP;
+  }catch(err){ document.getElementById('importLog').innerText='Erreur: '+err.message; }
+ }; r.readAsArrayBuffer(f);
+});
+
+function listenShop(s){
+ db.ref('shops/'+s+'/stock').on('value',snap=>{PRODUCTS[s]=snap.val()?Object.values(snap.val()):[];ALL_DATA[s].stock=PRODUCTS[s];if(SHOP===s||SHOP==='ALL'){renderStock();updateKPIs();}});
+ db.ref('shops/'+s+'/ventes').on('value',snap=>{ALL_DATA[s].ventes=Object.values(snap.val()||{});if(SHOP===s||SHOP==='ALL'){renderVentes();updateKPIs();renderTop();}});
+ db.ref('shops/'+s+'/depenses').on('value',snap=>{ALL_DATA[s].dep=Object.values(snap.val()||{});if(SHOP===s||SHOP==='ALL'){renderCaisse();updateKPIs();}});
+ db.ref('shops/'+s+'/versements').on('value',snap=>{ALL_DATA[s].vers=Object.values(snap.val()||{});if(SHOP===s||SHOP==='ALL'){renderCaisse();updateKPIs();}});
+ db.ref('shops/'+s+'/entrees').on('value',snap=>{ALL_DATA[s].entrees=Object.values(snap.val()||{});});
+}
+['Menkao1','Menkao2','Mbakana'].forEach(listenShop);
+
+function getFiltered(){ if(SHOP==='ALL')return{ventes:[...ALL_DATA.Menkao1.ventes,...ALL_DATA.Menkao2.ventes,...ALL_DATA.Mbakana.ventes],dep:[...ALL_DATA.Menkao1.dep,...ALL_DATA.Menkao2.dep,...ALL_DATA.Mbakana.dep],vers:[...ALL_DATA.Menkao1.vers,...ALL_DATA.Menkao2.vers,...ALL_DATA.Mbakana.vers],stock:[...ALL_DATA.Menkao1.stock,...ALL_DATA.Menkao2.stock,...ALL_DATA.Mbakana.stock],entrees:[...ALL_DATA.Menkao1.entrees,...ALL_DATA.Menkao2.entrees,...ALL_DATA.Mbakana.entrees]}; else return ALL_DATA[SHOP]; }
+
+function updateKPIs(){ let data=getFiltered(); let today=new Date().toDateString(); let vToday=data.ventes.filter(v=>new Date(v.date).toDateString()===today); let vMonth=data.ventes.filter(v=>new Date(v.date).getMonth()===new Date().getMonth()); let caJ=vToday.reduce((s,v)=>s+v.total,0); let caM=vMonth.reduce((s,v)=>s+v.total,0); let benJ=vToday.reduce((s,v)=>s+(v.benefice||0),0); let benM=vMonth.reduce((s,v)=>s+(v.benefice||0),0); let depJ=data.dep.filter(d=>new Date(d.date).toDateString()===today).reduce((s,d)=>s+d.montant,0); document.getElementById('caJour').innerText=caJ.toLocaleString()+' FC'; document.getElementById('caMois').innerText='Mois: '+caM.toLocaleString(); document.getElementById('benefJour').innerText=(benJ-depJ).toLocaleString()+' FC'; document.getElementById('benefMois').innerText='Mois net: '+(benM-data.dep.filter(d=>new Date(d.date).getMonth()===new Date().getMonth()).reduce((s,d)=>s+d.montant,0)).toLocaleString(); document.getElementById('aVerser').innerText=(caJ-depJ-data.vers.filter(v=>new Date(v.date).toDateString()===today).reduce((s,v)=>s+v.montant,0)).toLocaleString()+' FC'; }
+
+function renderVentes(){ let data=getFiltered(); let v=data.ventes.sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,50); document.getElementById('ventesList').innerHTML=v.map(v=>`<div style="padding:6px;border-bottom:1px solid #eee"><b>${new Date(v.date).toLocaleTimeString()} - ${v.boutique||SHOP}</b> - ${v.client?.nom||''} - ${v.total?.toLocaleString()||0} FC<br><small>${(v.items||[]).map(i=>i.qty+'x'+i.Designation).join(', ')}</small></div>`).join('')||'Aucune vente'; }
+function renderCaisse(){ let data=getFiltered(); let all=[...data.ventes.map(v=>({date:v.date,txt:`Vente ${v.boutique||''} - ${v.total?.toLocaleString()||0}`})),...data.dep.map(d=>({date:d.date,txt:`Dépense ${d.boutique||''} - ${d.motif} - ${d.montant?.toLocaleString()}`})),...data.vers.map(v=>({date:v.date,txt:`Versement ${v.boutique||''} - ${v.montant?.toLocaleString()}`}))].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,100); document.getElementById('caisseList').innerHTML=all.map(a=>`<div style="padding:5px;border-bottom:1px solid #eee">${new Date(a.date).toLocaleString()} - ${a.txt}</div>`).join(''); }
+function renderTop(){ let data=getFiltered(); let map={}; data.ventes.forEach(v=>{(v.items||[]).forEach(i=>{if(!map[i.CODE])map[i.CODE]={CODE:i.CODE,Designation:i.Designation,qty:0,ca:0,benef:0};map[i.CODE].qty+=i.qty;map[i.CODE].ca+=i.Prix*i.qty;map[i.CODE].benef+=(i.Prix-i.Achat)*i.qty;});}); let top=Object.values(map).sort((a,b)=>b.qty-a.qty).slice(0,10); document.getElementById('topList').innerHTML=top.map((p,i)=>`<div>${i+1}. ${p.Designation} - ${p.qty} vendus - Benef ${p.benef.toLocaleString()}</div>`).join('')||'Pas de ventes'; let sold=new Set(data.ventes.flatMap(v=>(v.items||[]).map(i=>i.CODE))); let flop=data.stock.filter(p=>!sold.has(p.CODE)).slice(0,20); document.getElementById('flopList').innerHTML=flop.map(p=>`<div>💤 ${p.CODE} ${p.Designation} - Stock ${p.Quantite}</div>`).join(''); }
+
+function renderStock(){
+ let data=getFiltered(); let q=(document.getElementById('searchS').value||'').toLowerCase(); let role=document.getElementById('roleSel').value;
+ let f=data.stock.filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).slice(0,200);
+ document.getElementById('stockT').innerHTML=f.map(p=>{
+  let canEdit = role!=='vendeur';
+  let pa = role==='vendeur'? '***' : p['Prix Achat']; let benef = role==='vendeur'? '***' : (p['Prix Unit']-p['Prix Achat']).toLocaleString();
+  return `<tr><td>${p.CODE}</td><td>${p.Designation}</td>
+  <td class="${canEdit?'editable':''}" onclick="editField('${p.CODE}','Quantite',${p.Quantite})">${p.Quantite}</td>
+  <td class="${canEdit?'editable':''}" onclick="editField('${p.CODE}','seuil',${p.seuil})">${p.seuil||3}</td>
+  <td class="${canEdit?'editable':''}" onclick="editField('${p.CODE}','Prix Unit',${p['Prix Unit']})">${p['Prix Unit']}</td>
+  <td class="${canEdit?'editable':''}" onclick="editField('${p.CODE}','Prix Achat',${p['Prix Achat']})">${pa}</td>
+  <td>${benef}</td>
+  <td><button onclick="entree('${p.CODE}')">+Entrée</button> <button onclick="supp('${p.CODE}')" style="background:red;color:white">X</button></td></tr>`;
+ }).join('');
+}
+
+function editField(code,field,oldVal){
+ let role=document.getElementById('roleSel').value;
+ if(role==='assistant'){ let c=prompt('Code autorisation patron (1234):'); if(c!==CODE_PATRON){alert('Non autorisé');return;} }
+ if(role==='vendeur'){alert('Vendeur ne peut pas modifier');return;}
+ let nv=prompt('Nouvelle valeur pour '+field+' de '+code+' (ancien: '+oldVal+')?'); if(nv===null)return;
+ let val = (field.includes('Prix')||field==='Quantite'||field==='seuil')? Number(nv.replace(/[^0-9.]/g,'')) : nv;
+ let targetShop = SHOP==='ALL'? prompt('Boutique? Menkao1/Menkao2/Mbakana'):SHOP; if(!targetShop)return;
+ db.ref('shops/'+targetShop+'/stock/'+code).update({[field]:val});
+}
+
+function entree(code){ let qty=parseInt(prompt('Qté entrée pour '+code+'?')); if(!qty)return; let s=SHOP==='ALL'?prompt('Boutique?'):SHOP; if(!s)return; db.ref('shops/'+s+'/stock/'+code).once('value').then(snap=>{ let p=snap.val(); if(p){ db.ref('shops/'+s+'/stock/'+code).update({Quantite:p.Quantite+qty}); db.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:code,Designation:p.Designation,qty:qty,boutique:s}); }}); }
+function supp(code){ if(!confirm('Supprimer '+code+'?'))return; let s=SHOP==='ALL'?prompt('Boutique?'):SHOP; db.ref('shops/'+s+'/stock/'+code).remove(); }
+
+function genRapport(){
+ let data=getFiltered(); let du=new Date(document.getElementById('du').value); let au=new Date(document.getElementById('au').value); au.setHours(23,59,59);
+ let type=document.getElementById('typeRapport').value;
+ let vPeriode=data.ventes.filter(v=>{ let d=new Date(v.date); return d>=du && d<=au; });
+ let depPeriode=data.dep.filter(d=>{ let dt=new Date(d.date); return dt>=du && dt<=au; });
+ let entPeriode=data.entrees.filter(e=>{ let dt=new Date(e.date); return dt>=du && dt<=au; });
+ let html=`<h3>Rapport ${type} du ${du.toLocaleDateString()} au ${au.toLocaleDateString()} - ${SHOP}</h3>`;
+ if(type==='ca'){ let ca=vPeriode.reduce((s,v)=>s+v.total,0); html+=`<b>CA: ${ca.toLocaleString()} FC</b><br>Nb ventes: ${vPeriode.length}`; }
+ if(type==='benef'){ let ben=vPeriode.reduce((s,v)=>s+(v.benefice||0),0)-depPeriode.reduce((s,d)=>s+d.montant,0); html+=`<b>Bénéfice Net: ${ben.toLocaleString()} FC</b><br>CA: ${vPeriode.reduce((s,v)=>s+v.total,0).toLocaleString()}<br>Dépenses: ${depPeriode.reduce((s,d)=>s+d.montant,0).toLocaleString()}`; }
+ if(type==='entrees'){ html+=`<b>${entPeriode.length} entrées</b><br>`+entPeriode.map(e=>`${new Date(e.date).toLocaleDateString()} - ${e.CODE} ${e.Designation||''} +${e.qty}`).join('<br>'); }
+ if(type==='depenses'){ html+=`<b>${depPeriode.length} dépenses - Total ${depPeriode.reduce((s,d)=>s+d.montant,0).toLocaleString()} FC</b><br>`+depPeriode.map(d=>`${new Date(d.date).toLocaleDateString()} - ${d.boutique} - ${d.motif} - ${d.montant.toLocaleString()}`).join('<br>'); }
+ if(type==='invendus'){ let sold=new Set(vPeriode.flatMap(v=>(v.items||[]).map(i=>i.CODE))); let inv=data.stock.filter(p=>!sold.has(p.CODE)); html+=`<b>${inv.length} invendus sur période</b><br>`+inv.map(p=>`${p.CODE} ${p.Designation} Stock:${p.Quantite} Valeur:${(p['Prix Unit']*p.Quantite).toLocaleString()}`).join('<br>'); }
+ if(type==='top'){ let map={}; vPeriode.forEach(v=>{(v.items||[]).forEach(i=>{ if(!map[i.CODE])map[i.CODE]={CODE:i.CODE,Designation:i.Designation,qty:0,ca:0}; map[i.CODE].qty+=i.qty; map[i.CODE].ca+=i.Prix*i.qty; });}); let top=Object.values(map).sort((a,b)=>b.qty-a.qty).slice(0,20); html+=`<b>Top 20 Meilleurs Produits</b><br>`+top.map((p,i)=>`${i+1}. ${p.CODE} ${p.Designation} - ${p.qty} vendus - CA ${p.ca.toLocaleString()}`).join('<br>'); }
+ if(type==='versements'){ let vers=data.vers.filter(v=>{let d=new Date(v.date); return d>=du && d<=au;}); html+=`<b>Versements: ${vers.reduce((s,v)=>s+v.montant,0).toLocaleString()} FC</b><br>`+vers.map(v=>`${new Date(v.date).toLocaleDateString()} - ${v.boutique} - ${v.montant.toLocaleString()}`).join('<br>'); }
+ document.getElementById('rapportC').innerHTML=html;
+}
+function refreshAll(){updateKPIs();renderVentes();renderCaisse();renderTop();renderStock();}
+</script></body></html>
