@@ -1,8 +1,34 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>BATEKE V4.7</title>
-<style>body{margin:0;font-family:Arial;background:#0b0f0d;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}.box{background:#111827;border-radius:20px;padding:25px;max-width:480px;width:100%;text-align:center}.card{padding:15px;border-radius:14px;margin:10px 0;cursor:pointer}.patron{background:#0b5e2f}.vendeur{background:#0ea5e9}.btn{width:100%;padding:14px;border:none;border-radius:10px;font-weight:bold;margin-top:10px;cursor:pointer}</style></head><body><div class="box">
-<h1>👑 BATEKE V4.7</h1><p>Lié temps réel</p>
-<div class="card patron" onclick="location.href='patron_v4_6_final.html'"><b>👑 PATRON V4.6</b><br>DG Toutes boutiques - Edit stock PA/PV</div>
-<div class="card vendeur" onclick="location.href='vendeur_v4_7_final.html'"><b>🛒 VENDEUR V4.7</b><br>Remise 5% max + Tél client</div>
-<button class="btn" style="background:#0b5e2f;color:#fff" onclick="location.href='patron_v4_6_final.html'">Ouvrir Patron</button>
-<button class="btn" style="background:#0ea5e9;color:#fff" onclick="location.href='vendeur_v4_7_final.html'">Ouvrir Vendeur</button>
+<style>
+body{margin:0;font-family:Arial;background:#0b1210;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:15px}
+.box{background:#111827;border-radius:20px;padding:22px;max-width:450px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+h1{margin:0;font-size:28px} .sub{color:#9ca3af;font-size:13px;margin-bottom:15px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
+.card{border-radius:14px;padding:16px;cursor:pointer;color:#fff}
+.card b{font-size:15px}
+.patron{background:linear-gradient(135deg,#0b5e2f,#16a34a)} .vendeur{background:linear-gradient(135deg,#1e3a8a,#0ea5e9)}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-weight:bold;margin-top:8px;cursor:pointer;font-size:14px}
+.info{text-align:left;background:#1f2937;padding:12px;border-radius:10px;font-size:12px;line-height:1.6;margin:12px 0}
+a.link{display:block;background:#1f2937;padding:10px;border-radius:8px;color:#93c5fd;text-decoration:none;font-size:12px;margin:6px 0;word-break:break-all}
+.ver{font-size:10px;color:#6b7280;margin-top:15px}
+</style>
+</head><body><div class="box">
+<h1>👑 BATEKE V4.7</h1><div class="sub">Gestion vente - Temps réel Firebase</div>
+<div class="info">
+✅ Patron: synthèse CA / Bénéf / Dépenses avec/sans bénéfice<br>
+✅ Stock éditable PA / PV / Seuil / Qté<br>
+✅ Vendeur: Remise max 5% + Tél client CRM<br>
+✅ Champs se vide après validation vente
+</div>
+<div class="grid">
+<div class="card patron" onclick="location.href='patron.html'"><b>👑 PATRON</b><br><small>DG toutes boutiques</small></div>
+<div class="card vendeur" onclick="location.href='vendeur.html'"><b>🛒 VENDEUR</b><br><small>Vente rapide</small></div>
+</div>
+<button class="btn" style="background:#0b5e2f;color:#fff" onclick="location.href='patron.html'">👑 Ouvrir PATRON.html</button>
+<button class="btn" style="background:#0ea5e9;color:#fff" onclick="location.href='vendeur.html'">🛒 Ouvrir VENDEUR.html</button>
+<div style="margin-top:15px">
+<a class="link" href="patron.html">https://aiseodon-ai.github.io/bateke/patron.html</a>
+<a class="link" href="vendeur.html">https://aiseodon-ai.github.io/bateke/vendeur.html</a>
+</div>
+<div class="ver">V4.7 lié - Firebase bateke-v4 - Déployé sur GitHub Pages</div>
 </div></body></html>
