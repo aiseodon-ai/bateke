@@ -51,22 +51,6 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 <div id="synthese" class="sec"><div class="card"><h4>📊 Ma Synthèse (sans bénéfice)</h4>Du: <input type="date" id="du"> Au: <input type="date" id="au"><button class="btn btn-g" onclick="genSyntheseVendeur()">Générer</button><div id="syntheseC" style="margin-top:10px;overflow:auto"></div><button class="btn btn-y" onclick="pdfSynthese()">📄 PDF</button></div></div>
 <script>
 
-// === LOCK BOUTIQUE PAR LIEN?shop=Menkao1 ===
-(function(){
-  const shopFromUrl = new URLSearchParams(window.location.search).get('shop');
-  if(shopFromUrl) localStorage.setItem('shop_lock', shopFromUrl);
-  const locked = localStorage.getItem('shop_lock');
-  if(locked){
-    window.addEventListener('DOMContentLoaded', ()=>{
-      const sel=document.getElementById('shopSel');
-      if(sel){ sel.value=locked; sel.disabled=true; sel.style.opacity='0.6'; sel.style.background='#ccc'; }
-      const hdr=document.querySelector('header');
-      if(hdr){ const b=document.createElement('div'); b.innerHTML='🔒 Boutique verrouillée: '+locked; b.style.cssText='background:#fff;color:#0b5e2f;padding:3px 8px;border-radius:8px;font-size:11px;margin-top:5px;display:inline-block'; hdr.appendChild(b); }
-    });
-  }
-})();
-// === CONFIG FIREBASE ===
-  
 const firebaseConfig={apiKey:"AIzaSyB0D421bg7tGVafz44cwCyIOCUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
 firebase.initializeApp(firebaseConfig);const db=firebase.database();
 let SHOP=localStorage.getItem('vendeur_shop')||'Menkao1';document.getElementById('shopSel').value=SHOP;document.getElementById('shopName').innerText=SHOP;document.getElementById('shopStock').innerText=SHOP;
