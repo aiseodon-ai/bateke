@@ -125,10 +125,10 @@ function secretPatron(){
  }
 }
 // Auto-login si déjà connecté et actif
-(async function autoLogin(){
- let savedPin=localStorage.getItem('vendeur_pin');
- if(savedPin){ document.getElementById('pinInput').value=savedPin; doLogin(); }
-})();
+//(async function autoLogin(){
+ //let savedPin=localStorage.getItem('vendeur_pin');
+ //if(savedPin){ document.getElementById('pinInput').value=savedPin; doLogin(); }
+//})();
 
 function switchShop(){ if(_lockedShop){ document.getElementById('shopSel').value=_lockedShop; return; } SHOP=document.getElementById('shopSel').value;localStorage.setItem('vendeur_shop',SHOP);document.getElementById('shopName').innerText=SHOP;document.getElementById('shopStock').innerText=SHOP;document.getElementById('loginShopName').innerText='Boutique: '+SHOP; document.getElementById('loginOverlay').style.display='flex'; }
 function switchTab(id){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');}
