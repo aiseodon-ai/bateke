@@ -50,13 +50,20 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 <div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Heure</th><th>Type</th><th>Montant</th><th>Motif</th></tr></thead><tbody id="caisseList"></tbody></table></div></div></div>
 <div id="synthese" class="sec"><div class="card"><h4>📊 Ma Synthèse (sans bénéfice)</h4>Du: <input type="date" id="du"> Au: <input type="date" id="au"><button class="btn btn-g" onclick="genSyntheseVendeur()">Générer</button><div id="syntheseC" style="margin-top:10px;overflow:auto"></div><button class="btn btn-y" onclick="pdfSynthese()">📄 PDF</button></div></div>
 <script>
+// === LOCK BOUTIQUE PAR LIEN ?shop=Menkao1 / Menkao2 / Mbakana - AJOUT MINIMAL ===
+const _shopFromUrl = new URLSearchParams(window.location.search).get('shop');
+if(_shopFromUrl){ localStorage.setItem('vendeur_shop', _shopFromUrl); localStorage.setItem('vendeur_shop_locked', _shopFromUrl); }
+const _lockedShop = localStorage.getItem('vendeur_shop_locked');
+// === FIN LOCK ===
 
 const firebaseConfig={apiKey:"AIzaSyB0D421bg7tGVafz44cwCyIOCUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
 firebase.initializeApp(firebaseConfig);const db=firebase.database();
 let SHOP=localStorage.getItem('vendeur_shop')||'Menkao1';document.getElementById('shopSel').value=SHOP;document.getElementById('shopName').innerText=SHOP;document.getElementById('shopStock').innerText=SHOP;
+// Si boutique verrouillée, on bloque le select visuellement
+if(_lockedShop){ const _sel=document.getElementById('shopSel'); if(_sel){ _sel.value=_lockedShop; _sel.disabled=true; _sel.style.opacity='0.6'; _sel.style.background='#ccc'; } SHOP=_lockedShop; document.getElementById('shopName').innerText=SHOP; document.getElementById('shopStock').innerText=SHOP; }
 let STOCK=[],VENTES=[],DEP=[],VERS=[];let PANIER=[];
 document.getElementById('du').valueAsDate=new Date(new Date().setDate(1));document.getElementById('au').valueAsDate=new Date();
-function switchShop(){SHOP=document.getElementById('shopSel').value;localStorage.setItem('vendeur_shop',SHOP);document.getElementById('shopName').innerText=SHOP;document.getElementById('shopStock').innerText=SHOP;listenAll();}
+function switchShop(){ if(_lockedShop){ document.getElementById('shopSel').value=_lockedShop; return; } SHOP=document.getElementById('shopSel').value;localStorage.setItem('vendeur_shop',SHOP);document.getElementById('shopName').innerText=SHOP;document.getElementById('shopStock').innerText=SHOP;listenAll();}
 function switchTab(id){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');}
 function listenAll(){
  db.ref('shops/'+SHOP+'/stock').on('value',s=>{STOCK=s.val()?Object.values(s.val()):[];renderStock();});
@@ -79,7 +86,6 @@ function validerVente(){
   PANIER.forEach(it=>{let st=STOCK.find(s=>s.CODE===it.CODE);if(st){db.ref('shops/'+SHOP+'/stock/'+it.CODE).update({Quantite:st.Quantite-it.qty});}});
   if((clientNom!=='Comptoir'||clientTel)&& (final-montantPaye>0 || clientTel)){db.ref('shops/'+SHOP+'/clients/'+clientNom.replace(/[^a-z0-9]/gi,'_')).once('value').then(snap=>{let c=snap.val()||{nom:clientNom,tel:clientTel,totalAchat:0,dette:0,nbVisites:0};c.nom=clientNom;c.tel=clientTel||c.tel;c.totalAchat=(c.totalAchat||0)+final;c.dette=(c.dette||0)+(final-montantPaye);c.nbVisites=(c.nbVisites||0)+1;c.derniereVisite=new Date().toISOString();db.ref('shops/'+SHOP+'/clients/'+clientNom.replace(/[^a-z0-9]/gi,'_')).set(c);});}
   PANIER=[];renderPanier();
-  // FIX TOUT VIDER
   clearArticleFields();document.getElementById('clientNom').value='';document.getElementById('clientTel').value='';document.getElementById('montantPaye').value='';document.getElementById('remise').value=0;
   alert('Vente validée: '+final.toLocaleString()+' FC'+(remisePct?` (remise ${remisePct}%)`:'' ));
  });
