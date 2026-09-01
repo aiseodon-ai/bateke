@@ -1,34 +1,225 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>BATEKE V4.7</title>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PATRON V4.8 - BATEKE EVOLUTIF</title>
 <style>
-body{margin:0;font-family:Arial;background:#0b1210;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:15px}
-.box{background:#111827;border-radius:20px;padding:22px;max-width:450px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-h1{margin:0;font-size:28px} .sub{color:#9ca3af;font-size:13px;margin-bottom:15px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
-.card{border-radius:14px;padding:16px;cursor:pointer;color:#fff}
-.card b{font-size:15px}
-.patron{background:linear-gradient(135deg,#0b5e2f,#16a34a)} .vendeur{background:linear-gradient(135deg,#1e3a8a,#0ea5e9)}
-.btn{width:100%;padding:14px;border:none;border-radius:10px;font-weight:bold;margin-top:8px;cursor:pointer;font-size:14px}
-.info{text-align:left;background:#1f2937;padding:12px;border-radius:10px;font-size:12px;line-height:1.6;margin:12px 0}
-a.link{display:block;background:#1f2937;padding:10px;border-radius:8px;color:#93c5fd;text-decoration:none;font-size:12px;margin:6px 0;word-break:break-all}
-.ver{font-size:10px;color:#6b7280;margin-top:15px}
+body{margin:0;font-family:Arial;background:#0f172a;color:#fff}
+header{background:#020617;padding:14px;position:sticky;top:0;z-index:99;display:flex;justify-content:space-between;align-items:center}
+.card{background:#1e293b;border-radius:12px;padding:14px;margin:10px}
+.tabs{display:flex;background:#1e293b;overflow-x:auto}.tabs button{flex:1;padding:12px;border:none;background:transparent;color:#94a3b8;font-weight:bold;cursor:pointer;border-bottom:3px solid transparent}.tabs button.active{color:#22c55e;border-bottom-color:#22c55e;background:#0f172a}
+.sec{display:none;padding:6px}.sec.active{display:block}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;border:1px solid #334155}th{background:#020617}
+input,select{padding:10px;border-radius:8px;border:1px solid #334155;width:100%;margin:5px 0;background:#0f172a;color:#fff;box-sizing:border-box}
+.btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;margin:3px}.btn-g{background:#22c55e;color:#000;width:100%}.btn-b{background:#0ea5e9;color:#fff}.btn-r{background:#ef4444;color:#fff}.btn-y{background:#facc15;color:#000}
+.shopBadge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:bold;margin:2px;display:inline-block;cursor:pointer}
+.badge-ok{background:#22c55e;color:#000}.badge-block{background:#ef4444;color:#fff}
+#loginPatron{position:fixed;inset:0;background:#020617;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
 </style>
-</head><body><div class="box">
-<h1>👑 BATEKE V4.7</h1><div class="sub">Gestion vente - Temps réel Firebase</div>
-<div class="info">
-✅ Patron: synthèse CA / Bénéf / Dépenses avec/sans bénéfice<br>
-✅ Stock éditable PA / PV / Seuil / Qté<br>
-✅ Vendeur: Remise max 5% + Tél client CRM<br>
-✅ Champs se vide après validation vente
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div id="loginPatron">
+<div style="background:#1e293b;padding:22px;border-radius:16px;max-width:340px;width:100%;text-align:center">
+<h2>🔐 PATRON BATEKE</h2>
+<p style="color:#94a3b8;font-size:13px">Code super patron</p>
+<input id="pinPatron" type="password" placeholder="9999" style="text-align:center;font-size:22px;letter-spacing:6px">
+<button class="btn btn-g" onclick="loginPatron()">ENTRER</button>
+<p id="msgPatron" style="color:#f87171;font-size:12px"></p>
 </div>
-<div class="grid">
-<div class="card patron" onclick="location.href='patron.html'"><b>👑 PATRON</b><br><small>DG toutes boutiques</small></div>
-<div class="card vendeur" onclick="location.href='vendeur.html'"><b>🛒 VENDEUR</b><br><small>Vente rapide</small></div>
 </div>
-<button class="btn" style="background:#0b5e2f;color:#fff" onclick="location.href='patron.html'">👑 Ouvrir PATRON.html</button>
-<button class="btn" style="background:#0ea5e9;color:#fff" onclick="location.href='vendeur.html'">🛒 Ouvrir VENDEUR.html</button>
-<div style="margin-top:15px">
-<a class="link" href="patron.html">https://aiseodon-ai.github.io/bateke/patron.html</a>
-<a class="link" href="vendeur.html">https://aiseodon-ai.github.io/bateke/vendeur.html</a>
+
+<header>
+<b>👑 PATRON V4.8 - <span id="nbShops">...</span> boutiques</b>
+<button class="btn btn-r" onclick="localStorage.clear();location.reload()" style="width:auto;padding:6px 10px">Déconnexion</button>
+</header>
+
+<div class="tabs">
+<button id="btn-boutiques" class="active" onclick="tab('boutiques')">🏪 Boutiques</button>
+<button id="btn-vendeurs" onclick="tab('vendeurs')">👥 Vendeurs</button>
+<button id="btn-ventes" onclick="tab('ventes')">📊 Ventes Live</button>
 </div>
-<div class="ver">V4.7 lié - Firebase bateke-v4 - Déployé sur GitHub Pages</div>
-</div></body></html>
+
+<!-- ONGLET BOUTIQUES -->
+<div id="boutiques" class="sec active">
+<div class="card">
+<h3>➕ Créer nouvelle boutique (évolutif)</h3>
+<p style="color:#94a3b8;font-size:12px">Ex: Limeté, Gombe, Masina... Le système crée tout seul stock, ventes, vendeurs</p>
+<div style="display:grid;grid-template-columns:1fr 120px;gap:8px">
+<input id="newShopName" placeholder="Nom nouvelle boutique (ex: Limete)">
+<button class="btn btn-g" onclick="createShop()">CRÉER BOUTIQUE</button>
+</div>
+</div>
+
+<div class="card">
+<h3>🏪 Liste boutiques</h3>
+<div id="listShops"></div>
+</div>
+</div>
+
+<!-- ONGLET VENDEURS -->
+<div id="vendeurs" class="sec">
+<div class="card">
+<h3>👥 Gérer vendeurs</h3>
+<select id="selShopVendeur" onchange="loadVendeurs()"></select>
+<div style="display:grid;grid-template-columns:1fr 80px 100px;gap:6px;margin-top:10px">
+<input id="vNom" placeholder="Nom vendeur ex: Paul">
+<input id="vPin" type="number" placeholder="PIN ex: 101">
+<button class="btn btn-g" onclick="createVendeur()">+ Ajouter</button>
+</div>
+<p style="color:#94a3b8;font-size:11px">PIN = code que le vendeur tape. 101, 102, 201, 301... Tu choisis.</p>
+</div>
+<div class="card">
+<h3>Vendeurs de <span id="shopVendeurName">-</span></h3>
+<div style="overflow:auto"><table><thead><tr><th>PIN</th><th>Nom</th><th>Statut</th><th>Action</th></tr></thead><tbody id="listVendeurs"></tbody></table></div>
+</div>
+<div class="card" style="border:1px solid #22c55e">
+<h4>🔗 Lien à envoyer au vendeur</h4>
+<p id="lienVendeur" style="background:#020617;padding:10px;border-radius:8px;word-break:break-all;font-size:12px"></p>
+<button class="btn btn-b" onclick="copyLien()">📋 Copier lien</button>
+</div>
+</div>
+
+<!-- ONGLET VENTES -->
+<div id="ventes" class="sec">
+<div class="card">
+<h3>📊 Ventes aujourd'hui (toutes boutiques)</h3>
+<select id="selShopVentes" onchange="loadVentes()"></select>
+<div id="ventesLive" style="margin-top:10px;overflow:auto"></div>
+</div>
+</div>
+
+<script>
+const firebaseConfig={apiKey:"AIzaSyB0D421bg7tGVafz44cwCyIOCUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
+firebase.initializeApp(firebaseConfig);const db=firebase.database();
+let SHOPS=[];let CURRENT_SHOP='Menkao1';
+
+function loginPatron(){
+ let pin=document.getElementById('pinPatron').value.trim();
+ if(pin==='9999' || pin==='1234'){ document.getElementById('loginPatron').style.display='none'; initPatron(); }
+ else document.getElementById('msgPatron').innerText='Code faux - 9999';
+}
+function tab(id){
+ document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+ document.getElementById('btn-'+id).classList.add('active');
+}
+
+async function initPatron(){
+ db.ref('shops').on('value', snap=>{
+   let data=snap.val()||{};
+   SHOPS=Object.keys(data);
+   if(!SHOPS.length) SHOPS=['Menkao1','Menkao2','Mbakana'];
+   document.getElementById('nbShops').innerText=SHOPS.length;
+   renderShops(data);
+   let opts=SHOPS.map(s=>`<option value="${s}">${s}</option>`).join('');
+   document.getElementById('selShopVendeur').innerHTML=opts;
+   document.getElementById('selShopVentes').innerHTML='<option value="ALL">TOUTES</option>'+opts;
+   if(!CURRENT_SHOP) CURRENT_SHOP=SHOPS[0];
+   document.getElementById('selShopVendeur').value=CURRENT_SHOP;
+   loadVendeurs(); loadVentes();
+ });
+}
+
+function renderShops(data){
+ let html=SHOPS.map(shop=>{
+   let blocked=data[shop]?.config?.blocked===true;
+   let nbVend=data[shop]?.vendeurs?Object.keys(data[shop].vendeurs).length:0;
+   let nbStock=data[shop]?.stock?Object.keys(data[shop].stock).length:0;
+   return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #334155">
+   <div><b>${shop}</b> ${blocked?'<span class="shopBadge badge-block">BLOQUÉE</span>':'<span class="shopBadge badge-ok">OUVERTE</span>'}<br><small style="color:#94a3b8">${nbVend} vendeurs - ${nbStock} articles</small></div>
+   <div>
+     <button class="btn ${blocked?'btn-g':'btn-r'}" style="width:auto;padding:6px 10px" onclick="toggleBlockShop('${shop}',${blocked})">${blocked?'Débloquer':'Bloquer'}</button>
+     <button class="btn btn-b" style="width:auto;padding:6px 10px" onclick="goVendeurs('${shop}')">Vendeurs</button>
+   </div>
+   </div>`;
+ }).join('');
+ document.getElementById('listShops').innerHTML=html;
+}
+
+function createShop(){
+ let name=document.getElementById('newShopName').value.trim().replace(/[^a-zA-Z0-9]/g,'');
+ if(!name) return alert('Tape un nom sans espace ex: Limete');
+ if(SHOPS.includes(name)) return alert('Boutique existe déjà');
+ db.ref('shops/'+name+'/config').set({created: new Date().toISOString(), blocked:false});
+ db.ref('shops/'+name+'/stock/INIT').set({CODE:'INIT',Designation:'Article test',Quantite:0,'Prix Unit':0});
+ alert('Boutique '+name+' créée! Elle apparaît partout maintenant.');
+ document.getElementById('newShopName').value='';
+}
+
+function goVendeurs(shop){ CURRENT_SHOP=shop; tab('vendeurs'); document.getElementById('selShopVendeur').value=shop; loadVendeurs(); }
+
+function loadVendeurs(){
+ CURRENT_SHOP=document.getElementById('selShopVendeur').value;
+ document.getElementById('shopVendeurName').innerText=CURRENT_SHOP;
+ let lien=`https://aiseodon-ai.github.io/bateke/vendeur.html?shop=${CURRENT_SHOP}`;
+ document.getElementById('lienVendeur').innerText=lien;
+ db.ref('shops/'+CURRENT_SHOP+'/vendeurs').on('value', snap=>{
+   let vends=snap.val()||{};
+   let rows=Object.keys(vends).map(pin=>{
+     let v=vends[pin];
+     let actif=v.actif!==false;
+     return `<tr><td><b>${pin}</b></td><td>${v.nom||''}</td><td>${actif?'<span style="color:#22c55e">✅ Actif</span>':'<span style="color:#ef4444">🚫 Bloqué</span>'}</td><td><button class="btn ${actif?'btn-r':'btn-g'}" style="width:auto;padding:5px 8px" onclick="toggleVendeur('${pin}',${actif})">${actif?'Bloquer':'Débloquer'}</button> <button class="btn btn-r" style="width:auto;padding:5px 8px" onclick="deleteVendeur('${pin}')">Suppr</button></td></tr>`;
+   }).join('');
+   document.getElementById('listVendeurs').innerHTML=rows||'<tr><td colspan=4>Aucun vendeur - crée le premier</td></tr>';
+ });
+}
+
+function createVendeur(){
+ let nom=document.getElementById('vNom').value.trim();
+ let pin=document.getElementById('vPin').value.trim();
+ if(!nom||!pin) return alert('Nom + PIN obligatoire');
+ db.ref('shops/'+CURRENT_SHOP+'/vendeurs/'+pin).set({nom:nom,pin:pin,actif:true,created:new Date().toISOString()});
+ document.getElementById('vNom').value=''; document.getElementById('vPin').value='';
+}
+
+function toggleVendeur(pin,actif){
+ db.ref('shops/'+CURRENT_SHOP+'/vendeurs/'+pin+'/actif').set(!actif);
+}
+
+function deleteVendeur(pin){
+ if(!confirm('Supprimer vendeur '+pin+' définitivement?')) return;
+ db.ref('shops/'+CURRENT_SHOP+'/vendeurs/'+pin).remove();
+}
+
+function toggleBlockShop(shop,isBlocked){
+ db.ref('shops/'+shop+'/config/blocked').set(!isBlocked);
+}
+
+function copyLien(){
+ navigator.clipboard.writeText(document.getElementById('lienVendeur').innerText);
+ alert('Lien copié - envoie au vendeur sur WhatsApp');
+}
+
+function loadVentes(){
+ let shop=document.getElementById('selShopVentes').value;
+ let ref= shop==='ALL'? db.ref('shops') : db.ref('shops/'+shop+'/ventes');
+ ref.on('value', snap=>{
+   let html='';
+   if(shop==='ALL'){
+     let all=snap.val()||{};
+     let ventes=[];
+     Object.keys(all).forEach(s=>{
+       let vs=all[s].ventes||{};
+       Object.values(vs).forEach(v=>{ v._shop=s; ventes.push(v); });
+     });
+     ventes.sort((a,b)=>new Date(b.date)-new Date(a.date));
+     let today=new Date().toDateString();
+     let todayV=ventes.filter(v=>new Date(v.date).toDateString()===today);
+     let ca=todayV.reduce((s,v)=>s+(v.total||0),0);
+     html=`<p>CA Jour Toutes boutiques: <b style="color:#22c55e">${ca.toLocaleString()} FC</b> (${todayV.length} ventes)</p>`;
+     html+=todayV.slice(0,30).map(v=>`<div style="padding:6px;border-bottom:1px solid #334155"><small>${new Date(v.date).toLocaleTimeString()} - <b>${v._shop}</b> - ${v.vendeur||''} - ${v.client?.nom||''} - ${(v.total||0).toLocaleString()} FC - ${v.payement}</small></div>`).join('');
+   } else {
+     let vs=snap.val()||{};
+     let arr=Object.values(vs).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,50);
+     html=arr.map(v=>`<div style="padding:6px;border-bottom:1px solid #334155">${new Date(v.date).toLocaleTimeString()} - ${v.vendeur||''} - ${v.client?.nom||''} - ${(v.total||0).toLocaleString()} FC</div>`).join('')||'Aucune vente';
+   }
+   document.getElementById('ventesLive').innerHTML=html;
+ });
+}
+</script>
+</body>
+</html>
