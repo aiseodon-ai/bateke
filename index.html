@@ -1,225 +1,91 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PATRON V4.8 - BATEKE EVOLUTIF</title>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>PATRON V4.7 ÉVOLUTIF</title>
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:#fff}
-header{background:#020617;padding:14px;position:sticky;top:0;z-index:99;display:flex;justify-content:space-between;align-items:center}
-.card{background:#1e293b;border-radius:12px;padding:14px;margin:10px}
-.tabs{display:flex;background:#1e293b;overflow-x:auto}.tabs button{flex:1;padding:12px;border:none;background:transparent;color:#94a3b8;font-weight:bold;cursor:pointer;border-bottom:3px solid transparent}.tabs button.active{color:#22c55e;border-bottom-color:#22c55e;background:#0f172a}
+body{margin:0;font-family:Arial;background:#f5f6fa}header{background:#020617;color:#fff;padding:10px;position:sticky;top:0;z-index:50}
+.card{background:#fff;border-radius:12px;padding:12px;margin:8px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
+.tabs{display:flex;background:#fff;position:sticky;top:52px;z-index:40;border-bottom:2px solid #eee;overflow-x:auto}.tabs button{flex:1;min-width:70px;padding:10px;border:none;background:#fff;font-weight:bold;cursor:pointer;font-size:12px}.tabs button.active{border-bottom:3px solid #020617;color:#020617;background:#e2e8f0}
 .sec{display:none;padding:6px}.sec.active{display:block}
-table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;border:1px solid #334155}th{background:#020617}
-input,select{padding:10px;border-radius:8px;border:1px solid #334155;width:100%;margin:5px 0;background:#0f172a;color:#fff;box-sizing:border-box}
-.btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;margin:3px}.btn-g{background:#22c55e;color:#000;width:100%}.btn-b{background:#0ea5e9;color:#fff}.btn-r{background:#ef4444;color:#fff}.btn-y{background:#facc15;color:#000}
-.shopBadge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:bold;margin:2px;display:inline-block;cursor:pointer}
-.badge-ok{background:#22c55e;color:#000}.badge-block{background:#ef4444;color:#fff}
-#loginPatron{position:fixed;inset:0;background:#020617;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
+table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:6px;border:1px solid #ddd}th{background:#020617;color:#fff}
+input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;margin:4px 0;box-sizing:border-box}
+.btn{padding:9px 12px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;margin:3px}.btn-g{background:#16a34a;color:#fff;width:100%}.btn-b{background:#0ea5e9;color:#fff}.btn-r{background:#ef4444;color:#fff}.btn-y{background:#facc15}.btn-k{background:#020617;color:#fff}
+#loginPat{position:fixed;inset:0;background:#020617;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
 </style>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-</head>
-<body>
-
-<div id="loginPatron">
-<div style="background:#1e293b;padding:22px;border-radius:16px;max-width:340px;width:100%;text-align:center">
-<h2>🔐 PATRON BATEKE</h2>
-<p style="color:#94a3b8;font-size:13px">Code super patron</p>
-<input id="pinPatron" type="password" placeholder="9999" style="text-align:center;font-size:22px;letter-spacing:6px">
-<button class="btn btn-g" onclick="loginPatron()">ENTRER</button>
-<p id="msgPatron" style="color:#f87171;font-size:12px"></p>
-</div>
-</div>
-
-<header>
-<b>👑 PATRON V4.8 - <span id="nbShops">...</span> boutiques</b>
-<button class="btn btn-r" onclick="localStorage.clear();location.reload()" style="width:auto;padding:6px 10px">Déconnexion</button>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script></head><body>
+<div id="loginPat"><div style="background:#fff;border-radius:16px;padding:20px;max-width:320px;width:100%;text-align:center"><h3>👑 PATRON V4.7</h3><input id="pinPat" type="password" placeholder="Code 9999" style="text-align:center;font-size:22px;letter-spacing:6px"><button class="btn btn-k" onclick="loginPat()">ENTRER</button><p id="msgPat" style="color:red;font-size:12px"></p></div></div>
+<header><div style="display:flex;justify-content:space-between;align-items:center"><b>👑 PATRON V4.7 ÉVOLUTIF - <span id="shopName">Menkao1</span></b><select id="shopSel" onchange="switchShop()" style="width:120px;padding:4px"></select></div>
+<div style="display:flex;gap:6px;margin-top:6px"><small id="caJour" style="background:#fff;color:#000;padding:4px 8px;border-radius:12px;font-weight:bold">CA:0</small><small id="benefJour" style="background:#22c55e;color:#000;padding:4px 8px;border-radius:12px;font-weight:bold">Bénéf:0</small><small id="nbVentes" style="background:#facc15;color:#000;padding:4px 8px;border-radius:12px;font-weight:bold">Ventes:0</small></div>
 </header>
-
 <div class="tabs">
-<button id="btn-boutiques" class="active" onclick="tab('boutiques')">🏪 Boutiques</button>
-<button id="btn-vendeurs" onclick="tab('vendeurs')">👥 Vendeurs</button>
-<button id="btn-ventes" onclick="tab('ventes')">📊 Ventes Live</button>
+<button id="btn-ventes" class="active" onclick="st('ventes')">📊 Ventes</button>
+<button id="btn-stock" onclick="st('stock')">📦 Stock</button>
+<button id="btn-caisse" onclick="st('caisse')">💰 Caisse</button>
+<button id="btn-clients" onclick="st('clients')">👥 Clients</button>
+<button id="btn-synthese" onclick="st('synthese')">📈 Synthèse</button>
+<button id="btn-vendeurs" onclick="st('vendeurs')">🔐 Vendeurs</button>
+<button id="btn-boutiques" onclick="st('boutiques')">🏪 Boutiques</button>
 </div>
 
-<!-- ONGLET BOUTIQUES -->
-<div id="boutiques" class="sec active">
-<div class="card">
-<h3>➕ Créer nouvelle boutique (évolutif)</h3>
-<p style="color:#94a3b8;font-size:12px">Ex: Limeté, Gombe, Masina... Le système crée tout seul stock, ventes, vendeurs</p>
-<div style="display:grid;grid-template-columns:1fr 120px;gap:8px">
-<input id="newShopName" placeholder="Nom nouvelle boutique (ex: Limete)">
-<button class="btn btn-g" onclick="createShop()">CRÉER BOUTIQUE</button>
-</div>
-</div>
+<div id="ventes" class="sec active"><div class="card"><h4>Ventes du jour - <span id="shopV">Menkao1</span></h4><div style="overflow:auto"><table><thead><tr><th>Heure</th><th>Vendeur</th><th>Client</th><th>Articles</th><th>Total</th><th>Bénéf</th><th>Paye</th></tr></thead><tbody id="ventesT"></tbody></table></div></div></div>
 
-<div class="card">
-<h3>🏪 Liste boutiques</h3>
-<div id="listShops"></div>
-</div>
-</div>
+<div id="stock" class="sec"><div class="card"><h4>📦 Stock - <span id="shopSt"></span> - <button class="btn btn-y" style="width:auto" onclick="openAddStock()">+ Nouvel Article</button> <button class="btn btn-b" style="width:auto" onclick="openEntree()">📥 Entrée</button></h4><input id="searchSt" placeholder="Chercher CODE ou Nom..." oninput="renderStock()"><div style="overflow:auto"><table><thead><tr><th>CODE</th><th>Désignation</th><th>Qté</th><th>PA</th><th>PV</th><th>Marge</th><th>Action</th></tr></thead><tbody id="stockT"></tbody></table></div></div></div>
 
-<!-- ONGLET VENDEURS -->
-<div id="vendeurs" class="sec">
-<div class="card">
-<h3>👥 Gérer vendeurs</h3>
-<select id="selShopVendeur" onchange="loadVendeurs()"></select>
-<div style="display:grid;grid-template-columns:1fr 80px 100px;gap:6px;margin-top:10px">
-<input id="vNom" placeholder="Nom vendeur ex: Paul">
-<input id="vPin" type="number" placeholder="PIN ex: 101">
-<button class="btn btn-g" onclick="createVendeur()">+ Ajouter</button>
-</div>
-<p style="color:#94a3b8;font-size:11px">PIN = code que le vendeur tape. 101, 102, 201, 301... Tu choisis.</p>
-</div>
-<div class="card">
-<h3>Vendeurs de <span id="shopVendeurName">-</span></h3>
-<div style="overflow:auto"><table><thead><tr><th>PIN</th><th>Nom</th><th>Statut</th><th>Action</th></tr></thead><tbody id="listVendeurs"></tbody></table></div>
-</div>
-<div class="card" style="border:1px solid #22c55e">
-<h4>🔗 Lien à envoyer au vendeur</h4>
-<p id="lienVendeur" style="background:#020617;padding:10px;border-radius:8px;word-break:break-all;font-size:12px"></p>
-<button class="btn btn-b" onclick="copyLien()">📋 Copier lien</button>
-</div>
-</div>
+<div id="caisse" class="sec"><div class="card"><h4>💰 Caisse</h4><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div>CA: <b id="caJ">0</b></div><div>Bénéf: <b id="benJ" style="color:green">0</b></div><div>À verser: <b id="aV" style="color:red">0</b></div></div><div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Heure</th><th>Type</th><th>Vendeur</th><th>Montant</th><th>Motif</th></tr></thead><tbody id="caisseT"></tbody></table></div></div></div>
 
-<!-- ONGLET VENTES -->
-<div id="ventes" class="sec">
-<div class="card">
-<h3>📊 Ventes aujourd'hui (toutes boutiques)</h3>
-<select id="selShopVentes" onchange="loadVentes()"></select>
-<div id="ventesLive" style="margin-top:10px;overflow:auto"></div>
-</div>
-</div>
+<div id="clients" class="sec"><div class="card"><h4>👥 Clients + Dettes</h4><input id="searchCl" placeholder="Chercher client..." oninput="renderClients()"><div style="overflow:auto"><table><thead><tr><th>Nom</th><th>Tél</th><th>Total Achat</th><th>Dette</th><th>Visites</th><th>Action</th></tr></thead><tbody id="clientsT"></tbody></table></div></div></div>
+
+<div id="synthese" class="sec"><div class="card"><h4>📈 Synthèse Patron (avec bénéfice)</h4>Du <input type="date" id="du"> Au <input type="date" id="au"> <button class="btn btn-k" style="width:auto" onclick="genSynthese()">Générer</button><div id="syntheseC" style="margin-top:10px;overflow:auto"></div><button class="btn btn-y" onclick="pdfSy()">📄 PDF</button></div></div>
+
+<div id="vendeurs" class="sec"><div class="card"><h3>🔐 Gestion Vendeurs - <span id="shopVend"></span></h3><div style="display:grid;grid-template-columns:1fr 70px 100px;gap:6px"><input id="vNom" placeholder="Nom ex: Paul"><input id="vPin" type="number" placeholder="PIN 101"><button class="btn btn-g" onclick="createVend()">+ Créer</button></div><div style="overflow:auto;margin-top:10px"><table><thead><tr><th>PIN</th><th>Nom</th><th>Statut</th><th>Ventes Jour</th><th>Action</th></tr></thead><tbody id="vendeursT"></tbody></table></div></div><div class="card" style="background:#dcfce7"><h4>🔗 Lien vendeur à envoyer</h4><p id="lienV" style="background:#fff;padding:8px;border-radius:8px;word-break:break-all;font-size:12px;color:#000"></p><button class="btn btn-b" onclick="copyLien()">📋 Copier</button></div></div>
+
+<div id="boutiques" class="sec"><div class="card"><h3>🏪 Boutiques Évolutif</h3><div style="display:grid;grid-template-columns:1fr 120px;gap:6px"><input id="newShop" placeholder="Nom nouvelle boutique ex: Limete"><button class="btn btn-g" onclick="createShop()">+ CRÉER</button></div><p style="font-size:11px;color:#666">Création auto de stock, ventes, vendeurs, caisse pour la nouvelle boutique.</p><div id="listShops" style="margin-top:10px"></div></div></div>
 
 <script>
 const firebaseConfig={apiKey:"AIzaSyB0D421bg7tGVafz44cwCyIOCUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
 firebase.initializeApp(firebaseConfig);const db=firebase.database();
-let SHOPS=[];let CURRENT_SHOP='Menkao1';
+let SHOP=localStorage.getItem('patron_shop')||'Menkao1';
+let STOCK=[],VENTES=[],DEP=[],VERS=[],CLIENTS={};let SHOPS_LIST=[];
+document.getElementById('du').valueAsDate=new Date(new Date().setDate(1));document.getElementById('au').valueAsDate=new Date();
 
-function loginPatron(){
- let pin=document.getElementById('pinPatron').value.trim();
- if(pin==='9999' || pin==='1234'){ document.getElementById('loginPatron').style.display='none'; initPatron(); }
- else document.getElementById('msgPatron').innerText='Code faux - 9999';
-}
-function tab(id){
- document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
- document.getElementById(id).classList.add('active');
- document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
- document.getElementById('btn-'+id).classList.add('active');
-}
+function loginPat(){let p=document.getElementById('pinPat').value.trim();if(p==='9999'||p==='1234'){document.getElementById('loginPat').style.display='none';init();}else document.getElementById('msgPat').innerText='Code faux';}
+function st(id){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');}
+function switchShop(){SHOP=document.getElementById('shopSel').value;localStorage.setItem('patron_shop',SHOP);updateLabels();listenAll();}
 
-async function initPatron(){
- db.ref('shops').on('value', snap=>{
-   let data=snap.val()||{};
-   SHOPS=Object.keys(data);
-   if(!SHOPS.length) SHOPS=['Menkao1','Menkao2','Mbakana'];
-   document.getElementById('nbShops').innerText=SHOPS.length;
-   renderShops(data);
-   let opts=SHOPS.map(s=>`<option value="${s}">${s}</option>`).join('');
-   document.getElementById('selShopVendeur').innerHTML=opts;
-   document.getElementById('selShopVentes').innerHTML='<option value="ALL">TOUTES</option>'+opts;
-   if(!CURRENT_SHOP) CURRENT_SHOP=SHOPS[0];
-   document.getElementById('selShopVendeur').value=CURRENT_SHOP;
-   loadVendeurs(); loadVentes();
+function init(){
+ db.ref('shops').on('value',snap=>{
+   let data=snap.val()||{};SHOPS_LIST=Object.keys(data);if(!SHOPS_LIST.length)SHOPS_LIST=['Menkao1','Menkao2','Mbakana'];
+   let opts=SHOPS_LIST.map(s=>`<option ${s===SHOP?'selected':''} value="${s}">${s}</option>`).join('');
+   document.getElementById('shopSel').innerHTML=opts;
+   let listHtml=SHOPS_LIST.map(s=>{let blk=data[s]?.config?.blocked;return `<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee"><b>${s}</b><div>${blk?'<span style="color:red">BLOQUÉE</span>':'<span style="color:green">OUVERTE</span>'} <button class="btn ${blk?'btn-g':'btn-r'}" style="width:auto;padding:4px 8px" onclick="toggleBlock('${s}',${blk?true:false})">${blk?'Débloquer':'Bloquer'}</button></div></div>`;}).join('');
+   document.getElementById('listShops').innerHTML=listHtml;
+   updateLabels();listenAll();
  });
 }
+function updateLabels(){document.getElementById('shopName').innerText=SHOP;document.getElementById('shopV').innerText=SHOP;document.getElementById('shopSt').innerText=SHOP;document.getElementById('shopVend').innerText=SHOP;document.getElementById('lienV').innerText='https://aiseodon-ai.github.io/bateke/vendeur.html?shop='+SHOP;}
 
-function renderShops(data){
- let html=SHOPS.map(shop=>{
-   let blocked=data[shop]?.config?.blocked===true;
-   let nbVend=data[shop]?.vendeurs?Object.keys(data[shop].vendeurs).length:0;
-   let nbStock=data[shop]?.stock?Object.keys(data[shop].stock).length:0;
-   return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #334155">
-   <div><b>${shop}</b> ${blocked?'<span class="shopBadge badge-block">BLOQUÉE</span>':'<span class="shopBadge badge-ok">OUVERTE</span>'}<br><small style="color:#94a3b8">${nbVend} vendeurs - ${nbStock} articles</small></div>
-   <div>
-     <button class="btn ${blocked?'btn-g':'btn-r'}" style="width:auto;padding:6px 10px" onclick="toggleBlockShop('${shop}',${blocked})">${blocked?'Débloquer':'Bloquer'}</button>
-     <button class="btn btn-b" style="width:auto;padding:6px 10px" onclick="goVendeurs('${shop}')">Vendeurs</button>
-   </div>
-   </div>`;
- }).join('');
- document.getElementById('listShops').innerHTML=html;
+function listenAll(){
+ db.ref('shops/'+SHOP+'/stock').on('value',s=>{STOCK=s.val()?Object.values(s.val()):[];renderStock();});
+ db.ref('shops/'+SHOP+'/ventes').on('value',s=>{VENTES=Object.values(s.val()||{});renderVentes();renderCaisse();renderKPI();});
+ db.ref('shops/'+SHOP+'/depenses').on('value',s=>{DEP=Object.values(s.val()||{});renderCaisse();renderKPI();});
+ db.ref('shops/'+SHOP+'/versements').on('value',s=>{VERS=Object.values(s.val()||{});renderCaisse();renderKPI();});
+ db.ref('shops/'+SHOP+'/clients').on('value',s=>{CLIENTS=s.val()||{};renderClients();});
+ db.ref('shops/'+SHOP+'/vendeurs').on('value',s=>{renderVendeurs(s.val()||{});});
 }
 
-function createShop(){
- let name=document.getElementById('newShopName').value.trim().replace(/[^a-zA-Z0-9]/g,'');
- if(!name) return alert('Tape un nom sans espace ex: Limete');
- if(SHOPS.includes(name)) return alert('Boutique existe déjà');
- db.ref('shops/'+name+'/config').set({created: new Date().toISOString(), blocked:false});
- db.ref('shops/'+name+'/stock/INIT').set({CODE:'INIT',Designation:'Article test',Quantite:0,'Prix Unit':0});
- alert('Boutique '+name+' créée! Elle apparaît partout maintenant.');
- document.getElementById('newShopName').value='';
-}
-
-function goVendeurs(shop){ CURRENT_SHOP=shop; tab('vendeurs'); document.getElementById('selShopVendeur').value=shop; loadVendeurs(); }
-
-function loadVendeurs(){
- CURRENT_SHOP=document.getElementById('selShopVendeur').value;
- document.getElementById('shopVendeurName').innerText=CURRENT_SHOP;
- let lien=`https://aiseodon-ai.github.io/bateke/vendeur.html?shop=${CURRENT_SHOP}`;
- document.getElementById('lienVendeur').innerText=lien;
- db.ref('shops/'+CURRENT_SHOP+'/vendeurs').on('value', snap=>{
-   let vends=snap.val()||{};
-   let rows=Object.keys(vends).map(pin=>{
-     let v=vends[pin];
-     let actif=v.actif!==false;
-     return `<tr><td><b>${pin}</b></td><td>${v.nom||''}</td><td>${actif?'<span style="color:#22c55e">✅ Actif</span>':'<span style="color:#ef4444">🚫 Bloqué</span>'}</td><td><button class="btn ${actif?'btn-r':'btn-g'}" style="width:auto;padding:5px 8px" onclick="toggleVendeur('${pin}',${actif})">${actif?'Bloquer':'Débloquer'}</button> <button class="btn btn-r" style="width:auto;padding:5px 8px" onclick="deleteVendeur('${pin}')">Suppr</button></td></tr>`;
-   }).join('');
-   document.getElementById('listVendeurs').innerHTML=rows||'<tr><td colspan=4>Aucun vendeur - crée le premier</td></tr>';
- });
-}
-
-function createVendeur(){
- let nom=document.getElementById('vNom').value.trim();
- let pin=document.getElementById('vPin').value.trim();
- if(!nom||!pin) return alert('Nom + PIN obligatoire');
- db.ref('shops/'+CURRENT_SHOP+'/vendeurs/'+pin).set({nom:nom,pin:pin,actif:true,created:new Date().toISOString()});
- document.getElementById('vNom').value=''; document.getElementById('vPin').value='';
-}
-
-function toggleVendeur(pin,actif){
- db.ref('shops/'+CURRENT_SHOP+'/vendeurs/'+pin+'/actif').set(!actif);
-}
-
-function deleteVendeur(pin){
- if(!confirm('Supprimer vendeur '+pin+' définitivement?')) return;
- db.ref('shops/'+CURRENT_SHOP+'/vendeurs/'+pin).remove();
-}
-
-function toggleBlockShop(shop,isBlocked){
- db.ref('shops/'+shop+'/config/blocked').set(!isBlocked);
-}
-
-function copyLien(){
- navigator.clipboard.writeText(document.getElementById('lienVendeur').innerText);
- alert('Lien copié - envoie au vendeur sur WhatsApp');
-}
-
-function loadVentes(){
- let shop=document.getElementById('selShopVentes').value;
- let ref= shop==='ALL'? db.ref('shops') : db.ref('shops/'+shop+'/ventes');
- ref.on('value', snap=>{
-   let html='';
-   if(shop==='ALL'){
-     let all=snap.val()||{};
-     let ventes=[];
-     Object.keys(all).forEach(s=>{
-       let vs=all[s].ventes||{};
-       Object.values(vs).forEach(v=>{ v._shop=s; ventes.push(v); });
-     });
-     ventes.sort((a,b)=>new Date(b.date)-new Date(a.date));
-     let today=new Date().toDateString();
-     let todayV=ventes.filter(v=>new Date(v.date).toDateString()===today);
-     let ca=todayV.reduce((s,v)=>s+(v.total||0),0);
-     html=`<p>CA Jour Toutes boutiques: <b style="color:#22c55e">${ca.toLocaleString()} FC</b> (${todayV.length} ventes)</p>`;
-     html+=todayV.slice(0,30).map(v=>`<div style="padding:6px;border-bottom:1px solid #334155"><small>${new Date(v.date).toLocaleTimeString()} - <b>${v._shop}</b> - ${v.vendeur||''} - ${v.client?.nom||''} - ${(v.total||0).toLocaleString()} FC - ${v.payement}</small></div>`).join('');
-   } else {
-     let vs=snap.val()||{};
-     let arr=Object.values(vs).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,50);
-     html=arr.map(v=>`<div style="padding:6px;border-bottom:1px solid #334155">${new Date(v.date).toLocaleTimeString()} - ${v.vendeur||''} - ${v.client?.nom||''} - ${(v.total||0).toLocaleString()} FC</div>`).join('')||'Aucune vente';
-   }
-   document.getElementById('ventesLive').innerHTML=html;
- });
-}
-</script>
-</body>
-</html>
+function renderKPI(){let today=new Date().toDateString();let vT=VENTES.filter(v=>new Date(v.date).toDateString()===today);let ca=vT.reduce((s,v)=>s+(v.total||0),0);let ben=vT.reduce((s,v)=>s+(v.benefice||0),0);document.getElementById('caJour').innerText='CA:'+ca.toLocaleString();document.getElementById('benefJour').innerText='Bénéf:'+ben.toLocaleString();document.getElementById('nbVentes').innerText='Ventes:'+vT.length;}
+function renderVentes(){let today=new Date().toDateString();let vT=VENTES.filter(v=>new Date(v.date).toDateString()===today).sort((a,b)=>new Date(b.date)-new Date(a.date));document.getElementById('ventesT').innerHTML=vT.map(v=>`<tr><td>${new Date(v.date).toLocaleTimeString()}</td><td>${v.vendeur||''}</td><td>${v.client?.nom||''}<br><small>${v.client?.tel||''}</small></td><td>${(v.items||[]).map(i=>i.CODE+'x'+i.qty).join(',')}</td><td>${(v.total||0).toLocaleString()}</td><td style="color:green">${(v.benefice||0).toLocaleString()}</td><td>${v.payement} ${v.reste>0?'<span style="color:red">Reste:'+v.reste+'</span>':''}</td></tr>`).join('')||'<tr><td colspan=7>Aucune</td></tr>';}
+function renderStock(){let q=(document.getElementById('searchSt').value||'').toLowerCase();let f=STOCK.filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).slice(0,300);document.getElementById('stockT').innerHTML=f.map(p=>`<tr><td>${p.CODE}</td><td>${p.Designation}</td><td style="${p.Quantite<=(p.seuil||3)?'color:red;font-weight:bold':''}">${p.Quantite}</td><td>${p['Prix Achat']||''}</td><td>${p['Prix Unit']}</td><td>${p['Prix Unit']&&p['Prix Achat']?Math.round((p['Prix Unit']-p['Prix Achat'])/p['Prix Achat']*100)+'%':''}</td><td><button class="btn btn-b" style="width:auto;padding:3px 6px" onclick="editStock('${p.CODE}')">✏️</button></td></tr>`).join('');}
+function renderCaisse(){let today=new Date().toDateString();let vT=VENTES.filter(v=>new Date(v.date).toDateString()===today);let ca=vT.reduce((s,v)=>s+(v.total||0),0);let ben=vT.reduce((s,v)=>s+(v.benefice||0),0);let dep=DEP.filter(d=>new Date(d.date).toDateString()===today).reduce((s,d)=>s+d.montant,0);let vers=VERS.filter(v=>new Date(v.date).toDateString()===today).reduce((s,v)=>s+v.montant,0);document.getElementById('caJ').innerText=ca.toLocaleString();document.getElementById('benJ').innerText=ben.toLocaleString();document.getElementById('aV').innerText=(ca-dep-vers).toLocaleString();let all=[...vT.map(v=>({date:v.date,type:'Vente',vendeur:v.vendeur,montant:v.total,motif:(v.items||[]).map(i=>i.CODE).join(',')})),...DEP.filter(d=>new Date(d.date).toDateString()===today).map(d=>({date:d.date,type:'Dépense',vendeur:d.vendeur,montant:-d.montant,motif:d.motif})),...VERS.filter(v=>new Date(v.date).toDateString()===today).map(v=>({date:v.date,type:'Versement',vendeur:v.vendeur,montant:-v.montant,motif:v.description}))].sort((a,b)=>new Date(b.date)-new Date(a.date));document.getElementById('caisseT').innerHTML=all.map(a=>`<tr><td>${new Date(a.date).toLocaleTimeString()}</td><td>${a.type}</td><td>${a.vendeur||''}</td><td style="color:${a.montant<0?'red':'green'}">${a.montant.toLocaleString()}</td><td>${a.motif}</td></tr>`).join('');}
+function renderClients(){let q=(document.getElementById('searchCl').value||'').toLowerCase();let arr=Object.values(CLIENTS).filter(c=>(c.nom||'').toLowerCase().includes(q)||(c.tel||'').includes(q)).sort((a,b)=>b.dette-a.dette).slice(0,200);document.getElementById('clientsT').innerHTML=arr.map(c=>`<tr><td>${c.nom}</td><td>${c.tel||''}</td><td>${(c.totalAchat||0).toLocaleString()}</td><td style="${c.dette>0?'color:red;font-weight:bold':''}">${(c.dette||0).toLocaleString()}</td><td>${c.nbVisites||0}</td><td><button class="btn btn-g" style="width:auto;padding:3px 6px" onclick="encaisser('${c.nom}')">Encaisser</button></td></tr>`).join('');}
+function renderVendeurs(vends){let today=new Date().toDateString();let vT=VENTES.filter(v=>new Date(v.date).toDateString()===today);let html=Object.keys(vends).map(pin=>{let v=vends[pin];let actif=v.actif!==false;let nb=vT.filter(x=>x.vendeurPin==pin||x.vendeur==v.nom).length;return `<tr><td>${pin}</td><td>${v.nom}</td><td>${actif?'✅':'🚫'}</td><td>${nb}</td><td><button class="btn ${actif?'btn-r':'btn-g'}" style="width:auto;padding:4px 6px" onclick="toggleV('${pin}',${actif})">${actif?'Bloquer':'Débloquer'}</button> <button class="btn btn-r" style="width:auto;padding:4px 6px" onclick="delV('${pin}')">X</button></td></tr>`;}).join('');document.getElementById('vendeursT').innerHTML=html||'<tr><td colspan=5>Aucun vendeur</td></tr>';}
+function createVend(){let nom=document.getElementById('vNom').value.trim();let pin=document.getElementById('vPin').value.trim();if(!nom||!pin)return alert('Nom+PIN');db.ref('shops/'+SHOP+'/vendeurs/'+pin).set({nom:nom,pin:pin,actif:true,created:new Date().toISOString()});document.getElementById('vNom').value='';document.getElementById('vPin').value='';}
+function toggleV(pin,actif){db.ref('shops/'+SHOP+'/vendeurs/'+pin+'/actif').set(!actif);}function delV(pin){if(confirm('Supprimer '+pin+'?'))db.ref('shops/'+SHOP+'/vendeurs/'+pin).remove();}
+function createShop(){let n=document.getElementById('newShop').value.trim().replace(/[^a-zA-Z0-9]/g,'');if(!n)return alert('Nom sans espace');db.ref('shops/'+n+'/config').set({created:new Date().toISOString(),blocked:false});db.ref('shops/'+n+'/stock/INIT').set({CODE:'INIT',Designation:'Supprime moi et ajoute tes articles',Quantite:0,'Prix Unit':0,'Prix Achat':0});alert('Boutique '+n+' créée');document.getElementById('newShop').value='';SHOP=n;localStorage.setItem('patron_shop',SHOP);}
+function toggleBlock(shop,blocked){db.ref('shops/'+shop+'/config/blocked').set(!blocked);}
+function copyLien(){navigator.clipboard.writeText(document.getElementById('lienV').innerText);alert('Lien copié');}
+function openAddStock(){let code=prompt('CODE');if(!code)return;let des=prompt('Désignation');let qte=parseInt(prompt('Quantité'));let pa=parseInt(prompt('Prix Achat'));let pv=parseInt(prompt('Prix Vente'));db.ref('shops/'+SHOP+'/stock/'+code).set({CODE:code,Designation:des,Quantite:qte||0,'Prix Achat':pa||0,'Prix Unit':pv||0});}
+function openEntree(){let code=prompt('CODE');let st=STOCK.find(s=>s.CODE===code);if(!st)return alert('CODE introuvable');let qte=parseInt(prompt('Qté entrée'));if(qte)db.ref('shops/'+SHOP+'/stock/'+code).update({Quantite:st.Quantite+qte});}
+function editStock(code){let st=STOCK.find(s=>s.CODE===code);let pv=prompt('Nouveau PV pour '+st.Designation, st['Prix Unit']);if(pv)db.ref('shops/'+SHOP+'/stock/'+code).update({'Prix Unit':parseInt(pv)});}
+function encaisser(nom){let key=nom.replace(/[^a-z0-9]/gi,'_');let c=CLIENTS[key];if(!c)return;let mont=parseFloat(prompt('Montant encaissé pour '+nom+' - Dette: '+c.dette));if(!mont)return;let newDette=c.dette-mont;db.ref('shops/'+SHOP+'/clients/'+key).update({dette:newDette});db.ref('shops/'+SHOP+'/versements/'+Date.now()).set({date:new Date().toISOString(),montant:mont,description:'Encaissement dette '+nom,vendeur:'PATRON'});alert('OK reste '+newDette);}
+function genSynthese(){let du=new Date(document.getElementById('du').value);let au=new Date(document.getElementById('au').value);au.setHours(23,59,59);let vP=VENTES.filter(v=>{let d=new Date(v.date);return d>=du&&d<=au;});let ca=vP.reduce((s,v)=>s+(v.total||0),0);let ben=vP.reduce((s,v)=>s+(v.benefice||0),0);let byArt={};vP.forEach(v=>{(v.items||[]).forEach(i=>{if(!byArt[i.CODE])byArt[i.CODE]={CODE:i.CODE,Designation:i.Designation,qty:0,ca:0,ben:0};byArt[i.CODE].qty+=i.qty;byArt[i.CODE].ca+=i.qty*i.Prix;byArt[i.CODE].ben+=i.qty*(i.Prix-(i.PA||0));});});let html=`<h4>${SHOP} du ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h4><p>CA: <b>${ca.toLocaleString()} FC</b> - Bénéf: <b style="color:green">${ben.toLocaleString()} FC</b> - Ventes: ${vP.length}</p><table><tr><th>CODE</th><th>Qté</th><th>CA</th><th>Bénéf</th><th>Stock restant</th></tr>`+Object.values(byArt).sort((a,b)=>b.qty-a.qty).map(r=>`<tr><td>${r.CODE}</td><td>${r.qty}</td><td>${r.ca.toLocaleString()}</td><td style="color:green">${r.ben.toLocaleString()}</td><td>${STOCK.find(s=>s.CODE===r.CODE)?.Quantite??''}</td></tr>`).join('')+'</table>';document.getElementById('syntheseC').innerHTML=html;}
+function pdfSy(){let c=document.getElementById('syntheseC').innerHTML;let w=window.open('','','width=900');w.document.write('<html><body>'+c+'</body></html>');w.document.close();w.print();}
+</script></body></html>
