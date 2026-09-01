@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V4.7.1 EVOLUTIF</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V4.7.2 EVOLUTIF</title>
 <style>body{margin:0;font-family:Arial;background:#f0f2f5}header{background:#111;color:#fff;padding:10px;text-align:center;position:sticky;top:0;z-index:30}
 .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px}.card{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
 .kpi{font-size:18px;font-weight:bold;color:#0b5e2f}.red{color:red}
@@ -12,26 +12,25 @@ input,select{padding:8px;border-radius:6px;border:1px solid #ccc;width:100%;marg
 #loginPat{position:fixed;inset:0;background:#111;z-index:9999;display:flex;align-items:center;justify-content:center}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head><body>
-<div id="loginPat"><div style="background:#fff;padding:25px;border-radius:16px;max-width:300px;width:90%;text-align:center"><h3>👑 PATRON V4.7.1</h3><input id="pinPat" type="password" placeholder="Code 9999" style="text-align:center;font-size:22px;letter-spacing:6px"><button class="btn btn-g" style="width:100%;margin-top:8px" onclick="loginPat()">ENTRER</button><p id="msgPat" style="color:red;font-size:12px"></p></div></div>
-<header><h3 style="margin:0">👑 PATRON V4.7.1 ÉVOLUTIF</h3><small>● Statut Actif = pris en compte réquisition</small>
+<div id="loginPat"><div style="background:#fff;padding:25px;border-radius:16px;max-width:300px;width:90%;text-align:center"><h3>👑 PATRON V4.7.2</h3><input id="pinPat" type="password" placeholder="Code 9999" style="text-align:center;font-size:22px;letter-spacing:6px"><button class="btn btn-g" style="width:100%;margin-top:8px" onclick="loginPat()">ENTRER</button><p id="msgPat" style="color:red;font-size:12px"></p></div></div>
+<header><h3 style="margin:0">👑 PATRON V4.7.2 ÉVOLUTIF</h3><small>Statut Actif = réquisition | Entrées tracées par nom</small>
 <div style="margin-top:6px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap">
 <select id="shopSel" onchange="switchShop()" style="width:130px"></select>
 <input type="file" id="excelIn" accept=".xlsx,.xls" style="width:110px"><button class="btn btn-b" onclick="openNewArt()">+ Article</button>
 </div></header>
 <div class="grid"><div class="card">💰 CA Jour<br><span class="kpi" id="caJour">0</span></div><div class="card">📈 Bénéf Net<br><span class="kpi" id="benefJour">0</span></div><div class="card">🏦 À Verser<br><span class="kpi red" id="aVerser">0</span></div></div>
 <div class="tabs"><button id="btn-ventes" class="active" onclick="switchTab('ventes')">🔴 Ventes</button><button id="btn-stock" onclick="switchTab('stock')">📦 Stock</button><button id="btn-rapport" onclick="switchTab('rapport')">📊 Rapport</button><button id="btn-crm" onclick="switchTab('crm')">👥 CRM</button><button id="btn-caisse" onclick="switchTab('caisse')">💰 Caisse</button><button id="btn-vendeurs" onclick="switchTab('vendeurs')">🔐 Vendeurs</button><button id="btn-boutiques" onclick="switchTab('boutiques')">🏪 Boutiques</button></div>
-
 <div id="ventes" class="sec active"><div class="card"><h4>🔴 Ventes Live - <span id="labVenteShop"></span></h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>CODE</th><th>Désignation</th><th>Qté</th><th>Total</th><th>Vendeur</th><th>Client</th></tr></thead><tbody id="ventesList"></tbody></table></div></div></div>
-<div id="stock" class="sec"><div class="card"><div style="display:flex;justify-content:space-between;flex-wrap:wrap"><h4>📦 Stock - Statut = Actif pour réquisition</h4><div><button class="btn btn-y" onclick="pdfStockTotal()">📦 PDF Stock</button><button class="btn btn-r" onclick="pdfRequisition()">📋 Réquisition (actifs seulement)</button></div></div><input id="searchS" placeholder="CODE ou Nom" oninput="renderStock()"><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation ✏️</th><th>Qté ✏️</th><th>Seuil ✏️</th><th>PV ✏️</th><th>PA ✏️</th><th>Bénéf</th><th>Statut</th><th>Act</th></tr></thead><tbody id="stockT"></tbody></table></div></div></div>
+<div id="stock" class="sec"><div class="card"><div style="display:flex;justify-content:space-between;flex-wrap:wrap"><h4>📦 Stock - Statut pour réquisition</h4><div><button class="btn btn-y" onclick="pdfStockTotal()">📦 PDF Stock</button><button class="btn btn-r" onclick="pdfRequisition()">📋 Réquisition Actifs</button></div></div><input id="searchS" placeholder="CODE ou Nom" oninput="renderStock()"><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation ✏️</th><th>Qté ✏️</th><th>Seuil ✏️</th><th>PV ✏️</th><th>PA ✏️</th><th>Bénéf</th><th>Statut</th><th>Act</th></tr></thead><tbody id="stockT"></tbody></table></div></div></div>
 <div id="rapport" class="sec"><div class="card"><h4>📊 Rapport DG</h4>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">Du: <input type="date" id="du">Au: <input type="date" id="au">
 Type: <select id="typeRapport" onchange="onTypeChange()">
 <option value="synthese">⭐ SYNTHESE PERIODE COMPLETE</option>
 <option value="synthese_ventes_vendeur">⭐ SYNTHESE VENTES (VENDEUR sans bénéf)</option>
 <option value="synthese_ventes_patron">⭐ SYNTHESE VENTES (PATRON avec bénéf)</option>
-<option value="synthese_entrees">⭐ SYNTHESE ENTREES</option>
+<option value="synthese_entrees">⭐ SYNTHESE ENTREES (avec qui/date/jour)</option>
 <option value="synthese_depenses">⭐ SYNTHESE DEPENSES</option>
-<option value="synthese_caisse">⭐ SYNTHESE CAISSE (CA + Dép + Vers)</option>
+<option value="synthese_caisse">⭐ SYNTHESE CAISSE (CA+Dép+Vers)</option>
 <option value="ca">CA Global</option><option value="ventes">Ventes Détaillées</option><option value="benef">Bénéfice Net</option><option value="article">Vente par ARTICLE</option><option value="entrees">Entrées liste</option><option value="entree_article">Entrée par ARTICLE</option><option value="depenses">Dépenses Liste</option><option value="top">Top Produits</option>
 </select><div id="filtreExtra"></div></div>
 <div style="margin-top:8px"><button class="btn btn-g" onclick="genRapport()">Générer</button><button class="btn btn-y" onclick="pdfRapportOnly()">📄 PDF</button></div>
@@ -50,22 +49,13 @@ firebase.initializeApp(firebaseConfig);const db=firebase.database();
 let SHOP=localStorage.getItem('patron_shop')||'Menkao1';let SHOPS_LIST=[];let ALL_DATA={};
 document.getElementById('du').valueAsDate=new Date(new Date().setDate(1));document.getElementById('au').valueAsDate=new Date();let chart1=null;
 function loginPat(){let p=document.getElementById('pinPat').value.trim();if(p==='9999'||p==='1234'){document.getElementById('loginPat').style.display='none';initShops();}else document.getElementById('msgPat').innerText='Code faux - 9999';}
-function initShops(){
- db.ref('shops').on('value',snap=>{
-  let data=snap.val()||{};SHOPS_LIST=Object.keys(data);if(!SHOPS_LIST.length)SHOPS_LIST=['Menkao1','Menkao2','Mbakana'];
-  SHOPS_LIST.forEach(s=>{if(!ALL_DATA[s])ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{},vendeurs:{}};listenShop(s);});
-  let opts=SHOPS_LIST.map(s=>`<option ${s===SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL" '+(SHOP==='ALL'?'selected':'')+'>TOUTES</option>';
-  document.getElementById('shopSel').innerHTML=opts;
-  if(!SHOPS_LIST.includes(SHOP) && SHOP!=='ALL') SHOP=SHOPS_LIST[0];
-  renderBoutiques(data);updateLabels();refreshAll();
- });
-}
+function initShops(){db.ref('shops').on('value',snap=>{let data=snap.val()||{};SHOPS_LIST=Object.keys(data);if(!SHOPS_LIST.length)SHOPS_LIST=['Menkao1','Menkao2','Mbakana'];SHOPS_LIST.forEach(s=>{if(!ALL_DATA[s])ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{},vendeurs:{}};listenShop(s);});let opts=SHOPS_LIST.map(s=>`<option ${s===SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL" '+(SHOP==='ALL'?'selected':'')+'>TOUTES</option>';document.getElementById('shopSel').innerHTML=opts;if(!SHOPS_LIST.includes(SHOP) && SHOP!=='ALL')SHOP=SHOPS_LIST[0];renderBoutiques(data);updateLabels();refreshAll();});}
 function switchShop(){SHOP=document.getElementById('shopSel').value;localStorage.setItem('patron_shop',SHOP);updateLabels();refreshAll();renderVendeurs();renderBoutiquesLinks();}
 function updateLabels(){document.getElementById('labVenteShop').innerText=SHOP;document.getElementById('labVendShop').innerText=SHOP;document.getElementById('lienV').innerText='https://aiseodon-ai.github.io/bateke/vendeur.html?shop='+SHOP;}
 function switchTab(id){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');}
 function switchSub(id){document.getElementById('vue-table').style.display=id==='table'?'block':'none';document.getElementById('vue-graph').style.display=id==='graph'?'block':'none';document.getElementById('sub-table').classList.toggle('active',id==='table');document.getElementById('sub-graph').classList.toggle('active',id==='graph');if(id==='graph')genGraph();}
 function openNewArt(){document.getElementById('modalArt').classList.add('active')}function closeModal(id){document.getElementById(id).classList.remove('active')}
-document.getElementById('excelIn').addEventListener('change',e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{try{let wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});let js=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);let c=0;js.forEach(row=>{let code=String(row.CODE||'').trim();if(!code)return;let des=String(row.Designation||'').trim();let pv=parseFloat(String(row['Prix Unit']||0).replace(/[^0-9.]/g,''))||0;let pa=parseFloat(String(row['Prix Achat']||pv*0.7).replace(/[^0-9.]/g,''))||Math.round(pv*0.7);let qte=parseInt(row.Quantite||0)||0;let seuil=parseInt(row.seuil||3)||3;let actif=row.actif===false?false:true;db.ref('shops/'+SHOP+'/stock/'+code).set({CODE:code,Designation:des,'Prix Unit':pv,'Prix Achat':pa,Quantite:qte,seuil:seuil,actif:actif});c++;});alert(c+' importés dans '+SHOP);}catch(err){alert(err.message);}};r.readAsArrayBuffer(f);});
+document.getElementById('excelIn').addEventListener('change',e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{try{let wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});let js=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);let c=0;js.forEach(row=>{let code=String(row.CODE||'').trim();if(!code)return;let des=String(row.Designation||'').trim();let pv=parseFloat(String(row['Prix Unit']||0).replace(/[^0-9.]/g,''))||0;let pa=parseFloat(String(row['Prix Achat']||pv*0.7).replace(/[^0-9.]/g,''))||Math.round(pv*0.7);let qte=parseInt(row.Quantite||0)||0;let seuil=parseInt(row.seuil||3)||3;db.ref('shops/'+SHOP+'/stock/'+code).set({CODE:code,Designation:des,'Prix Unit':pv,'Prix Achat':pa,Quantite:qte,seuil:seuil,actif:row.actif!==false});c++;});alert(c+' importés dans '+SHOP);}catch(err){alert(err.message);}};r.readAsArrayBuffer(f);});
 function listenShop(s){
  db.ref('shops/'+s+'/stock').on('value',snap=>{ALL_DATA[s].stock=snap.val()?Object.values(snap.val()):[];if(SHOP===s||SHOP==='ALL'){renderStock();updateKPIs();}});
  db.ref('shops/'+s+'/ventes').on('value',snap=>{ALL_DATA[s].ventes=Object.values(snap.val()||{});if(SHOP===s||SHOP==='ALL'){renderVentes();updateKPIs();renderCaisse();renderVendeurs();}});
@@ -99,7 +89,27 @@ function renderStock(){
 function toggleActif(code){let target=SHOP==='ALL'?prompt('Boutique? '+SHOPS_LIST.join('/'),SHOPS_LIST[0]):SHOP;if(!target)return;let p=ALL_DATA[target]?.stock?.find(x=>x.CODE===code);let cur=p?.actif!==false;db.ref('shops/'+target+'/stock/'+code).update({actif:!cur});}
 function renderCRM(){let data=getFiltered();let q=(document.getElementById('searchCli').value||'').toLowerCase();let clis=Object.values(data.clients).filter(c=>(c.nom||'').toLowerCase().includes(q));document.getElementById('crmList').innerHTML=clis.map(c=>`<tr><td>${c.nom}</td><td>${c.tel||''}</td><td>${(c.totalAchat||0).toLocaleString()}</td><td>${(c.dette||0).toLocaleString()}</td></tr>`).join('')||'<tr><td colspan=4>Aucun</td></tr>';}
 function editField(code,field,oldVal){let nv=prompt(`Modifier ${field} pour ${code}\nAncien: ${oldVal}\nNouveau:`, oldVal);if(nv===null||nv==='')return;let val=field==='Designation'?nv.trim():Number(nv);if(field!=='Designation' && isNaN(val)){alert('Nombre invalide');return;}let target=SHOP==='ALL'?prompt('Boutique cible? '+SHOPS_LIST.join(' / '),SHOPS_LIST[0]):SHOP;if(!target)return;db.ref('shops/'+target+'/stock/'+code).update({[field]:val});}
-function entree(code){let qty=parseInt(prompt('Qté entrée '+code+'?'));if(!qty)return;let s=SHOP==='ALL'?prompt('Boutique? '+SHOPS_LIST.join('/')):SHOP;if(!s)return;db.ref('shops/'+s+'/stock/'+code).once('value').then(snap=>{let p=snap.val();if(p){db.ref('shops/'+s+'/stock/'+code).update({Quantite:(p.Quantite||0)+qty});db.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:code,Designation:p.Designation||code,boutique:s,qty:qty});}});}
+function entree(code){
+ let qty=parseInt(prompt('Qté entrée '+code+'?')); if(!qty) return;
+ let s=SHOP==='ALL'?prompt('Boutique? '+SHOPS_LIST.join('/')):SHOP; if(!s) return;
+ let qui=prompt('Qui fait l\'entrée?','PATRON'); if(!qui) qui='PATRON';
+ db.ref('shops/'+s+'/stock/'+code).once('value').then(snap=>{
+  let p=snap.val(); if(p){
+   db.ref('shops/'+s+'/stock/'+code).update({Quantite:(p.Quantite||0)+qty});
+   db.ref('shops/'+s+'/entrees/'+Date.now()).set({
+    date:new Date().toISOString(),
+    jour:new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}),
+    heure:new Date().toLocaleTimeString('fr-FR'),
+    CODE:code,
+    Designation:p.Designation||code,
+    boutique:s,
+    qty:qty,
+    vendeur:qui,
+    faitPar:qui
+   });
+  }
+ });
+}
 function supp(code){if(!confirm('Supprimer '+code+'?'))return;let s=SHOP==='ALL'?prompt('Boutique? '+SHOPS_LIST.join('/')):SHOP;db.ref('shops/'+s+'/stock/'+code).remove();}
 function saveNewArt(){let code=document.getElementById('newCode').value.trim();if(!code)return;let des=document.getElementById('newDes').value;let pv=Number(document.getElementById('newPV').value)||0;let pa=Number(document.getElementById('newPA').value)||Math.round(pv*0.7);let qte=Number(document.getElementById('newQte').value)||0;let seuil=Number(document.getElementById('newSeuil').value)||3;let actif=document.getElementById('newActif').checked;let s=SHOP==='ALL'?prompt('Boutique cible? '+SHOPS_LIST.join('/')):SHOP;if(!s)return;db.ref('shops/'+s+'/stock/'+code).set({CODE:code,Designation:des,'Prix Unit':pv,'Prix Achat':pa,Quantite:qte,seuil:seuil,actif:actif});closeModal('modalArt');}
 function onTypeChange(){let t=document.getElementById('typeRapport').value;let extra=document.getElementById('filtreExtra');if(t==='article'||t==='entree_article')extra.innerHTML=`<input id="fCode" placeholder="CODE">`;else if(t==='depenses')extra.innerHTML=`<select id="fDep"><option value="">Tous</option><option>ration</option><option>transport</option><option>achat stock</option><option>loyer</option><option>electricite</option><option>credit</option></select>`;else extra.innerHTML='';}
@@ -110,29 +120,29 @@ function genRapport(){
  if(type==='synthese'){let ca=vPeriode.reduce((s,v)=>s+v.total,0);let ben=vPeriode.reduce((s,v)=>s+(v.benefice||0),0);let dep=depPeriode.reduce((s,d)=>s+d.montant,0);let qteV=vPeriode.reduce((s,v)=>s+(v.items||[]).reduce((a,i)=>a+i.qty,0),0);let qteE=entPeriode.reduce((s,e)=>s+e.qty,0);html=`<h3>⭐ SYNTHESE PERIODE ${SHOP} - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3><table><tr><th>Indicateur</th><th>Valeur</th><th>Détail</th></tr><tr><td>CA</td><td><b>${ca.toLocaleString()} FC</b></td><td>${vPeriode.length} ventes / ${qteV} articles</td></tr><tr><td>Bénéf Brut</td><td>${ben.toLocaleString()} FC</td><td>${ca?((ben/ca)*100).toFixed(1):0}%</td></tr><tr><td>Dépenses</td><td style="color:red">${dep.toLocaleString()} FC</td><td>${depPeriode.length} ops</td></tr><tr><td>Bénéf Net</td><td style="color:green;font-weight:bold">${(ben-dep).toLocaleString()} FC</td><td>Brut - dépenses</td></tr><tr><td>Entrées</td><td>+${qteE}</td><td>${entPeriode.length} réappros</td></tr></table>`;}
  function buildVentesTable(withBenef){let byArt={};vPeriode.forEach(v=>{(v.items||[]).forEach(i=>{if(!byArt[i.CODE])byArt[i.CODE]={CODE:i.CODE,Designation:nameMap[i.CODE]||i.Designation||i.CODE,qty:0,ca:0,benef:0};byArt[i.CODE].qty+=i.qty;byArt[i.CODE].ca+=i.qty*i.Prix;byArt[i.CODE].benef+= i.qty*((i.Prix||0)-(fullMap[i.CODE]?.['Prix Achat']||0));});});let totalQte=Object.values(byArt).reduce((s,a)=>s+a.qty,0);let totalCA=Object.values(byArt).reduce((s,a)=>s+a.ca,0);let totalBenef=Object.values(byArt).reduce((s,a)=>s+a.benef,0);let header=`<tr><th>CODE</th><th>Désignation</th><th>Qté Sortie</th><th>CA</th>${withBenef?'<th>Bénéfice</th>':''}<th>Stock Actuel</th></tr>`;let rows=Object.values(byArt).sort((a,b)=>b.qty-a.qty).map(r=>`<tr><td>${r.CODE}</td><td><b>${r.Designation}</b></td><td>${r.qty}</td><td>${r.ca.toLocaleString()} FC</td>${withBenef?`<td style="color:green">${r.benef.toLocaleString()} FC</td>`:''}<td>${fullMap[r.CODE]?.Quantite??''}</td></tr>`).join('');let title=withBenef?`⭐ SYNTHESE VENTES (PATRON avec bénéf) - ${SHOP}`:`⭐ SYNTHESE VENTES (VENDEUR sans bénéf) - ${SHOP}`;let summary=withBenef?`<p>Total: <b>${totalQte}</b> articles - CA: <b>${totalCA.toLocaleString()} FC</b> - Bénéf: <b>${totalBenef.toLocaleString()} FC</b></p>`:`<p>Total: <b>${totalQte}</b> articles - CA: <b>${totalCA.toLocaleString()} FC</b> - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</p>`;return `<h3>${title}</h3>${summary}<table>${header}${rows}</table>`;}
  if(type==='synthese_ventes_vendeur'){html=buildVentesTable(false);}if(type==='synthese_ventes_patron'){html=buildVentesTable(true);}
- if(type==='synthese_entrees'){let byArt={};entPeriode.forEach(e=>{if(!byArt[e.CODE])byArt[e.CODE]={CODE:e.CODE,Designation:nameMap[e.CODE]||e.Designation||e.CODE,qty:0,nb:0};byArt[e.CODE].qty+=e.qty;byArt[e.CODE].nb++;});let totalQte=Object.values(byArt).reduce((s,a)=>s+a.qty,0);html=`<h3>⭐ SYNTHESE ENTREES - Total +${totalQte}</h3><table><tr><th>CODE</th><th>Désignation</th><th>Nb</th><th>Qté Totale</th></tr>`+Object.values(byArt).sort((a,b)=>b.qty-a.qty).map(r=>`<tr><td>${r.CODE}</td><td><b>${r.Designation}</b></td><td>${r.nb}</td><td>+${r.qty}</td></tr>`).join('')+'</table>';}
+ if(type==='synthese_entrees'){
+  let byArt={}; let detailRows='';
+  entPeriode.sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(e=>{
+   let d=new Date(e.date);
+   let jour=e.jour||d.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+   let heure=e.heure||d.toLocaleTimeString('fr-FR');
+   detailRows+=`<tr><td><b>${jour}</b><br><small>${heure}</small></td><td><b style="color:#0b5e2f">${e.faitPar||e.vendeur||'Inconnu'}</b></td><td>${e.CODE}</td><td><b>${nameMap[e.CODE]||e.Designation||e.CODE}</b></td><td style="color:green;font-weight:bold">+${e.qty}</td><td>${e.boutique||''}</td></tr>`;
+   if(!byArt[e.CODE])byArt[e.CODE]={CODE:e.CODE,Designation:nameMap[e.CODE]||e.Designation||e.CODE,qty:0,nb:0};
+   byArt[e.CODE].qty+=e.qty; byArt[e.CODE].nb++;
+  });
+  let totalQte=Object.values(byArt).reduce((s,a)=>s+a.qty,0);
+  html=`<h3>⭐ SYNTHESE ENTREES - ${du.toLocaleDateString()} au ${au.toLocaleDateString()} - Total +${totalQte} sur ${entPeriode.length} ops</h3>
+  <h4>📋 Détail avec qui / jour / heure</h4><table><tr><th>Jour / Heure</th><th>Fait par</th><th>CODE</th><th>Désignation</th><th>Qté</th><th>Boutique</th></tr>${detailRows||'<tr><td colspan=6>Aucune entrée sur période</td></tr>'}</table>
+  <br><h4>📊 Résumé par article</h4><table><tr><th>CODE</th><th>Désignation</th><th>Nb Entrées</th><th>Qté Totale</th></tr>`+Object.values(byArt).sort((a,b)=>b.qty-a.qty).map(r=>`<tr><td>${r.CODE}</td><td><b>${r.Designation}</b></td><td>${r.nb}</td><td>+${r.qty}</td></tr>`).join('')+'</table>';
+ }
  if(type==='synthese_depenses'){let byMot={};depPeriode.forEach(d=>{byMot[d.motif]=(byMot[d.motif]||0)+d.montant;});let totalDep=depPeriode.reduce((s,d)=>s+d.montant,0);let rows=Object.entries(byMot).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${k}</td><td>${v.toLocaleString()} FC</td><td>${totalDep? (v/totalDep*100).toFixed(1):0}%</td></tr>`).join('');html=`<h3>⭐ SYNTHESE DEPENSES - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3><table><tr><th>Type</th><th>Total</th><th>%</th></tr>${rows}</table><p><b>Total: ${totalDep.toLocaleString()} FC - ${depPeriode.length} ops</b></p>`;}
- // NOUVEAU: SYNTHESE CAISSE
  if(type==='synthese_caisse'){
-  let ca=vPeriode.reduce((s,v)=>s+v.total,0);
-  let dep=depPeriode.reduce((s,d)=>s+d.montant,0);
-  let vers=versPeriode.reduce((s,v)=>s+v.montant,0);
-  let ben=vPeriode.reduce((s,v)=>s+(v.benefice||0),0);
-  let aVerser=ca-dep-vers;
-  let byDay={};
+  let ca=vPeriode.reduce((s,v)=>s+v.total,0); let dep=depPeriode.reduce((s,d)=>s+d.montant,0); let vers=versPeriode.reduce((s,v)=>s+v.montant,0); let ben=vPeriode.reduce((s,v)=>s+(v.benefice||0),0); let aVerser=ca-dep-vers; let byDay={};
   vPeriode.forEach(v=>{let d=new Date(v.date).toLocaleDateString();if(!byDay[d])byDay[d]={ca:0,dep:0,vers:0,ben:0,nb:0};byDay[d].ca+=v.total;byDay[d].ben+=v.benefice||0;byDay[d].nb++;});
   depPeriode.forEach(d=>{let day=new Date(d.date).toLocaleDateString();if(!byDay[day])byDay[day]={ca:0,dep:0,vers:0,ben:0,nb:0};byDay[day].dep+=d.montant;});
   versPeriode.forEach(v=>{let day=new Date(v.date).toLocaleDateString();if(!byDay[day])byDay[day]={ca:0,dep:0,vers:0,ben:0,nb:0};byDay[day].vers+=v.montant;});
   let rowsDay=Object.entries(byDay).sort((a,b)=>new Date(a[0])-new Date(b[0])).map(([day,val])=>`<tr><td>${day}</td><td>${val.ca.toLocaleString()}</td><td style="color:red">${val.dep.toLocaleString()}</td><td>${val.vers.toLocaleString()}</td><td style="font-weight:bold">${(val.ca-val.dep-val.vers).toLocaleString()}</td><td style="color:green">${val.ben.toLocaleString()}</td><td>${val.nb}</td></tr>`).join('');
-  html=`<h3>⭐ SYNTHESE CAISSE ${SHOP} - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3>
-  <table><tr><th>Indicateur</th><th>Total Période</th><th>Explication</th></tr>
-  <tr><td>💰 CA Encaissé</td><td><b>${ca.toLocaleString()} FC</b></td><td>${vPeriode.length} ventes</td></tr>
-  <tr><td>📉 Dépenses</td><td style="color:red">${dep.toLocaleString()} FC</td><td>${depPeriode.length} sorties</td></tr>
-  <tr><td>🏦 Versements</td><td>${vers.toLocaleString()} FC</td><td>${versPeriode.length} versements patron</td></tr>
-  <tr style="background:#dcfce7"><td>🏧 À VERSER / EN CAISSE</td><td><b style="color:${aVerser<0?'red':'green'}">${aVerser.toLocaleString()} FC</b></td><td>CA - Dép - Vers</td></tr>
-  <tr><td>📈 Bénéfice Brut</td><td style="color:green"><b>${ben.toLocaleString()} FC</b></td><td>Somme marges ventes</td></tr>
-  <tr><td>📈 Bénéf Net</td><td style="color:green;font-weight:bold">${(ben-dep).toLocaleString()} FC</td><td>Brut - Dépenses</td></tr>
-  </table><br><h4>Détail par jour</h4><table><tr><th>Jour</th><th>CA</th><th>Dép</th><th>Vers</th><th>À Verser</th><th>Bénéf</th><th>Ventes</th></tr>${rowsDay}</table>`;
+  html=`<h3>⭐ SYNTHESE CAISSE ${SHOP} - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3><table><tr><th>Indicateur</th><th>Total</th><th>Explication</th></tr><tr><td>💰 CA Encaissé</td><td><b>${ca.toLocaleString()} FC</b></td><td>${vPeriode.length} ventes</td></tr><tr><td>📉 Dépenses</td><td style="color:red">${dep.toLocaleString()} FC</td><td>${depPeriode.length} sorties</td></tr><tr><td>🏦 Versements</td><td>${vers.toLocaleString()} FC</td><td>${versPeriode.length} versements</td></tr><tr style="background:#dcfce7"><td>🏧 À VERSER / EN CAISSE</td><td><b>${aVerser.toLocaleString()} FC</b></td><td>CA - Dép - Vers</td></tr><tr><td>📈 Bénéfice Brut</td><td style="color:green"><b>${ben.toLocaleString()} FC</b></td><td>Marges</td></tr><tr><td>📈 Bénéf Net</td><td style="color:green;font-weight:bold">${(ben-dep).toLocaleString()} FC</td><td>Brut - Dép</td></tr></table><br><h4>Détail par jour</h4><table><tr><th>Jour</th><th>CA</th><th>Dép</th><th>Vers</th><th>À Verser</th><th>Bénéf</th><th>Ventes</th></tr>${rowsDay}</table>`;
  }
  document.getElementById('rapportC').innerHTML=html;switchSub('table');
 }
@@ -141,12 +151,7 @@ function pdfRapportOnly(){let content=document.getElementById('rapportC').innerH
 function pdfStockTotal(){let data=getFiltered();let stock=data.stock.sort((a,b)=>a.CODE.localeCompare(b.CODE));let html=`<h2>STOCK TOTAL ${SHOP} ${new Date().toLocaleDateString()}</h2><table border=1 cellpadding=5 style="width:100%;border-collapse:collapse;font-size:11px"><tr><th>CODE</th><th>Désignation</th><th>Qté</th><th>Statut</th><th>PV</th></tr>`+stock.map(p=>`<tr><td>${p.CODE}</td><td>${p.Designation}</td><td>${p.Quantite}</td><td>${p.actif!==false?'Actif':'Désactivé'}</td><td>${p['Prix Unit']}</td></tr>`).join('')+'</table>';let w=window.open('','','width=1000,height=900');w.document.write('<html><body>'+html+'</body></html>');w.document.close();w.print();}
 function pdfRequisition(){let data=getFiltered();let low=data.stock.filter(p=>p.actif!==false && p.Quantite<= (p.seuil||3));let html=`<h2>REQUISITION ${SHOP} - ACTIFS seulement - ${new Date().toLocaleDateString()}</h2><p>${low.length} articles actifs sous seuil</p><table border=1 cellpadding=6 style="width:100%;border-collapse:collapse"><tr><th>CODE</th><th>Désignation</th><th>Qté</th><th>Seuil</th><th>À Cmd</th></tr>`+low.map(p=>`<tr><td>${p.CODE}</td><td>${p.Designation}</td><td style="color:red">${p.Quantite}</td><td>${p.seuil}</td><td><b>${Math.max((p.seuil||3)*3 - p.Quantite,10)}</b></td></tr>`).join('')+'</table>';let w=window.open('','','width=1000,height=900');w.document.write('<html><body>'+html+'</body></html>');w.document.close();w.print();}
 function refreshAll(){updateKPIs();renderVentes();renderCaisse();renderStock();renderCRM();}
-function renderBoutiques(data){
- let html=SHOPS_LIST.map(shop=>{
-  let info=data[shop]||{}; let blk=info.config?.blocked; let nbS=info.stock?Object.keys(info.stock).length:0; let nbV=info.vendeurs?Object.keys(info.vendeurs).length:0;
-  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #eee"><div><b>${shop}</b> ${blk?'<span style="background:red;color:#fff;padding:2px 6px;border-radius:10px;font-size:10px">BLOQUÉE</span>':'<span style="background:#22c55e;color:#000;padding:2px 6px;border-radius:10px;font-size:10px">OUVERTE</span>'}<br><small>${nbS} articles - ${nbV} vendeurs</small></div><div><button class="btn ${blk?'btn-g':'btn-r'}" style="width:auto" onclick="toggleBlock('${shop}',${blk?true:false})">${blk?'Débloquer':'Bloquer'}</button> <button class="btn btn-b" style="width:auto" onclick="selectShop('${shop}')">Ouvrir</button></div></div>`;
- }).join(''); document.getElementById('listShops').innerHTML=html; renderBoutiquesLinks();
-}
+function renderBoutiques(data){let html=SHOPS_LIST.map(shop=>{let info=data[shop]||{}; let blk=info.config?.blocked; let nbS=info.stock?Object.keys(info.stock).length:0; let nbV=info.vendeurs?Object.keys(info.vendeurs).length:0; return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #eee"><div><b>${shop}</b> ${blk?'<span style="background:red;color:#fff;padding:2px 6px;border-radius:10px;font-size:10px">BLOQUÉE</span>':'<span style="background:#22c55e;color:#000;padding:2px 6px;border-radius:10px;font-size:10px">OUVERTE</span>'}<br><small>${nbS} articles - ${nbV} vendeurs</small></div><div><button class="btn ${blk?'btn-g':'btn-r'}" style="width:auto" onclick="toggleBlock('${shop}',${blk?true:false})">${blk?'Débloquer':'Bloquer'}</button> <button class="btn btn-b" style="width:auto" onclick="selectShop('${shop}')">Ouvrir</button></div></div>`;}).join(''); document.getElementById('listShops').innerHTML=html; renderBoutiquesLinks();}
 function renderBoutiquesLinks(){let html=SHOPS_LIST.map(s=>`<div style="padding:6px;border-bottom:1px solid #eee"><b>${s}</b><br><small style="word-break:break-all">https://aiseodon-ai.github.io/bateke/vendeur.html?shop=${s}</small> <button class="btn btn-b" style="width:auto;padding:2px 6px" onclick="navigator.clipboard.writeText('https://aiseodon-ai.github.io/bateke/vendeur.html?shop=${s}');alert('Copié')">Copier</button></div>`).join('');document.getElementById('allLinks').innerHTML=html;}
 function createShop(){let n=document.getElementById('newShop').value.trim(); if(!n) return alert('Nom boutique?'); let clean=n.replace(/[^a-zA-Z0-9]/g,''); if(!clean) return alert('Nom invalide'); if(SHOPS_LIST.includes(clean)) return alert('Existe déjà'); db.ref('shops/'+clean+'/config').set({created:new Date().toISOString(),blocked:false}); db.ref('shops/'+clean+'/stock/INIT').set({CODE:'INIT',Designation:'ARTICLE TEST - SUPPRIME MOI',Quantite:0,'Prix Unit':0,'Prix Achat':0,seuil:3,actif:true}); alert('Boutique '+clean+' créée!'); document.getElementById('newShop').value='';}
 function toggleBlock(shop,blk){ db.ref('shops/'+shop+'/config/blocked').set(!blk); }
