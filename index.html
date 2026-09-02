@@ -32,8 +32,13 @@ document.getElementById('du').valueAsDate=new Date(new Date().setDate(1));docume
 function loginPat(){let raw=document.getElementById('pinPat').value||'';let p=raw.replace(/\D/g,'').trim();if(p==='9999'||p==='1234'||raw.includes('9999')||p!==''&&p.length>=4){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');initShops();}else{document.getElementById('msgPat').innerText='Code faux: '+raw+' tape 9999';}}
 function bypassLogin(){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');initShops();}
 document.getElementById('pinPat').addEventListener('keydown',e=>{if(e.key==='Enter')loginPat();});
-let params=new URLSearchParams(window.location.search);if(params.get('patron')==='9999'){bypassLogin();}
-if(localStorage.getItem('patron_logged')==='yes'){document.getElementById('loginPat').style.display='none';setTimeout(initShops,300);}
+//let params=new URLSearchParams(window.location.search);if(params.get('patron')==='9999'){bypassLogin();}
+//if(localStorage.getItem('patron_logged')==='yes'){document.getElementById('loginPat').style.display='none';setTimeout(initShops,300);}
+let params=new URLSearchParams(window.location.search);
+if(params.get('logout')!==null){localStorage.clear(); location.href=location.pathname; }
+if(params.get('patron')==='9999'){bypassLogin();}
+ // PAS d'auto-login - on force le login 9999 à chaque fois
+ // if(localStorage.getItem('patron_logged')==='yes'){...}  <-- SUPPRIMÉ
 function initShops(){db.ref('shops').on('value',snap=>{let data=snap.val()||{};SHOPS_LIST=Object.keys(data);if(!SHOPS_LIST.length)SHOPS_LIST=['Menkao1','Menkao2','Mbakana'];SHOPS_LIST.forEach(s=>{if(!ALL_DATA[s])ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{},vendeurs:{}};listenShop(s);});let opts=SHOPS_LIST.map(s=>`<option ${s===SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL" '+(SHOP==='ALL'?'selected':'')+'>TOUTES</option>';document.getElementById('shopSel').innerHTML=opts;if(!SHOPS_LIST.includes(SHOP)&&SHOP!=='ALL')SHOP=SHOPS_LIST[0];renderBoutiques(data);updateLabels();refreshAll();});}
 function switchShop(){SHOP=document.getElementById('shopSel').value;localStorage.setItem('patron_shop',SHOP);updateLabels();refreshAll();renderVendeurs();renderBoutiquesLinks();}
 function updateLabels(){document.getElementById('labVenteShop').innerText=SHOP;document.getElementById('labVendShop').innerText=SHOP;document.getElementById('lienV').innerText='https://aiseodon-ai.github.io/bateke/vendeur.html?shop='+SHOP;}
