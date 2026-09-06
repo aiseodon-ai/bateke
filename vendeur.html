@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Vendeur V4.7.5 FINAL - Entrées tracées 100%</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Vendeur V4.7.8 FINAL - Remise en % + FC</title>
 <style>
 body{margin:0;font-family:Arial;background:#f5f6fa}header{background:#0b5e2f;color:#fff;padding:12px;text-align:center;position:sticky;top:0;z-index:30}
 .card{background:#fff;border-radius:12px;padding:12px;margin:8px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
@@ -11,6 +11,7 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 .panierItem{display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #eee}
 .kpi{font-size:16px;font-weight:bold;color:#0b5e2f}
 #loginOverlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#0b5e2f;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
+.remiseBox{display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;background:#fffde7;padding:8px;border-radius:8px;border:1px dashed #facc15}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script></head><body>
 <div id="loginOverlay">
@@ -18,7 +19,7 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 <h3>🔐 Accès Boutique</h3>
 <p id="loginShopName" style="font-weight:bold;color:#0b5e2f"></p>
 <p style="font-size:12px;color:#666">Code PIN vendeur</p>
-<input id="pinInput" type="text" inputmode="numeric" placeholder="PIN ex: 100" style="text-align:center;font-size:22px;letter-spacing:5px;font-weight:bold">
+<input id="pinInput" type="text" inputmode="numeric" placeholder="PIN ex: 101" style="text-align:center;font-size:22px;letter-spacing:5px;font-weight:bold">
 <button class="btn btn-g" onclick="doLogin()">ENTRER</button>
 <p id="loginMsg" style="color:red;font-size:12px;margin-top:8px"></p>
 <small style="color:#999">Lien: ?shop=Menkao1</small><br>
@@ -26,7 +27,7 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 </div>
 </div>
 
-<header><h3 style="margin:0" onclick="secretPatron()">🛒 VENDEUR V4.7.5 - <span id="shopName"></span> - <small id="vendeurName" style="background:#fff;color:#0b5e2f;padding:2px 6px;border-radius:6px"></small></h3>
+<header><h3 style="margin:0">🛒 VENDEUR V4.7.8 - <span id="shopName"></span> - <small id="vendeurName" style="background:#fff;color:#0b5e2f;padding:2px 6px;border-radius:6px"></small></h3>
 <div style="display:flex;gap:5px;justify-content:center;margin-top:6px">
 <select id="shopSel" onchange="switchShop()" style="width:130px"></select>
 <small id="caJour" style="background:#fff;color:#0b5e2f;padding:4px 8px;border-radius:12px;font-weight:bold">CA Jour: 0</small>
@@ -43,10 +44,20 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 <div class="searchBox"><input id="searchArt" placeholder="🔍 Tape CODE ou Nom..." oninput="searchArticle()"><div id="suggest" class="suggest"></div></div>
 <div style="display:grid;grid-template-columns:1fr 90px 70px 50px;gap:5px;margin-top:8px"><input id="codeArt" placeholder="CODE" readonly><input id="pvArt" placeholder="PV" type="number" readonly><input id="qteArt" placeholder="Qté" type="number" value="1"><button class="btn btn-b" onclick="addPanier()">+</button></div>
 <div id="panierList" style="margin-top:10px;min-height:60px;background:#fafafa;border-radius:8px;padding:8px">Panier vide</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-<div>Remise % (max 5%): <input id="remise" type="number" placeholder="0" max="5" min="0" value="0" oninput="checkRemise();renderPanier()"></div>
-<div style="text-align:right">Total: <span id="totalPanier" class="kpi">0 FC</span><br><small id="remiseInfo"></small><br><b id="totalFinal" style="color:green;font-size:18px">0 FC</b></div>
+
+<div class="remiseBox" style="margin-top:10px">
+<div>
+Remise %<br><small style="color:#666">max 5%</small>
+<input id="remise" type="number" placeholder="0" max="5" min="0" value="0" oninput="checkRemise();renderPanier()" style="font-weight:bold;text-align:center;font-size:16px">
 </div>
+<div style="text-align:right">
+<div>Brut: <span id="totalPanier" class="kpi">0 FC</span></div>
+<div id="remiseInfo" style="color:#ef4444;font-weight:bold;font-size:13px;margin:4px 0"></div>
+<div id="remiseInfoFC" style="color:#ef4444;font-weight:bold;font-size:13px;background:#fee;padding:4px;border-radius:6px"></div>
+<div style="margin-top:6px">À PAYER:<br><b id="totalFinal" style="color:green;font-size:20px">0 FC</b></div>
+</div>
+</div>
+
 <hr>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
 <input id="clientNom" placeholder="Nom client"><input id="clientTel" placeholder="Tél client ex: 089...">
@@ -59,7 +70,7 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 </div>
 <div id="stock" class="sec"><div class="card"><h4>📦 Stock <span id="shopStock"></span> - Actifs seulement vendables</h4><input id="searchS" placeholder="Chercher..." oninput="renderStock()"><div style="overflow:auto"><table><thead><tr><th>CODE</th><th>Désignation</th><th>Qté</th><th>PV</th><th>Statut</th><th>Actif?</th></tr></thead><tbody id="stockT"></tbody></table></div><button class="btn btn-y" onclick="openEntree()">📥 + Entrée Stock (tracée avec nom)</button></div></div>
 <div id="caisse" class="sec"><div class="card"><h4>💰 Caisse du jour</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div>CA Jour: <b id="caJour2">0</b></div><div>À Verser: <b id="aVerser" style="color:red">0</b></div></div>
-<div style="margin-top:10px"><h5>Dépenses</h5><div style="display:grid;grid-template-columns:1fr 100px;gap:5px"><select id="motifDep"><option>ration</option><option>transport</option><option>achat stock</option><option>loyer</option><option>electricite</option><option>credit</option><option>autre</option></select><input id="montDep" type="number" placeholder="Montant"></div><input id="descDep" placeholder="Description"><button class="btn btn-r" onclick="addDepense()">➖ Dépense</button></div>
+<div style="margin-top:10px"><h5>Dépenses</h5><div style="display:grid;grid-template-columns:1fr 100px;gap:5px"><select id="motifDep"><option>ration</option><option>transport</option><option>achat stock</option><option>loyer</option><option>electricite</option><option>salaire</option><option>prime</option><option>fisc</option><option>credit</option><option>autre</option></select><input id="montDep" type="number" placeholder="Montant"></div><input id="descDep" placeholder="Description"><button class="btn btn-r" onclick="addDepense()">➖ Dépense</button></div>
 <div style="margin-top:10px"><h5>Versements</h5><input id="montVers" type="number" placeholder="Montant versé"><input id="descVers" placeholder="À qui"><button class="btn btn-b" onclick="addVersement()">📤 Versement</button></div>
 <div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Heure</th><th>Type</th><th>Montant</th><th>Motif</th></tr></thead><tbody id="caisseList"></tbody></table></div></div></div>
 <div id="synthese" class="sec"><div class="card"><h4>📊 Ma Synthèse (sans bénéfice)</h4>Du: <input type="date" id="du"> Au: <input type="date" id="au"><button class="btn btn-g" onclick="genSyntheseVendeur()">Générer</button><div id="syntheseC" style="margin-top:10px;overflow:auto"></div><button class="btn btn-y" onclick="pdfSynthese()">📄 PDF</button></div></div>
@@ -78,7 +89,6 @@ document.getElementById('shopName').innerText=SHOP;
 document.getElementById('shopStock').innerText=SHOP;
 if(_lockedShop){ const _sel=document.getElementById('shopSel'); if(_sel){ _sel.disabled=true; _sel.style.opacity='0.6'; _sel.style.background='#ccc'; } }
 document.getElementById('du').valueAsDate=new Date(new Date().setDate(1));document.getElementById('au').valueAsDate=new Date();
-
 db.ref('shops').on('value',snap=>{
  let data=snap.val()||{}; SHOPS_LIST=Object.keys(data); if(!SHOPS_LIST.length) SHOPS_LIST=['Menkao1','Menkao2','Mbakana'];
  if(!_lockedShop){
@@ -89,7 +99,6 @@ db.ref('shops').on('value',snap=>{
  }
  document.getElementById('loginShopName').innerText='Boutique: '+SHOP;
 });
-
 async function doLogin(){
  let pin=(document.getElementById('pinInput').value||'').toString().replace(/\D/g,'').trim();
  if(!pin){ document.getElementById('loginMsg').innerText='Entre ton PIN'; return; }
@@ -116,7 +125,6 @@ async function doLogin(){
  }catch(e){ document.getElementById('loginMsg').innerText='Erreur: '+e.message; }
 }
 function logoutAll(){ localStorage.removeItem('vendeur_shop'); localStorage.removeItem('vendeur_shop_locked'); localStorage.removeItem('vendeur_pin'); localStorage.removeItem('vendeur_nom'); location.href=location.pathname; }
-function secretPatron(){ let code=prompt('Code Patron ?'); if(code==='1234' || code==='9999'){ let act=confirm('BLOQUER boutique '+SHOP+' ? OK=Bloquer / Annuler=Débloquer'); db.ref('shops/'+SHOP+'/config/blocked').set(act); alert(act?'Bloquée':'Débloquée'); } }
 function switchShop(){ if(_lockedShop){ document.getElementById('shopSel').value=_lockedShop; return; } SHOP=document.getElementById('shopSel').value;localStorage.setItem('vendeur_shop',SHOP);document.getElementById('shopName').innerText=SHOP;document.getElementById('shopStock').innerText=SHOP;document.getElementById('loginShopName').innerText='Boutique: '+SHOP; document.getElementById('loginOverlay').style.display='flex'; }
 function switchTab(id){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');}
 function listenAll(){
@@ -133,7 +141,27 @@ function searchArticle(){let q=document.getElementById('searchArt').value.toLowe
 function selectArt(code){let p=STOCK.find(x=>x.CODE===code);if(!p)return;document.getElementById('codeArt').value=p.CODE;document.getElementById('pvArt').value=p['Prix Unit'];document.getElementById('searchArt').value=p.CODE+' '+p.Designation;document.getElementById('suggest').style.display='none';document.getElementById('qteArt').focus();}
 function addPanier(){let code=document.getElementById('codeArt').value;if(!code)return alert('Choisis article');let p=STOCK.find(x=>x.CODE===code);if(!p)return;if(p.actif===false)return alert('Article désactivé');let qte=parseInt(document.getElementById('qteArt').value)||1;if(qte>p.Quantite)return alert('Stock insuffisant: '+p.Quantite);let exist=PANIER.find(x=>x.CODE===code);if(exist)exist.qty+=qte;else PANIER.push({CODE:p.CODE,Designation:p.Designation,Prix:p['Prix Unit'],PA:p['Prix Achat']||Math.round(p['Prix Unit']*0.7),qty:qte});renderPanier();clearArticleFields();}
 function clearArticleFields(){document.getElementById('codeArt').value='';document.getElementById('pvArt').value='';document.getElementById('searchArt').value='';document.getElementById('qteArt').value=1;}
-function renderPanier(){if(!PANIER.length){document.getElementById('panierList').innerHTML='Panier vide';document.getElementById('totalPanier').innerText='0 FC';document.getElementById('totalFinal').innerText='0 FC';document.getElementById('remiseInfo').innerText='';return;}let {brut,remisePct,remiseVal,final}=getTotals();document.getElementById('panierList').innerHTML=PANIER.map((it,i)=>`<div class="panierItem"><span>${it.CODE} ${it.Designation} x${it.qty}</span><span>${(it.qty*it.Prix).toLocaleString()} FC <button onclick="PANIER.splice(${i},1);renderPanier()" style="background:red;color:#fff;border:none;border-radius:4px">X</button></span></div>`).join('');document.getElementById('totalPanier').innerText=brut.toLocaleString()+' FC';document.getElementById('remiseInfo').innerText=remisePct?`Remise ${remisePct}% = -${remiseVal.toLocaleString()} FC`:'';document.getElementById('totalFinal').innerText=final.toLocaleString()+' FC à payer';}
+function renderPanier(){
+ if(!PANIER.length){
+  document.getElementById('panierList').innerHTML='Panier vide';
+  document.getElementById('totalPanier').innerText='0 FC';
+  document.getElementById('totalFinal').innerText='0 FC';
+  document.getElementById('remiseInfo').innerText='';
+  document.getElementById('remiseInfoFC').innerText='';
+  return;
+ }
+ let {brut,remisePct,remiseVal,final}=getTotals();
+ document.getElementById('panierList').innerHTML=PANIER.map((it,i)=>`<div class="panierItem"><span>${it.CODE} ${it.Designation} x${it.qty}</span><span>${(it.qty*it.Prix).toLocaleString()} FC <button onclick="PANIER.splice(${i},1);renderPanier()" style="background:red;color:#fff;border:none;border-radius:4px">X</button></span></div>`).join('');
+ document.getElementById('totalPanier').innerText=brut.toLocaleString()+' FC';
+ if(remisePct>0){
+  document.getElementById('remiseInfo').innerText=`Remise ${remisePct}%`;
+  document.getElementById('remiseInfoFC').innerText=`- ${remiseVal.toLocaleString()} FC`;
+ } else {
+  document.getElementById('remiseInfo').innerText='Pas de remise';
+  document.getElementById('remiseInfoFC').innerText='';
+ }
+ document.getElementById('totalFinal').innerText=final.toLocaleString()+' FC à payer';
+}
 function validerVente(){
  if(!PANIER.length)return alert('Panier vide');let {brut,remisePct,remiseVal,final}=getTotals();let benef=PANIER.reduce((s,i)=>s+i.qty*(i.Prix-(i.PA||0)),0)-remiseVal;
  let clientNom=document.getElementById('clientNom').value||'Comptoir';let clientTel=document.getElementById('clientTel').value||'';let payMode=document.getElementById('payMode').value;let montantPaye=parseFloat(document.getElementById('montantPaye').value)||final;
@@ -141,16 +169,15 @@ function validerVente(){
  db.ref('shops/'+SHOP+'/ventes/'+Date.now()).set(vente).then(()=>{
   PANIER.forEach(it=>{let st=STOCK.find(s=>s.CODE===it.CODE);if(st){db.ref('shops/'+SHOP+'/stock/'+it.CODE).update({Quantite:st.Quantite-it.qty});}});
   if((clientNom!=='Comptoir'||clientTel)&&(final-montantPaye>0||clientTel)){db.ref('shops/'+SHOP+'/clients/'+clientNom.replace(/[^a-z0-9]/gi,'_')).once('value').then(snap=>{let c=snap.val()||{nom:clientNom,tel:clientTel,totalAchat:0,dette:0,nbVisites:0};c.nom=clientNom;c.tel=clientTel||c.tel;c.totalAchat=(c.totalAchat||0)+final;c.dette=(c.dette||0)+(final-montantPaye);c.nbVisites=(c.nbVisites||0)+1;c.derniereVisite=new Date().toISOString();db.ref('shops/'+SHOP+'/clients/'+clientNom.replace(/[^a-z0-9]/gi,'_')).set(c);});}
-  PANIER=[];renderPanier();clearArticleFields();document.getElementById('clientNom').value='';document.getElementById('clientTel').value='';document.getElementById('montantPaye').value='';document.getElementById('remise').value=0;alert('Vente validée: '+final.toLocaleString()+' FC par '+(CURRENT_VENDEUR?CURRENT_VENDEUR.nom:''));
+  PANIER=[];renderPanier();clearArticleFields();document.getElementById('clientNom').value='';document.getElementById('clientTel').value='';document.getElementById('montantPaye').value='';document.getElementById('remise').value=0;alert('Vente validée: '+final.toLocaleString()+' FC ('+brut.toLocaleString()+' - '+remiseVal.toLocaleString()+' remise) par '+(CURRENT_VENDEUR?CURRENT_VENDEUR.nom:''));
  });
 }
-function renderVentesJour(){let today=new Date().toDateString();let vToday=VENTES.filter(v=>new Date(v.date).toDateString()===today).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20);document.getElementById('ventesJour').innerHTML=vToday.map(v=>`<tr><td>${new Date(v.date).toLocaleTimeString()}</td><td>${v.client?.nom||''}</td><td>${v.client?.tel||''}</td><td>${(v.items||[]).map(i=>i.CODE+' x'+i.qty).join(', ')}</td><td>${(v.total||0).toLocaleString()}</td><td>${v.remisePct? v.remisePct+'%':''}</td></tr>`).join('')||'<tr><td colspan=6>Aucune</td></tr>';}
+function renderVentesJour(){let today=new Date().toDateString();let vToday=VENTES.filter(v=>new Date(v.date).toDateString()===today).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20);document.getElementById('ventesJour').innerHTML=vToday.map(v=>`<tr><td>${new Date(v.date).toLocaleTimeString()}</td><td>${v.client?.nom||''}</td><td>${v.client?.tel||''}</td><td>${(v.items||[]).map(i=>i.CODE+' x'+i.qty).join(', ')}</td><td>${(v.total||0).toLocaleString()}<br><small style="color:green">${v.totalBrut? v.totalBrut.toLocaleString()+' brut':''}</small></td><td>${v.remisePct? v.remisePct+'% = -'+(v.remiseVal||0).toLocaleString()+' FC':''}</td></tr>`).join('')||'<tr><td colspan=6>Aucune</td></tr>';}
 function renderStock(){let q=(document.getElementById('searchS').value||'').toLowerCase();let f=STOCK.filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).slice(0,200);document.getElementById('stockT').innerHTML=f.map(p=>{let actif=p.actif!==false;let statut=p.Quantite<= (p.seuil||3)?`<span style="color:red;font-weight:bold">⚠️ Faible</span>`:`<span style="color:green">OK</span>`;return `<tr style="${!actif?'background:#fee;opacity:0.6':''}"><td>${p.CODE}</td><td>${p.Designation}</td><td>${p.Quantite}</td><td>${p['Prix Unit']?.toLocaleString()}</td><td>${statut}</td><td>${actif?'✅ Actif':'🚫 Désactivé'}</td></tr>`;}).join('');}
-function renderCaisse(){let today=new Date().toDateString();let vToday=VENTES.filter(v=>new Date(v.date).toDateString()===today);let ca=vToday.reduce((s,v)=>s+(v.total||0),0);let depJ=DEP.filter(d=>new Date(d.date).toDateString()===today).reduce((s,d)=>s+d.montant,0);let versJ=VERS.filter(v=>new Date(v.date).toDateString()===today).reduce((s,v)=>s+v.montant,0);document.getElementById('caJour').innerText='CA: '+ca.toLocaleString();document.getElementById('caJour2').innerText=ca.toLocaleString()+' FC';document.getElementById('aVerser').innerText=(ca-depJ-versJ).toLocaleString()+' FC';let all=[...vToday.map(v=>({date:v.date,type:'Vente',montant:v.total,motif:(v.items||[]).map(i=>i.CODE).join(',')})),...DEP.filter(d=>new Date(d.date).toDateString()===today).map(d=>({date:d.date,type:'Dépense',montant:-d.montant,motif:d.motif})),...VERS.filter(v=>new Date(v.date).toDateString()===today).map(v=>({date:v.date,type:'Versement',montant:-v.montant,motif:v.description}))].sort((a,b)=>new Date(b.date)-new Date(a.date));document.getElementById('caisseList').innerHTML=all.map(a=>`<tr><td>${new Date(a.date).toLocaleTimeString()}</td><td>${a.type}</td><td style="color:${a.montant<0?'red':'green'}">${a.montant.toLocaleString()}</td><td>${a.motif}</td></tr>`).join('');}
+function renderCaisse(){let today=new Date().toDateString();let vToday=VENTES.filter(v=>new Date(v.date).toDateString()===today);let ca=vToday.reduce((s,v)=>s+(v.total||0),0);let depJ=DEP.filter(d=>new Date(d.date).toDateString()===today).reduce((s,d)=>s+d.montant,0);let versJ=VERS.filter(v=>new Date(v.date).toDateString()===today).reduce((s,v)=>s+v.montant,0);document.getElementById('caJour').innerText='CA: '+ca.toLocaleString();document.getElementById('caJour2').innerText=ca.toLocaleString()+' FC';document.getElementById('aVerser').innerText=(ca-depJ-versJ).toLocaleString()+' FC';let all=[...vToday.map(v=>({date:v.date,type:'Vente',montant:v.total,motif:(v.items||[]).map(i=>i.CODE).join(',')+ (v.remiseVal?` (remise -${v.remiseVal.toLocaleString()})`:'' )})),...DEP.filter(d=>new Date(d.date).toDateString()===today).map(d=>({date:d.date,type:'Dépense',montant:-d.montant,motif:d.motif})),...VERS.filter(v=>new Date(v.date).toDateString()===today).map(v=>({date:v.date,type:'Versement',montant:-v.montant,motif:v.description}))].sort((a,b)=>new Date(b.date)-new Date(a.date));document.getElementById('caisseList').innerHTML=all.map(a=>`<tr><td>${new Date(a.date).toLocaleTimeString()}</td><td>${a.type}</td><td style="color:${a.montant<0?'red':'green'}">${a.montant.toLocaleString()}</td><td>${a.motif}</td></tr>`).join('');}
 function updateKPI(){renderCaisse();}
 function addDepense(){let motif=document.getElementById('motifDep').value;let mont=parseFloat(document.getElementById('montDep').value);if(!mont)return alert('Montant');let desc=document.getElementById('descDep').value;db.ref('shops/'+SHOP+'/depenses/'+Date.now()).set({date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',motif:motif,montant:mont,description:desc});document.getElementById('montDep').value='';document.getElementById('descDep').value='';}
 function addVersement(){let mont=parseFloat(document.getElementById('montVers').value);if(!mont)return alert('Montant');let desc=document.getElementById('descVers').value;db.ref('shops/'+SHOP+'/versements/'+Date.now()).set({date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',montant:mont,description:desc});document.getElementById('montVers').value='';document.getElementById('descVers').value='';}
-
 function openEntree(){
  let code=prompt('CODE article entrée?'); if(!code) return; code=code.toUpperCase().trim();
  let st=STOCK.find(s=>s.CODE===code); if(!st) return alert('CODE introuvable: '+code);
@@ -173,7 +200,7 @@ function openEntree(){
   pin: pin,
   vendeurPin: pin
  });
- alert('✅ Entrée +'+qty+' '+code+' par '+qui+' ('+pin+') - Patron verra qui/date/jour');
+ alert('✅ Entrée +'+qty+' '+code+' par '+qui+' ('+pin+')');
 }
 function genSyntheseVendeur(){let du=new Date(document.getElementById('du').value);let au=new Date(document.getElementById('au').value);au.setHours(23,59,59);let vPeriode=VENTES.filter(v=>{let d=new Date(v.date);return d>=du&&d<=au;});let byArt={};vPeriode.forEach(v=>{(v.items||[]).forEach(i=>{if(!byArt[i.CODE])byArt[i.CODE]={CODE:i.CODE,Designation:i.Designation||STOCK.find(s=>s.CODE===i.CODE)?.Designation||i.CODE,qty:0,ca:0};byArt[i.CODE].qty+=i.qty;byArt[i.CODE].ca+=i.qty*i.Prix;});});let totalQte=Object.values(byArt).reduce((s,a)=>s+a.qty,0);let totalCA=Object.values(byArt).reduce((s,a)=>s+a.ca,0);let html=`<h4>Synthèse ${SHOP} - ${du.toLocaleDateString()} au ${au.toLocaleDateString()} - Vendeur: ${CURRENT_VENDEUR?CURRENT_VENDEUR.nom:''}</h4><p>Total: <b>${totalQte}</b> - CA: <b>${totalCA.toLocaleString()} FC</b></p><table><tr><th>CODE</th><th>Désignation</th><th>Qté</th><th>CA</th><th>Stock</th></tr>`+Object.values(byArt).sort((a,b)=>b.qty-a.qty).map(r=>`<tr><td>${r.CODE}</td><td>${r.Designation}</td><td>${r.qty}</td><td>${r.ca.toLocaleString()} FC</td><td>${STOCK.find(s=>s.CODE===r.CODE)?.Quantite??''}</td></tr>`).join('')+'</table>';document.getElementById('syntheseC').innerHTML=html;}
 function pdfSynthese(){let c=document.getElementById('syntheseC').innerHTML;let w=window.open('','','width=900,height=900');w.document.write('<html><head><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px}th{background:#111;color:#fff}</style></head><body>'+c+'</body></html>');w.document.close();w.print();}
