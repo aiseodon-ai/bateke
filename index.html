@@ -11,7 +11,12 @@ input,select{padding:8px;border-radius:6px;border:1px solid #ccc;width:100%;marg
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:99;align-items:center;justify-content:center}.modal.active{display:flex}.modalBox{background:#fff;padding:20px;border-radius:12px;width:90%;max-width:500px}
 #loginPat{position:fixed;inset:0;background:#111;z-index:9999;display:flex;align-items:center;justify-content:center}
 </style>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head><body>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head><body>
 <div id="loginPat"><div style="background:#fff;padding:25px;border-radius:16px;max-width:320px;width:90%;text-align:center"><h3>👑 PATRON V4.7.8</h3><input id="pinPat" type="text" inputmode="numeric" placeholder="9999" style="text-align:center;font-size:28px;letter-spacing:8px;font-weight:bold;border:2px solid #0b5e2f;border-radius:8px"><button class="btn btn-g" style="width:100%;margin-top:12px;font-size:16px;padding:12px" onclick="loginPat()">ENTRER</button><button class="btn btn-r" style="width:100%;margin-top:6px;padding:10px" onclick="bypassLogin()">🚨 BYPASS SI BLOQUE</button><p id="msgPat" style="color:red;font-size:12px;margin-top:8px;min-height:16px"></p></div></div>
 <header><h3 style="margin:0">👑 PATRON V4.7.8 - FIX INVENDU + DEPENSE + ANNULATION VENTE</h3><div style="margin-top:6px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap"><select id="shopSel" onchange="switchShop()" style="width:130px"></select><input type="file" id="excelIn" accept=".xlsx,.xls" style="width:110px"><button class="btn btn-b" onclick="openNewArt()">+ Article</button></div></header>
 <div class="grid"><div class="card">💰 CA Jour<br><span class="kpi" id="caJour">0</span></div><div class="card">📈 Bénéf Net<br><span class="kpi" id="benefJour">0</span></div><div class="card">🏦 À Verser<br><span class="kpi red" id="aVerser">0</span></div></div>
@@ -27,10 +32,12 @@ input,select{padding:8px;border-radius:6px;border:1px solid #ccc;width:100%;marg
 <script>
 const firebaseConfig={apiKey:"AIzaSyB0D421bg7tGVafz44cwCyIOCUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
 firebase.initializeApp(firebaseConfig);const db=firebase.database();
-let SHOP=localStorage.getItem('patron_shop')||'Menkao1';let SHOPS_LIST=[];let ALL_DATA={};
+let SHOP=localStorage.getItem('patron_shop')||'Menkao1';let SHOPS_LIST=[];let ALL_DATA={};let AUTH_READY=false;
+firebase.auth().signInAnonymously().catch(e=>alert("Active Anonyme dans Firebase: "+e.message));
+firebase.auth().onAuthStateChanged(user=>{ if(user){ AUTH_READY=true; }});
 document.getElementById('du').valueAsDate=new Date(new Date().setDate(1));document.getElementById('au').valueAsDate=new Date();let chart1=null;
-function loginPat(){let raw=document.getElementById('pinPat').value||'';let p=raw.replace(/\D/g,'').trim();if(p==='9999'||p==='1234'||raw.includes('9999')||p!==''&&p.length>=4){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');initShops();}else{document.getElementById('msgPat').innerText='Code faux: '+raw+' tape 9999';}}
-function bypassLogin(){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');initShops();}
+function loginPat(){if(!AUTH_READY){document.getElementById('msgPat').innerText='Attends 2 sec secure...';return;}let raw=document.getElementById('pinPat').value||'';let p=raw.replace(/\D/g,'').trim();if(p==='9999'||p==='1234'||raw.includes('9999')||p!==''&&p.length>=4){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');initShops();}else{document.getElementById('msgPat').innerText='Code faux: '+raw+' tape 9999';}}
+function bypassLogin(){if(!AUTH_READY){alert('Attends secure 2 sec');return;}document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');initShops();}
 document.getElementById('pinPat').addEventListener('keydown',e=>{if(e.key==='Enter')loginPat();});
 let params=new URLSearchParams(window.location.search);
 if(params.get('logout')!==null){localStorage.clear(); location.href=location.pathname; }
