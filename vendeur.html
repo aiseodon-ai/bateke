@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Vendeur V4.7.8 FINAL - Remise en % + FC</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Vendeur V4.7.9 STABLE - API KEY FIX</title>
 <style>
 body{margin:0;font-family:Arial;background:#f5f6fa}header{background:#0b5e2f;color:#fff;padding:12px;text-align:center;position:sticky;top:0;z-index:30}
 .card{background:#fff;border-radius:12px;padding:12px;margin:8px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
@@ -13,7 +13,10 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 #loginOverlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#0b5e2f;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
 .remiseBox{display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;background:#fffde7;padding:8px;border-radius:8px;border:1px dashed #facc15}
 </style>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script></head><body>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+</head><body>
 <div id="loginOverlay">
 <div style="background:#fff;border-radius:16px;padding:20px;max-width:340px;width:100%;text-align:center">
 <h3>🔐 Accès Boutique</h3>
@@ -22,12 +25,13 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 <input id="pinInput" type="text" inputmode="numeric" placeholder="PIN ex: 101" style="text-align:center;font-size:22px;letter-spacing:5px;font-weight:bold">
 <button class="btn btn-g" onclick="doLogin()">ENTRER</button>
 <p id="loginMsg" style="color:red;font-size:12px;margin-top:8px"></p>
+<p id="authStatus" style="color:#999;font-size:10px">Connexion Firebase...</p>
 <small style="color:#999">Lien: ?shop=Menkao1</small><br>
 <button onclick="logoutAll()" style="background:none;border:none;color:#999;font-size:11px;margin-top:10px">Déconnecter / Changer boutique</button>
 </div>
 </div>
 
-<header><h3 style="margin:0">🛒 VENDEUR V4.7.8 - <span id="shopName"></span> - <small id="vendeurName" style="background:#fff;color:#0b5e2f;padding:2px 6px;border-radius:6px"></small></h3>
+<header><h3 style="margin:0">🛒 VENDEUR V4.7.9 - <span id="shopName"></span> - <small id="vendeurName" style="background:#fff;color:#0b5e2f;padding:2px 6px;border-radius:6px"></small></h3>
 <div style="display:flex;gap:5px;justify-content:center;margin-top:6px">
 <select id="shopSel" onchange="switchShop()" style="width:130px"></select>
 <small id="caJour" style="background:#fff;color:#0b5e2f;padding:4px 8px;border-radius:12px;font-weight:bold">CA Jour: 0</small>
@@ -78,8 +82,13 @@ Remise %<br><small style="color:#666">max 5%</small>
 const _shopFromUrl = new URLSearchParams(window.location.search).get('shop');
 if(_shopFromUrl){ localStorage.setItem('vendeur_shop', _shopFromUrl); localStorage.setItem('vendeur_shop_locked', _shopFromUrl); }
 const _lockedShop = localStorage.getItem('vendeur_shop_locked');
-const firebaseConfig={apiKey:"AIzaSyB0D421bg7tGVafz44cwCyIOCUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
-firebase.initializeApp(firebaseConfig);const db=firebase.database();
+// --- V4.7.9 STABLE FIX API KEY ---
+const firebaseConfig={apiKey:"AIzaSyBOD421bg7tGVafz44cwCyIOCUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+let AUTH_READY=false;
+firebase.auth().signInAnonymously().then(()=>{AUTH_READY=true; document.getElementById('authStatus').innerText='✅ Connecté';}).catch(e=>{document.getElementById('authStatus').innerText='❌ '+e.message; console.error(e);});
+
 let SHOP=localStorage.getItem('vendeur_shop')||'Menkao1';
 if(_lockedShop) SHOP=_lockedShop;
 let STOCK=[],VENTES=[],DEP=[],VERS=[];let PANIER=[];let CURRENT_VENDEUR=null;let SHOPS_LIST=[];
@@ -102,6 +111,7 @@ db.ref('shops').on('value',snap=>{
 async function doLogin(){
  let pin=(document.getElementById('pinInput').value||'').toString().replace(/\D/g,'').trim();
  if(!pin){ document.getElementById('loginMsg').innerText='Entre ton PIN'; return; }
+ if(!AUTH_READY){ document.getElementById('loginMsg').innerText='Attends connexion Firebase 2 sec...'; setTimeout(doLogin,1000); return; }
  document.getElementById('loginMsg').innerText='Vérification...';
  if(pin==='9999'){
    CURRENT_VENDEUR={nom:'PATRON', pin:'9999', role:'patron'};
