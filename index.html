@@ -89,7 +89,7 @@ Type: <select id="typeRapport" onchange="onTypeChange()" style="grid-column:span
 </div></div>
 <div id="modalArt" class="modal"><div class="modalBox"><h3>Nouvel Article</h3><input id="newCode" placeholder="CODE"><input id="newDes" placeholder="Désignation"><input id="newPV" type="number" placeholder="PV"><input id="newPA" type="number" placeholder="PA"><input id="newQte" type="number" placeholder="Qté"><input id="newSeuil" type="number" value="3"><div style="display:flex;gap:5px;margin-top:10px"><button class="btn btn-g" onclick="saveNewArt()">Créer</button><button class="btn" onclick="closeModal('modalArt')">Annuler</button></div></div></div>
 <script>
-const firebaseConfig={apiKey:"AIzaSyB0D421bg7tGVafz44cwCyIOCUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
+const firebaseConfig={apiKey:"AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
 firebase.initializeApp(firebaseConfig);const db=firebase.database();const auth=firebase.auth();
 function updateAuthStatus(m,c){document.getElementById('authStatus').innerText=m;if(c)document.getElementById('authStatus').style.color=c;}
 auth.onAuthStateChanged(u=>{if(u){updateAuthStatus('✅ Connecté: '+u.uid,'green');}else{updateAuthStatus('Connexion anonyme...','#666');auth.signInAnonymously().catch(e=>updateAuthStatus('Erreur: '+e.message,'red'));}});
