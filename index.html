@@ -31,7 +31,7 @@
 
 <script>
 // ================= CONFIG + SUPER ADMIN =================
-const firebaseConfig={apiKey:"AIzaSyClBYZqJ7cUxB7iV4uT8B2dP4v7v2RqX8Y",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.appspot.com",messagingSenderId:"123456",appId:"1:123456:web:abc"};
+const firebaseConfig={apiKey:"AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.appspot.com",messagingSenderId:"123456",appId:"1:123456:web:abc"};
 firebase.initializeApp(firebaseConfig); const db=firebase.database();
 let currentShop=localStorage.getItem('bateke_shop')||'Menkao1'; let isSuperAdmin=false; let currentUid=null; let stockCache={}; let ventesCache=[]; let vendeursCache={}; let editingCode=null; let entreeCode=null; let chartInst=null;
 
