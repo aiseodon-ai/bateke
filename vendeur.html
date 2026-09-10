@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Vendeur V5.5.1 - FIX Vendeur colonne</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Vendeur V5.6 PRO - FIX Colonne + mustChangePin</title>
 <style>
 body{margin:0;font-family:Arial;background:#f5f6fa}header{background:#0b5e2f;color:#fff;padding:12px;text-align:center;position:sticky;top:0;z-index:30}
 .card{background:#fff;border-radius:12px;padding:12px;margin:8px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
@@ -11,6 +11,7 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 .panierItem{display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #eee}
 .kpi{font-size:16px;font-weight:bold;color:#0b5e2f}
 #loginOverlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#0b5e2f;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
+#changePinOverlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:100000;display:none;align-items:center;justify-content:center;padding:20px}
 .remiseBox{display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;background:#fffde7;padding:8px;border-radius:8px;border:1px dashed #facc15}
 .deviseBox{display:grid;grid-template-columns:1fr 110px;gap:8px;background:#e0f2fe;padding:8px;border-radius:8px;border:2px solid #0ea5e9;margin-top:8px}
 </style>
@@ -25,10 +26,21 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 <button class="btn btn-g" onclick="doLogin()">ENTRER</button>
 <p id="loginMsg" style="color:red;font-size:12px;margin-top:8px"></p>
 <p id="authStatus" style="color:#999;font-size:10px">Connexion Firebase...</p>
-<small style="color:#999">Lien: ?shop=Menkao1</small><br>
+<small style="color:#999">Lien:?shop=Menkao1</small><br>
 <button onclick="logoutAll()" style="background:none;border:none;color:#999;font-size:11px;margin-top:10px">Déconnecter / Changer boutique</button>
 </div></div>
-<header><h3 style="margin:0">🛒 VENDEUR V5.5.1 - <span id="shopName"></span> - <small id="vendeurName" style="background:#fff;color:#0b5e2f;padding:2px 6px;border-radius:6px"></small></h3>
+
+<div id="changePinOverlay"><div style="background:#fff;border-radius:16px;padding:20px;max-width:340px;width:100%;text-align:center;border:3px solid #facc15">
+<h3 style="color:#b45309">⚠️ PIN Temporaire Détecté</h3><p style="font-size:13px">Tu es connecté avec un PIN temporaire créé par SUPER ADMIN (1981#).<br>Tu <b>DOIS</b> créer ton PIN personnel secret maintenant.</p>
+<p style="font-size:12px;color:#666">Ancien PIN temporaire: <span id="oldPinDisplay" style="font-weight:bold"></span></p>
+<input id="newPin1" type="password" inputmode="numeric" placeholder="Nouveau PIN perso (4 chiffres min)" style="text-align:center;font-size:18px;letter-spacing:4px">
+<input id="newPin2" type="password" inputmode="numeric" placeholder="Confirme nouveau PIN" style="text-align:center;font-size:18px;letter-spacing:4px">
+<button class="btn btn-g" onclick="doChangePinForce()">✅ VALIDER MON NOUVEAU PIN</button>
+<p id="changePinMsg" style="color:red;font-size:12px"></p>
+<small style="color:#999">Ce nouveau PIN sera ton PIN définitif. Garde-le secret.</small>
+</div></div>
+
+<header><h3 style="margin:0">🛒 VENDEUR V5.6 PRO - <span id="shopName"></span> - <small id="vendeurName" style="background:#fff;color:#0b5e2f;padding:2px 6px;border-radius:6px"></small></h3>
 <div style="display:flex;gap:5px;justify-content:center;margin-top:6px">
 <select id="shopSel" onchange="switchShop()" style="width:130px"></select>
 <small id="caJour" style="background:#fff;color:#0b5e2f;padding:4px 8px;border-radius:12px;font-weight:bold">CA Jour: 0</small>
@@ -97,6 +109,7 @@ if(_lockedShop) SHOP=_lockedShop;
 let STOCK=[],VENTES=[],DEP=[],VERS=[];let PANIER=[];let CURRENT_VENDEUR=null;let SHOPS_LIST=[];
 let CONFIG_ENT={nom:'ETS BATEKE',adresse:'Kinshasa',rccm:'',tva:16,devise:'FC',deviseBase:'FC',taux:{USD:0,EUR:0,XAF:0,XOF:0},tauxUSD:0,tauxEUR:0,logo:'',piedFacture:'',piedDevis:'',tel:'',email:'',idnat:''};
 let PANIER_DEVIS=[],PANIER_FACT=[],DEVIS=[],FACTURES=[];
+let TEMP_OLD_PIN=null; // pour changement forcé
 document.getElementById('loginShopName').innerText='Boutique: '+SHOP;
 document.getElementById('shopName').innerText=SHOP;
 document.getElementById('shopStock').innerText=SHOP;
@@ -112,8 +125,9 @@ db.ref('shops').on('value',snap=>{
  }
  document.getElementById('loginShopName').innerText='Boutique: '+SHOP;
 });
+
 async function doLogin(){
- let pin=(document.getElementById('pinInput').value||'').toString().replace(/\D/g,'').trim();
+ let pin=(document.getElementById('pinInput').value||'').toString().trim();
  if(!pin){ document.getElementById('loginMsg').innerText='Entre ton PIN'; return; }
  if(!AUTH_READY){ document.getElementById('loginMsg').innerText='Attends connexion Firebase 2 sec...'; setTimeout(doLogin,1000); return; }
  document.getElementById('loginMsg').innerText='Vérification...';
@@ -127,17 +141,56 @@ async function doLogin(){
  try{
    let snap=await db.ref('shops/'+SHOP+'/vendeurs/'+pin).once('value');
    let vend=snap.val();
-   if(!vend){ document.getElementById('loginMsg').innerText='PIN '+pin+' inconnu pour '+SHOP; return; }
+   if(!vend){ document.getElementById('loginMsg').innerText='PIN '+pin+' inconnu pour '+SHOP+' (peut-être déjà changé)'; return; }
    if(vend.actif===false){ document.getElementById('loginMsg').innerText='🚫 ACCÈS RÉVOQUÉ'; return; }
    let snapB=await db.ref('shops/'+SHOP+'/config/blocked').once('value');
    if(snapB.val()===true){ document.getElementById('loginMsg').innerText='🚫 Boutique bloquée'; return; }
+   // ===== PATCH PRO mustChangePin =====
+   if(vend.mustChangePin===true){
+     TEMP_OLD_PIN=pin;
+     CURRENT_VENDEUR=vend;
+     document.getElementById('oldPinDisplay').innerText=pin;
+     document.getElementById('changePinOverlay').style.display='flex';
+     document.getElementById('loginMsg').innerText='';
+     return;
+   }
+   // ===== FIN PATCH =====
    CURRENT_VENDEUR=vend;
    localStorage.setItem('vendeur_pin',pin); localStorage.setItem('vendeur_nom',vend.nom||pin);
    document.getElementById('loginOverlay').style.display='none';
    document.getElementById('vendeurName').innerText=vend.nom||pin;
+   db.ref('shops/'+SHOP+'/vendeurs/'+pin).update({lastLogin:Date.now(), lastUid:'vendeur'});
    listenAll();
  }catch(e){ document.getElementById('loginMsg').innerText='Erreur: '+e.message; }
 }
+
+async function doChangePinForce(){
+ let n1=(document.getElementById('newPin1').value||'').trim();
+ let n2=(document.getElementById('newPin2').value||'').trim();
+ let msg=document.getElementById('changePinMsg');
+ if(n1.length<4){ msg.innerText='PIN trop court, 4 chiffres min'; return; }
+ if(n1!==n2){ msg.innerText='Les 2 PIN ne correspondent pas'; return; }
+ if(n1===TEMP_OLD_PIN){ msg.innerText='Choisis un PIN différent du temporaire'; return; }
+ // vérifie si PIN déjà utilisé
+ let snap=await db.ref('shops/'+SHOP+'/vendeurs/'+n1).once('value');
+ if(snap.exists()){ msg.innerText='Ce PIN existe déjà, choisis un autre'; return; }
+ // migration
+ let oldData=CURRENT_VENDEUR;
+ let newData={...oldData, pin:n1, mustChangePin:false, lastPinChange:Date.now(), oldTempPin:TEMP_OLD_PIN};
+ msg.innerText='Migration en cours...';
+ await db.ref('shops/'+SHOP+'/vendeurs/'+n1).set(newData);
+ await db.ref('shops/'+SHOP+'/vendeurs/'+TEMP_OLD_PIN).remove();
+ await db.ref('shops/'+SHOP+'/superLogs').push({ts:Date.now(), action:'VENDEUR_CHANGE_PIN', detail: oldData.nom+' '+TEMP_OLD_PIN+' -> '+n1, role:'VENDEUR', shop:SHOP});
+ CURRENT_VENDEUR=newData;
+ localStorage.setItem('vendeur_pin',n1); localStorage.setItem('vendeur_nom',newData.nom||n1);
+ document.getElementById('changePinOverlay').style.display='none';
+ document.getElementById('loginOverlay').style.display='none';
+ document.getElementById('vendeurName').innerText=newData.nom||n1;
+ document.getElementById('pinInput').value=n1;
+ alert('✅ PIN changé avec succès! Ton nouveau PIN perso est: '+n1+' - Retiens-le bien!');
+ listenAll();
+}
+
 function logoutAll(){ localStorage.removeItem('vendeur_shop'); localStorage.removeItem('vendeur_shop_locked'); localStorage.removeItem('vendeur_pin'); localStorage.removeItem('vendeur_nom'); location.href=location.pathname; }
 function switchShop(){ if(_lockedShop){ document.getElementById('shopSel').value=_lockedShop; return; } SHOP=document.getElementById('shopSel').value;localStorage.setItem('vendeur_shop',SHOP);document.getElementById('shopName').innerText=SHOP;document.getElementById('shopStock').innerText=SHOP;document.getElementById('loginShopName').innerText='Boutique: '+SHOP; document.getElementById('loginOverlay').style.display='flex'; }
 function switchTab(id){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+id).classList.add('active');}
@@ -182,7 +235,7 @@ function renderPanier(){
 function validerVente(){
  if(!PANIER.length)return alert('Panier vide');let {brut,remisePct,remiseVal,final}=getTotals();let benef=PANIER.reduce((s,i)=>s+i.qty*(i.Prix-(i.PA||0)),0)-remiseVal;
  let clientNom=document.getElementById('clientNom').value||'Comptoir';let clientTel=document.getElementById('clientTel').value||'';let payMode=document.getElementById('payMode').value;let montantPaye=parseFloat(document.getElementById('montantPaye').value)||final;
- let vente={date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'inconnu',vendeurNom:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'inconnu',vendeurPin:CURRENT_VENDEUR?CURRENT_VENDEUR.pin:'',client:{nom:clientNom,tel:clientTel},items:PANIER,totalBrut:brut,remisePct:remisePct,remiseVal:remiseVal,total:final,benefice:benef,payement:payMode,montantPaye:montantPaye,reste:final-montantPaye};
+ let vente={date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'inconnu',vendeurNom:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'inconnu',vendeurPin:CURRENT_VENDEUR?CURRENT_VENDEUR.pin:'',client:{nom:clientNom,tel:clientTel},items:PANIER,totalBrut:brut,remisePct:remisePct,remiseVal:remiseVal,total:final,benefice:benef,payement:payMode,montantPaye:montantPaye,reste:final-montantPaye, createdByUid:'vendeur', createdByRole:'VENDEUR'};
  db.ref('shops/'+SHOP+'/ventes/'+Date.now()).set(vente).then(()=>{
   PANIER.forEach(it=>{let st=STOCK.find(s=>s.CODE===it.CODE);if(st){db.ref('shops/'+SHOP+'/stock/'+it.CODE).update({Quantite:st.Quantite-it.qty});}});
   PANIER=[];renderPanier();clearArticleFields();document.getElementById('clientNom').value='';document.getElementById('clientTel').value='';document.getElementById('montantPaye').value='';document.getElementById('remise').value=0;alert('Vente validée: '+final.toLocaleString()+' FC');
