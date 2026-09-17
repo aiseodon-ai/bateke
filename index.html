@@ -72,16 +72,39 @@ db.ref('shops/'+s+'/vendeurs').on('value',snap=>{ALL_DATA[s].vendeurs=snap.val()
 db.ref('shops/'+s+'/config_entreprise').on('value',snap=>{if(snap.val()&&(SHOP===s||SHOP==='ALL')){let c=snap.val();CURRENT_CONFIG={...CURRENT_CONFIG,...c,compta:{...CURRENT_CONFIG.compta,...(c.compta||{})}};applyConfigToUI();savePatronCache();}});
 db.ref('shops/'+s+'/presence').on('value',snap=>{ALL_DATA[s].presence=snap.val()||{};savePatronCache();renderPresenceKPI();if(SHOP===s)renderVendeurs();});
 db.ref('shops/'+s+'/vendeur_logs').on('value',snap=>{ALL_DATA[s].logs=snap.val()||{};savePatronCache();if(SHOP===s)renderVendeurs();});
+db.ref('shops/'+s+'/versements').on('value',snap=>{let raw=snap.val()||{};ALL_DATA[s].vers=Object.entries(raw).map(([k,v])=>({...v,_id:k}));savePatronCache();if(SHOP===s||SHOP==='ALL')renderCaisse();});
 }
-function getFiltered(){if(SHOP==='ALL'){let agg={ventes:[],dep:[],vers:[],stock:[],entrees:[]};SHOPS_LIST.forEach(s=>{let d=ALL_DATA[s]||{};agg.ventes=[...agg.ventes,...(d.ventes||[])];agg.dep=[...agg.dep,...(d.dep||[])];agg.stock=[...agg.stock,...(d.stock||[])];agg.entrees=[...agg.entrees,...(d.entrees||[]).map(e=>({...e,_shop:s}))];});return agg;}else{let d=ALL_DATA[SHOP]||{ventes:[],dep:[],vers:[],stock:[],entrees:[]};return {...d,entrees:(d.entrees||[]).map(e=>({...e,_shop:SHOP}))};}}
+function getFiltered(){if(SHOP==='ALL'){let agg={ventes:[],dep:[],vers:[],stock:[],entrees:[]};SHOPS_LIST.forEach(s=>{let d=ALL_DATA[s]||{};agg.ventes=[...agg.ventes,...(d.ventes||[])];agg.dep=[...agg.dep,...(d.dep||[])];agg.stock=[...agg.stock,...(d.stock||[])];agg.entrees=[...agg.entrees,...(d.entrees||[]).map(e=>({...e,_shop:s}))];});return agg;}else{let d=ALL_DATA[SHOP]||{ventes:[],dep:[],vers:[],stock:[],entrees:[]};let versRaw=ALL_DATA[SHOP]?.vers||[];return {...d,vers:versRaw.map(v=>({...v,_shop:SHOP})),entrees:(d.entrees||[]).map(e=>({...e,_shop:SHOP}))}; //return {...d,entrees:(d.entrees||[]).map(e=>({...e,_shop:SHOP}))};}}
 function updateKPIs(){let data=getFiltered();let today=new Date().toDateString();let vToday=data.ventes.filter(v=>new Date(v.date).toDateString()===today);let caJ=vToday.reduce((s,v)=>s+(v.total||0),0);document.getElementById('caJour').innerText=caJ.toLocaleString()+' FC';document.getElementById('caJourDetail').innerText='Encaissé: '+vToday.reduce((s,v)=>s+(v.montantPaye??v.total),0).toLocaleString();document.getElementById('benefJour').innerText=(vToday.reduce((s,v)=>s+(v.benefice||0),0)-data.dep.filter(d=>new Date(d.date).toDateString()===today).reduce((s,d)=>s+d.montant,0)).toLocaleString()+' FC';document.getElementById('aVerser').innerText=document.getElementById('caJourDetail').innerText;document.getElementById('detteJour').innerText=vToday.reduce((s,v)=>s+(v.reste||0),0).toLocaleString()+' FC';}
 function fmtVu(ts){if(!ts)return'jamais';let diff=Date.now()-ts;let m=Math.floor(diff/60000);if(m<1)return'à l’instant';if(m<60)return'il y a '+m+' min';let h=Math.floor(m/60);if(h<24)return'il y a '+h+'h';return'il y a '+Math.floor(h/24)+'j';}
 function renderPresenceKPI(){let s=SHOP==='ALL'?SHOPS_LIST[0]:SHOP;let pres=ALL_DATA[s]?.presence||{};let vends=ALL_DATA[s]?.vendeurs||{};let html='';Object.keys(vends).forEach(pin=>{let v=vends[pin];let p=pres[pin]||{};let online=p.online===true&&Date.now()-(p.lastSeen||0)<180000;html+=`<div style="background:#fff;border:1px solid ${online?'#22c55e':'#ef4444'};border-radius:20px;padding:6px 12px"><span class="presence-dot ${online?'online':'offline'}"></span><b>${v.nom}</b> ${online?'En ligne':'Hors ligne'} • ${fmtVu(p.lastSeen)}</div>`;});document.getElementById('presenceKPIList').innerHTML=html||'<small>Aucun</small>';}
 function renderVentes(){let data=getFiltered();let rows=[];data.ventes.sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,200).forEach(v=>{(v.items||[]).forEach(i=>{rows.push(`<tr><td>${new Date(v.date).toLocaleString()}</td><td>${v.vendeurNom||v.vendeur}</td><td>${i.CODE}</td><td>${i.Designation}</td><td>${i.qty}</td><td>${(i.qty*i.Prix).toLocaleString()}</td><td>${(v.montantPaye??v.total).toLocaleString()}</td><td>${(v.reste||0).toLocaleString()}</td><td>${v.client?.nom||'Comptoir'}</td><td>${v.payement||'cash'}</td><td><button class="btn btn-r" style="width:auto;font-size:10px" onclick="annulerVente('${v._id}','${v._shop}')">↩️</button></td></tr>`);});});document.getElementById('ventesList').innerHTML=rows.join('')||'<tr><td colspan=11>Aucune</td></tr>';}
-function renderCaisse(){let data=getFiltered();let all=[];data.ventes.forEach(v=>all.push({date:v.date,type:'Vente',motif:(v.items||[]).map(i=>i.CODE).join(','),montant:v.montantPaye??v.total}));data.dep.forEach(d=>all.push({date:d.date,type:'Dépense',motif:d.motif||'',montant:-d.montant}));all.sort((a,b)=>new Date(b.date)-new Date(a.date));document.getElementById('caisseList').innerHTML=all.slice(0,150).map(a=>`<tr><td>${new Date(a.date).toLocaleString()}</td><td>${a.type}</td><td>${a.motif}</td><td style="color:${a.montant<0?'red':'green'}">${a.montant.toLocaleString()}</td></tr>`).join('');}
+//function renderCaisse(){let data=getFiltered();let all=[];data.ventes.forEach(v=>all.push({date:v.date,type:'Vente',motif:(v.items||[]).map(i=>i.CODE).join(','),montant:v.montantPaye??v.total}));data.dep.forEach(d=>all.push({date:d.date,type:'Dépense',motif:d.motif||'',montant:-d.montant}));all.sort((a,b)=>new Date(b.date)-new Date(a.date));document.getElementById('caisseList').innerHTML=all.slice(0,150).map(a=>`<tr><td>${new Date(a.date).toLocaleString()}</td><td>${a.type}</td><td>${a.motif}</td><td style="color:${a.montant<0?'red':'green'}">${a.montant.toLocaleString()}</td></tr>`).join('');}
+function renderCaisse(){
+ let data=getFiltered();
+ let all=[];
+ data.ventes.forEach(v=>all.push({date:v.date,type:'Vente',motif:(v.items||[]).map(i=>i.CODE).join(','),montant:v.montantPaye??v.total,_id:v._id,_shop:v._shop,noDelete:true}));
+ (data.dep||[]).forEach(d=>all.push({date:d.date,type:'Dépense',motif:d.motif||d.description||'',montant:-d.montant,_id:d._id,_shop:d._shop||SHOP,isDep:true}));
+ (data.vers||[]).forEach(v=>all.push({date:v.date,type:'Versement',motif:v.description||v.motif||'',montant:-v.montant,_id:v._id,_shop:v._shop||SHOP,isVers:true}));
+ all.sort((a,b)=>new Date(b.date)-new Date(a.date));
+ document.getElementById('caisseList').innerHTML=all.slice(0,200).map(a=>{
+   let btn='';
+   if(a.isDep) btn=`<button class="btn btn-r" style="width:auto;padding:4px 8px;font-size:10px" onclick="annulerDepense('${a._id}','${a._shop||SHOP}')">↩️ Annuler</button>`;
+   if(a.isVers) btn=`<button class="btn btn-r" style="width:auto;padding:4px 8px;font-size:10px" onclick="annulerVersement('${a._id}','${a._shop||SHOP}')">↩️ Annuler</button>`;
+   return `<tr><td>${new Date(a.date).toLocaleString()}</td><td>${a.type}</td><td>${a.motif}</td><td style="color:${a.montant<0?'red':'green'}">${a.montant.toLocaleString()}</td><td>${btn}</td></tr>`;
+ }).join('')||'<tr><td colspan=5>Aucun</td></tr>';
+}
+function annulerDepense(id,shop){
+ if(!confirm('Annuler cette dépense? '+id)) return;
+ db.ref('shops/'+(shop||SHOP)+'/depenses/'+id).remove().then(()=>alert('✅ Dépense annulée'));
+}
+function annulerVersement(id,shop){
+ if(!confirm('Annuler ce versement? '+id)) return;
+ db.ref('shops/'+(shop||SHOP)+'/versements/'+id).remove().then(()=>alert('✅ Versement annulé'));
+}
+ 
 function renderStock(){
  let data=getFiltered();let q=(document.getElementById('searchS').value||'').toLowerCase();
- //let f=data.stock.filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).slice(0,400);
  let f=data.stock.filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).sort((a,b)=>(a.CODE||'').localeCompare(b.CODE||''));
  let totalFC=0,totalPA=0,totalQte=0,totalRef=0;
  data.stock.filter(p=>p.actif!==false).forEach(p=>{totalFC+=(p.Quantite||0)*(p['Prix Unit']||0);totalPA+=(p.Quantite||0)*(p['Prix Achat']||0);totalQte+=(p.Quantite||0);totalRef++;});
