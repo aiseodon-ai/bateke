@@ -175,7 +175,7 @@ function genRapport(){
    html=`<h3>🛒 SYNTHESE ACHATS</h3><table><tr><th>CODE</th><th>Dés</th><th>Qté achetée</th><th>PA</th><th>Total PA</th><th>STOCK ACTUEL</th></tr>`+list.map(a=>`<tr><td>${a.CODE}</td><td>${a.Des}</td><td><b>${a.qty}</b></td><td>${a.pa.toLocaleString()}</td><td>${(a.qty*a.pa).toLocaleString()}</td><td style="background:#e0f2fe;font-weight:bold;text-align:center">${a.stockActuel}</td></tr>`).join('')+`</table>`;
  } 
   //
-   } else if(type==='vente_article'){
+   else if(type==='vente_article'){
    let codeFiltre=document.getElementById('filtreCode')?.value?.trim().toLowerCase()||'';
    let parArticle={};
    vPeriode.forEach(v=>(v.items||[]).forEach(i=>{
