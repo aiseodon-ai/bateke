@@ -183,7 +183,7 @@ function genRapport(){
  } else if(type==='invendu'){
    let vendus=new Set(); vPeriode.forEach(v=>(v.items||[]).forEach(i=>vendus.add(i.CODE))); let inv=data.stock.filter(p=>!vendus.has(p.CODE));
    html=`<h3>INVENDUS + STOCK ACTUEL</h3><table><tr><th>CODE</th><th>Désignation</th><th style="background:#f59e0b">STOCK ACTUEL</th><th>Seuil</th></tr>`+inv.map(p=>`<tr><td>${p.CODE}</td><td>${p.Designation}</td><td style="background:#fee;font-weight:bold;text-align:center">${p.Quantite}</td><td>${p.seuil}</td></tr>`).join('')+`</table>`;
- }  } else if(type==='depense_par_type'){
+ } else if(type==='depense_par_type'){
    let map={}; dPeriode.forEach(d=>{let k=(d.categorie||d.motif||d.type||'Autre').trim(); map[k]=(map[k]||0)+Number(d.montant||0);});
    let total=Object.values(map).reduce((s,v)=>s+v,0);
    html=`<h3>💸 DEPENSE PAR TYPE - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3><table><tr><th>Type</th><th>Total FC</th></tr><tr><td><b>TOTAL</b></td><td><b>${total.toLocaleString()}</b></td></tr></table><h4>Détail par type</h4><table><tr><th>Type</th><th>Total</th><th>%</th></tr>`+Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${k}</td><td>${v.toLocaleString()}</td><td>${total?((v/total)*100).toFixed(1):0}%</td></tr>`).join('')+`</table>`;
