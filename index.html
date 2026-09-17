@@ -173,10 +173,32 @@ function genRapport(){
    let parArticle={}; allEntrees.forEach(e=>{if(!parArticle[e.CODE])parArticle[e.CODE]={CODE:e.CODE,Des:e.Designation||e.CODE,qty:0,shop:e.shop,stockActuel:stockMap[e.CODE]?.Quantite||0,pa:stockMap[e.CODE]?.['Prix Achat']||0};parArticle[e.CODE].qty+=e.qty||0;});
    let list=Object.values(parArticle).sort((a,b)=>b.qty-a.qty);
    html=`<h3>🛒 SYNTHESE ACHATS</h3><table><tr><th>CODE</th><th>Dés</th><th>Qté achetée</th><th>PA</th><th>Total PA</th><th>STOCK ACTUEL</th></tr>`+list.map(a=>`<tr><td>${a.CODE}</td><td>${a.Des}</td><td><b>${a.qty}</b></td><td>${a.pa.toLocaleString()}</td><td>${(a.qty*a.pa).toLocaleString()}</td><td style="background:#e0f2fe;font-weight:bold;text-align:center">${a.stockActuel}</td></tr>`).join('')+`</table>`;
- } else if(type==='vente_article'){
-   let codeFiltre=document.getElementById('filtreCode')?.value?.toLowerCase()||'';let parArticle={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{if(codeFiltre&&!i.CODE.toLowerCase().includes(codeFiltre)&&!i.Designation.toLowerCase().includes(codeFiltre))return;if(!parArticle[i.CODE])parArticle[i.CODE]={CODE:i.CODE,Des:i.Designation,qty:0,ca:0,stockActuel:stockMap[i.CODE]?.Quantite||0};parArticle[i.CODE].qty+=i.qty;parArticle[i.CODE].ca+=i.qty*i.Prix;}));let list=Object.values(parArticle).sort((a,b)=>b.ca-a.ca);
-   html=`<h3>VENTE PAR ARTICLE + HISTORIQUE</h3><table><tr><th>CODE</th><th>Dés</th><th>Qté</th><th>CA</th><th>STOCK ACTUEL</th></tr>`+list.map(a=>`<tr><td>${a.CODE}</td><td>${a.Des}</td><td>${a.qty}</td><td>${a.ca.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${a.stockActuel}</td></tr>`).join('')+`</table><h4>Historique ventes (100 dernières)</h4><table><tr><th>Date</th><th>CODEs</th><th>Client</th><th>Total</th></tr>`+vPeriode.slice(0,100).map(v=>`<tr><td>${new Date(v.date).toLocaleDateString()}</td><td>${(v.items||[]).map(i=>i.CODE).join(',')}</td><td>${v.client?.nom||''}</td><td>${v.total.toLocaleString()}</td></tr>`).join('')+`</table>`;
- } else if(type==='top'){
+ } 
+  //
+   } else if(type==='vente_article'){
+   let codeFiltre=document.getElementById('filtreCode')?.value?.trim().toLowerCase()||'';
+   let parArticle={};
+   vPeriode.forEach(v=>(v.items||[]).forEach(i=>{
+     if(codeFiltre &&!i.CODE.toLowerCase().includes(codeFiltre) &&!(i.Designation||'').toLowerCase().includes(codeFiltre)) return;
+     if(!parArticle[i.CODE])parArticle[i.CODE]={CODE:i.CODE,Des:i.Designation,qty:0,ca:0,stockActuel:stockMap[i.CODE]?.Quantite||0};
+     parArticle[i.CODE].qty+=i.qty;parArticle[i.CODE].ca+=i.qty*i.Prix;
+   }));
+   let list=Object.values(parArticle).sort((a,b)=>b.ca-a.ca);
+   // HISTORIQUE UNIQUEMENT POUR L'ARTICLE FILTRÉ
+   let histFiltre = vPeriode.filter(v=> (v.items||[]).some(it=> {
+     if(!codeFiltre) return true;
+     return it.CODE.toLowerCase().includes(codeFiltre) || (it.Designation||'').toLowerCase().includes(codeFiltre);
+   }));
+   html=`<h3>VENTE PAR ARTICLE + HISTORIQUE ${codeFiltre? ' - ['+codeFiltre.toUpperCase()+']' : ''}</h3>
+   <table><tr><th>CODE</th><th>Dés</th><th>Qté</th><th>CA</th><th>STOCK ACTUEL</th></tr>`+list.map(a=>`<tr><td>${a.CODE}</td><td>${a.Des}</td><td>${a.qty}</td><td>${a.ca.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${a.stockActuel}</td></tr>`).join('')+`</table>
+   <h4>Historique ${codeFiltre? 'pour '+codeFiltre.toUpperCase() : 'récent'} - ${histFiltre.length} ventes</h4>
+   <table><tr><th>Date</th><th>Client</th><th>Qté article</th><th>Prix</th><th>Total vente</th><th>Vendeur</th></tr>`+histFiltre.slice(0,200).map(v=>{
+     let it=(v.items||[]).find(i=>!codeFiltre || i.CODE.toLowerCase().includes(codeFiltre) || (i.Designation||'').toLowerCase().includes(codeFiltre)) || v.items[0];
+     return `<tr><td>${new Date(v.date).toLocaleString()}</td><td>${v.client?.nom||'Comptoir'}</td><td>${it?.qty||''}</td><td>${(it?.Prix||0).toLocaleString()}</td><td>${v.total.toLocaleString()}</td><td>${v.vendeurNom||''}</td></tr>`;
+   }).join('')+`</table>`;
+ }
+    //
+   else if(type==='top'){
    let map={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{if(!map[i.CODE])map[i.CODE]={CODE:i.CODE,Des:i.Designation,qty:0,ca:0,stockActuel:stockMap[i.CODE]?.Quantite||0};map[i.CODE].qty+=i.qty;map[i.CODE].ca+=i.qty*i.Prix;})); let top=Object.values(map).sort((a,b)=>b.qty-a.qty).slice(0,20);
    html=`<h3>TOP 20</h3><table><tr><th>CODE</th><th>Dés</th><th>Qté</th><th>CA</th><th>STOCK</th></tr>`+top.map(t=>`<tr><td>${t.CODE}</td><td>${t.Des}</td><td><b>${t.qty}</b></td><td>${t.ca.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${t.stockActuel}</td></tr>`).join('')+`</table>`;
  } else if(type==='invendu'){
