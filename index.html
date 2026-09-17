@@ -184,12 +184,32 @@ function genRapport(){
    let vendus=new Set(); vPeriode.forEach(v=>(v.items||[]).forEach(i=>vendus.add(i.CODE))); let inv=data.stock.filter(p=>!vendus.has(p.CODE));
    html=`<h3>INVENDUS + STOCK ACTUEL</h3><table><tr><th>CODE</th><th>Désignation</th><th style="background:#f59e0b">STOCK ACTUEL</th><th>Seuil</th></tr>`+inv.map(p=>`<tr><td>${p.CODE}</td><td>${p.Designation}</td><td style="background:#fee;font-weight:bold;text-align:center">${p.Quantite}</td><td>${p.seuil}</td></tr>`).join('')+`</table>`;
  }
-else { html=`<h3>${type} - ${vPeriode.length} ventes</h3><table><tr><th>Date</th><th>Vendeur</th><th>Total</th><th>Bénéf</th><th>Stock actuel après vente</th></tr>`+vPeriode.slice(0,100).map(v=>`<tr><td>${new Date(v.date).toLocaleString()}</td><td>${v.vendeurNom}</td><td>${v.total.toLocaleString()}</td><td>${(v.benefice||0).toLocaleString()}</td><td>${(v.items||[]).map(i=>`${i.CODE}:${stockMap[i.CODE]?.Quantite||0}`).join(', ')}</td></tr>`).join('')+`</table>`; }
- document.getElementById('rapportC').innerHTML=html;
- window._lastRapportData={vPeriode,dPeriode};
-}
-
-
+//
+ else if(type==='depense_par_type'){
+   let map={}; dPeriode.forEach(d=>{let k=(d.categorie||d.motif||d.type||'Autre').trim(); map[k]=(map[k]||0)+Number(d.montant||0);});
+   let total=Object.values(map).reduce((s,v)=>s+v,0);
+   html=`<h3>💸 DEPENSE PAR TYPE - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3><table><tr><th>Type</th><th>Total FC</th></tr><tr><td><b>TOTAL</b></td><td><b>${total.toLocaleString()}</b></td></tr></table><h4>Détail par type</h4><table><tr><th>Type</th><th>Total</th><th>%</th></tr>`+Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${k}</td><td>${v.toLocaleString()}</td><td>${total?((v/total)*100).toFixed(1):0}%</td></tr>`).join('')+`</table>`;
+ } else if(type==='entree_stock_detail'){
+   let allEntrees=[]; SHOPS_LIST.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au) allEntrees.push({...e,shop:s});});});
+   html=`<h3>📥 ENTREE STOCK DETAIL - ${allEntrees.length} entrées</h3><table><tr><th>Date</th><th>CODE</th><th>Dés</th><th>Qté</th><th>PA</th><th>Fournisseur</th><th>Shop</th></tr>`+allEntrees.sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,500).map(e=>`<tr><td>${new Date(e.date).toLocaleString()}</td><td>${e.CODE||''}</td><td>${e.Designation||''}</td><td>${e.qty||0}</td><td>${(e.pa||stockMap[e.CODE]?.['Prix Achat']||0).toLocaleString()}</td><td>${e.fournisseur||''}</td><td>${e.shop}</td></tr>`).join('')+`</table>`;
+ } else if(type==='entree_par_article' || type==='entree_article'){
+   let allEntrees=[]; SHOPS_LIST.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au) allEntrees.push(e);});});
+   let map={}; allEntrees.forEach(e=>{if(!map[e.CODE])map[e.CODE]={CODE:e.CODE,Des:e.Designation||e.CODE,qty:0,pa:stockMap[e.CODE]?.['Prix Achat']||0,stockActuel:stockMap[e.CODE]?.Quantite||0}; map[e.CODE].qty+=e.qty||0;});
+   let list=Object.values(map).sort((a,b)=>b.qty-a.qty);
+   html=`<h3>📦 ENTREE PAR ARTICLE</h3><table><tr><th>CODE</th><th>Dés</th><th>Qté entrée</th><th>PA</th><th>Total PA</th><th style="background:#0ea5e9;color:#fff">STOCK ACTUEL</th></tr>`+list.map(a=>`<tr><td>${a.CODE}</td><td>${a.Des}</td><td><b>${a.qty}</b></td><td>${a.pa.toLocaleString()}</td><td>${(a.qty*a.pa).toLocaleString()}</td><td style="background:#e0f2fe;font-weight:bold;text-align:center">${a.stockActuel}</td></tr>`).join('')+`</table>`;
+ } else if(type==='entree_historique'){
+   let allEntrees=[]; SHOPS_LIST.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au) allEntrees.push({...e,shop:s});});});
+   html=`<h3>📜 HISTORIQUE ENTREES - TABLEAU COMPLET</h3><table><tr><th>Date</th><th>CODE</th><th>Qté</th><th>Source</th><th>Shop</th></tr>`+allEntrees.sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,500).map(e=>`<tr><td>${new Date(e.date).toLocaleString()}</td><td>${e.CODE}</td><td>${e.qty}</td><td>${e.fournisseur||e.motif||''}</td><td>${e.shop}</td></tr>`).join('')+`</table>`;
+ } else if(type==='ca_par_client' || type==='chiffre_affaire_client'){
+   let map={}; let cnt={}; vPeriode.forEach(v=>{let nom=(v.client?.nom||v.clientNom||'Comptoir').trim()||'Comptoir'; map[nom]=(map[nom]||0)+Number(v.total||0); cnt[nom]=(cnt[nom]||0)+1;});
+   html=`<h3>👤 CA PAR CLIENT - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3><table><tr><th>Client</th><th>CA Total</th><th>Nbr achats</th><th>Panier moyen</th></tr>`+Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td><b>${k}</b></td><td>${v.toLocaleString()}</td><td>${cnt[k]}</td><td>${(v/cnt[k]).toLocaleString()}</td></tr>`).join('')+`</table>`;
+ } else if(type==='dette' || type==='dette_client'){
+   let dettes=vPeriode.filter(v=>(v.reste||0)>0);
+   let total=dettes.reduce((s,v)=>s+(v.reste||0),0);
+   html=`<h3>⚠️ DETTES CLIENTS - Total ${total.toLocaleString()} FC - ${dettes.length} dettes</h3><table><tr><th>Date</th><th>Client</th><th>Tél</th><th>Shop</th><th>Total</th><th>Payé</th><th style="background:red;color:#fff">Reste</th></tr>`+dettes.slice(0,200).map(v=>`<tr><td>${new Date(v.date).toLocaleString()}</td><td><b>${v.client?.nom||''}</b></td><td>${v.client?.tel||''}</td><td>${v._shop||SHOP}</td><td>${v.total.toLocaleString()}</td><td>${(v.montantPaye||0).toLocaleString()}</td><td style="color:red;font-weight:bold">${(v.reste||0).toLocaleString()}</td></tr>`).join('')+`</table>`;
+ } else { html=`<h3>${type} - ${vPeriode.length} ventes</h3><table><tr><th>Date</th><th>Vendeur</th><th>Total</th><th>Bénéf</th><th>Stock actuel après vente</th></tr>`+vPeriode.slice(0,100).map(v=>`<tr><td>${new Date(v.date).toLocaleString()}</td><td>${v.vendeurNom}</td><td>${v.total.toLocaleString()}</td><td>${(v.benefice||0).toLocaleString()}</td><td>${(v.items||[]).map(i=>`${i.CODE}:${stockMap[i.CODE]?.Quantite||0}`).join(', ')}</td></tr>`).join('')+`</table>`; 
+        }
+//
 function genGraph(){let data=window._lastRapportData;if(!data){alert('Génère tableau d abord');return;}let byDay={};data.vPeriode.forEach(v=>{let day=new Date(v.date).toLocaleDateString('fr-FR');byDay[day]=(byDay[day]||0)+v.total;});let labels=Object.keys(byDay);let values=Object.values(byDay);let ctx=document.getElementById('chartRapport').getContext('2d');if(chartRapport)chartRapport.destroy();chartRapport=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'CA par jour',data:values,backgroundColor:'#0b5e2f'}]}});}
 function pdfRapportOnly(){let content=document.getElementById('rapportC').innerHTML;let w=window.open('','','width=1000,height=800');w.document.write(`<html><head><title>Rapport ${SHOP}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px;font-size:11px}th{background:#111;color:#fff}</style></head><body><h2>${CURRENT_CONFIG.nom} - Rapport ${SHOP} - ${new Date().toLocaleDateString()} - V4.9.14</h2><p style="font-size:10px">Légende valorisation: Vente FC = PV x Qté, Achat = PA x Qté, Bénéf latent = Vente-Achat, Stock actuel = reste magasin</p>${content}</body></html>`);w.document.close();w.print();}
 function exportExcelRapport(){let content=document.getElementById('rapportC').innerHTML;let w=window.open('','','width=800');w.document.write(`<html><body>${content}</body></html>`);}
