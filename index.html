@@ -222,17 +222,37 @@ function genRapport(){
        }
      });
    });
-   all.sort((a,b)=>new Date(b.date)-new Date(a.date));
-   let totalQte=all.reduce((s,e)=>s+Number(e.qty||0),0);
-   let totalPA=all.reduce((s,e)=>s+Number(e.qty||0)*Number(stockMap[e.CODE]?.['Prix Achat']||e.pa||0),0);
-   html=`<h3>📥 ENTREE STOCK DETAIL ${codeFiltre?' - ['+codeFiltre.toUpperCase()+']':''}</h3>
-   <table><tr><th>Indicateur</th><th>Valeur</th></tr><tr><td>Nb entrées</td><td><b>${all.length}</b></td></tr><tr><td>Qté totale entrée</td><td><b>${totalQte.toLocaleString()}</b></td></tr><tr><td>Valeur PA totale</td><td><b>${totalPA.toLocaleString()} FC</b></td></tr></table>
-   <h4>Historique détail ${codeFiltre?'pour '+codeFiltre.toUpperCase():''} - ${all.length} lignes</h4>
-   <table><tr><th>Date</th><th>CODE</th><th>Dés</th><th>Qté</th><th>PA Unit</th><th>Total PA</th><th>Fournisseur</th><th style="background:#0ea5e9;color:#fff">STOCK ACTUEL</th><th>Shop</th></tr>`+all.slice(0,500).map(e=>{
-     let st=stockMap[e.CODE]; let pa=st?.['Prix Achat']||e.pa||0; let stockActuel=st?.Quantite||0;
-     return `<tr><td>${new Date(e.date).toLocaleString()}</td><td>${e.CODE}</td><td>${e.Designation||''}</td><td><b>${e.qty||0}</b></td><td>${pa.toLocaleString()}</td><td>${(Number(e.qty||0)*Number(pa)).toLocaleString()}</td><td>${e.fournisseur||''}</td><td style="background:#e0f2fe;font-weight:bold;text-align:center">${stockActuel}</td><td>${e.shop}</td></tr>`;
+   // Groupé par CODE comme synthèse vente
+   let map={};
+   all.forEach(e=>{
+     let st=stockMap[e.CODE];
+     if(!map[e.CODE])map[e.CODE]={CODE:e.CODE,Des:e.Designation||st?.Designation||e.CODE,qty:0,pa:st?.['Prix Achat']||e.pa||0,pv:st?.['Prix Unit']||0,stockActuel:st?.Quantite||0};
+     map[e.CODE].qty+=Number(e.qty||0);
+     // si PA change, on garde le dernier PA du stockMap
+     if(st?.['Prix Achat']) map[e.CODE].pa=st['Prix Achat'];
+     if(st?.['Prix Unit']) map[e.CODE].pv=st['Prix Unit'];
+   });
+   let list=Object.values(map).sort((a,b)=>b.qty-a.qty);
+   let totalQte=list.reduce((s,a)=>s+a.qty,0);
+   let totalPA=list.reduce((s,a)=>s+a.qty*a.pa,0);
+   let totalPV=list.reduce((s,a)=>s+a.qty*a.pv,0);
+   let totalBenef=totalPV-totalPA;
+   html=`<h3>📥 ENTREE STOCK DETAIL - ENSEMBLE ARTICLES ENTRES + MARGE - ${du.toLocaleDateString()} au ${au.toLocaleDateString()} ${codeFiltre?'['+codeFiltre.toUpperCase()+']':''}</h3>
+   <p style="background:#e0f2fe;padding:6px;border-radius:8px;font-size:11px">Légende: Qté entrée = total acheté sur période - PA = prix achat - PV = prix vente - Marge unit = PV-PA - Bénéf latent = Qté x Marge - Stock actuel = reste en magasin</p>
+   <table><tr><th>Indicateur</th><th>Montant</th></tr>
+   <tr><td>Total Qté entrée</td><td><b>${totalQte.toLocaleString()}</b></td></tr>
+   <tr><td>Valeur Achat (Qté x PA)</td><td><b>${totalPA.toLocaleString()} FC</b></td></tr>
+   <tr><td>Valeur Vente potentielle (Qté x PV)</td><td><b>${totalPV.toLocaleString()} FC</b></td></tr>
+   <tr style="background:#111;color:#fff"><td>Bénéf latent total</td><td><b>${totalBenef.toLocaleString()} FC</b></td></tr>
+   </table>
+   <h4>Détail par article entré - avec PA / PV / Marge à date</h4>
+   <table><tr><th>CODE</th><th>Désignation</th><th>Qté entrée</th><th>PA</th><th>PV</th><th>Marge unit</th><th>Total PA</th><th>Total PV</th><th>Bénéf latent</th><th>Marge %</th><th style="background:#f59e0b">STOCK ACTUEL</th></tr>`+list.map(a=>{
+     let marge=a.pv-a.pa; let benef=a.qty*marge; let margePct=a.pv?((marge/a.pv)*100).toFixed(1):0;
+     return `<tr><td>${a.CODE}</td><td>${a.Des}</td><td><b>${a.qty}</b></td><td>${a.pa.toLocaleString()}</td><td>${a.pv.toLocaleString()}</td><td style="color:#0b5e2f">${marge.toLocaleString()}</td><td>${(a.qty*a.pa).toLocaleString()}</td><td>${(a.qty*a.pv).toLocaleString()}</td><td style="color:#0b5e2f;font-weight:bold">${benef.toLocaleString()}</td><td>${margePct}%</td><td style="background:#fef3c7;font-weight:bold;text-align:center">${a.stockActuel}</td></tr>`;
    }).join('')+`</table>`;
- } else if(type==='entree_par_article' || type==='entree_article'){
+ }
+   //
+   else if(type==='entree_par_article' || type==='entree_article'){
    let codeFiltre=document.getElementById('filtreCode')?.value?.trim().toLowerCase()||'';
    let all=[];
    SHOPS_LIST.forEach(s=>{
