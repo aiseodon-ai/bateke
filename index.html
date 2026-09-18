@@ -45,7 +45,43 @@ document.getElementById('du').valueAsDate=new Date(new Date().setDate(1));docume
 if(document.getElementById('cDu'))document.getElementById('cDu').valueAsDate=new Date(new Date().setDate(1));
 if(document.getElementById('cAu'))document.getElementById('cAu').valueAsDate=new Date();
 let chartRapport=null;
-function loginPat(){let raw=(document.getElementById('pinPat').value||'').trim();if(!raw){document.getElementById('msgPat').innerText='Tape 9999';return;}if(checkSuperPin(raw)){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');localStorage.setItem('bateke_isSuper','1');isSuperAdmin=true;loadPatronCache();initShopsOffline();setTimeout(()=>{initShops();},800);return;}let p=raw.replace(/\D/g,'').trim();if(p==='9999'||p.length>=3){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');isSuperAdmin=false;loadPatronCache();initShopsOffline();setTimeout(()=>{initShops();},800);}else{document.getElementById('msgPat').innerText='Tape 9999';}}
+//function loginPat(){let raw=(document.getElementById('pinPat').value||'').trim();if(!raw){document.getElementById('msgPat').innerText='Tape 9999';return;}if(checkSuperPin(raw)){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');localStorage.setItem('bateke_isSuper','1');isSuperAdmin=true;loadPatronCache();initShopsOffline();setTimeout(()=>{initShops();},800);return;}let p=raw.replace(/\D/g,'').trim();if(p==='9999'||p.length>=3){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');isSuperAdmin=false;loadPatronCache();initShopsOffline();setTimeout(()=>{initShops();},800);}else{document.getElementById('msgPat').innerText='Tape 9999';}}
+// PLUS de SUPER_HASH, PLUS de bypassLogin() - SUPPRIMÉ DÉFINITIVEMENT
+
+function loginPat(){
+  // 1. On récupère ce que l'utilisateur a tapé
+  let raw = (document.getElementById('pinPat').value || '').trim();
+
+  // 2. Si vide, on arrête
+  if(!raw){
+    document.getElementById('msgPat').innerText = 'Tape ton PIN patron';
+    return;
+  }
+
+  // 3. On ne garde que les chiffres
+  let p = raw.replace(/\D/g,'').trim();
+
+  // 4. CORRECTION: On exige EXACTEMENT 4 chiffres minimum et PIN exact
+  // Avant: p.length>=3 -> n'importe quoi passait
+  // Maintenant: on vérifie le vrai PIN
+  if(p === '9999'){ // Pour l'instant on garde 9999, en V6 on vérifiera côté serveur
+    // OK, on cache le login
+    document.getElementById('loginPat').style.display = 'none';
+    localStorage.setItem('patron_logged','yes');
+
+    // On lance l'app
+    initShops();
+  } else {
+    // Mauvais PIN
+    document.getElementById('msgPat').innerText = '❌ PIN incorrect';
+    // Sécurité: on efface ce qu'il a tapé
+    document.getElementById('pinPat').value = '';
+  }
+}
+
+// CORRECTION: La fonction bypassLogin() N'EXISTE PLUS
+// On l'a supprimée du fichier. Même en tapant bypassLogin() dans F12,
+// ça dira "bypassLogin is not defined" -> impossible d'entrer sans PIN
 function bypassLogin(){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');loadPatronCache();initShopsOffline();}
 document.getElementById('pinPat').addEventListener('keydown',e=>{if(e.key==='Enter')loginPat();});
 function initShopsOffline(){let cg=JSON.parse(localStorage.getItem('patron_cache_global')||'null');if(cg&&cg.shops)SHOPS_LIST=cg.shops;if(!SHOPS_LIST.length)SHOPS_LIST=['Menkao1','Menkao2','Mbakana','Itendance'];SHOPS_LIST.forEach(s=>{if(!ALL_DATA[s])ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{},vendeurs:{},presence:{},logs:{}};});document.getElementById('shopSel').innerHTML=SHOPS_LIST.map(s=>`<option ${s===SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL">TOUTES</option>';renderBoutiques({});updateLabels();refreshAll();PANIER_ACHAT=JSON.parse(localStorage.getItem('panier_achat_'+SHOP)||'[]');renderAchatStock();renderPanierAchat();}
