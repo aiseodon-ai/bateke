@@ -134,8 +134,48 @@ function renderStock(){
  document.getElementById('stockT').innerHTML=f.map(p=>`<tr style="${p.actif===false?'opacity:.5;background:#fee':''}"><td>${p.CODE}</td><td class="editable" onclick="editField('${p.CODE}','Designation','${(p.Designation||'').replace(/'/g,"\\'")}')">${p.Designation} ✏️</td><td class="editable" onclick="editField('${p.CODE}','Quantite',${p.Quantite||0})">${p.Quantite} ✏️</td><td class="editable" onclick="editField('${p.CODE}','seuil',${p.seuil||3})">${p.seuil||3} ✏️</td><td class="editable" onclick="editField('${p.CODE}','Prix Unit',${p['Prix Unit']||0})">${(p['Prix Unit']||0).toLocaleString()} ✏️</td><td class="editable" onclick="editField('${p.CODE}','Prix Achat',${p['Prix Achat']||0})">${(p['Prix Achat']||0).toLocaleString()} ✏️</td><td>${((p['Prix Unit']||0)-(p['Prix Achat']||0)).toLocaleString()}</td><td>${p.actif!==false?'✅ Actif':'🚫'}</td><td><button class="btn ${p.actif!==false?'btn-r':'btn-g'}" style="width:auto" onclick="toggleActif('${p.CODE}')">${p.actif!==false?'Désactiver':'Activer'}</button> <button class="btn btn-g" style="width:auto" onclick="entree('${p.CODE}')">+Entrée</button> <button class="btn btn-r" style="width:auto" onclick="supp('${p.CODE}')">X</button></td></tr>`).join('');
 }
 function toggleActif(code){let t=SHOP==='ALL'?prompt('Boutique? '+SHOPS_LIST.join('/')):SHOP;let p=ALL_DATA[t]?.stock?.find(x=>x.CODE===code);let cur=p?.actif!==false;if(confirm(cur?'Désactiver '+code+'?':'Activer '+code+'?')){db.ref('shops/'+t+'/stock/'+code).update({actif:!cur});}}
-function editField(code,field,oldVal){let nv=prompt(`Modifier ${field} pour ${code}\nAncien: ${oldVal}\nNouveau:`,oldVal);if(nv===null||nv==='')return;let val=field==='Designation'?nv.trim():Number(nv);let t=SHOP==='ALL'?prompt('Boutique cible? '+SHOPS_LIST.join('/')):SHOP;if(!t)return;db.ref('shops/'+t+'/stock/'+code).update({[field]:val});}
-function entree(code){let qty=parseInt(prompt('Qté entrée '+code+'?'));if(!qty)return;let s=SHOP==='ALL'?prompt('Boutique? '+SHOPS_LIST.join('/')):SHOP;let qui=prompt('Qui?','PATRON');db.ref('shops/'+s+'/stock/'+code).once('value').then(snap=>{let p=snap.val();if(p){db.ref('shops/'+s+'/stock/'+code).update({Quantite:(p.Quantite||0)+qty});db.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:code,Designation:p.Designation,boutique:s,qty:qty,vendeur:qui});}});}
+//function editField(code,field,oldVal){let nv=prompt(`Modifier ${field} pour ${code}\nAncien: ${oldVal}\nNouveau:`,oldVal);if(nv===null||nv==='')return;let val=field==='Designation'?nv.trim():Number(nv);let t=SHOP==='ALL'?prompt('Boutique cible? '+SHOPS_LIST.join('/')):SHOP;if(!t)return;db.ref('shops/'+t+'/stock/'+code).update({[field]:val});}
+async function editField(code,field,oldVal){
+  let nv=prompt(`Modifier ${field} pour ${code}\nAncien: ${oldVal}\nNouveau:`,oldVal);
+  if(nv===null||nv==='') return;
+  let val=field==='Designation'?nv.trim():Number(nv);
+  let t=SHOP==='ALL'?prompt('Boutique cible? '+SHOPS_LIST.join('/')):SHOP;
+  if(!t) return;
+  if(field==='Quantite'){
+    let ref=db.ref('shops/'+t+'/stock/'+code+'/Quantite');
+    let res=await ref.transaction(current=>{ return val; });
+    if(res.committed) alert('✅ Quantité mise à jour');
+    else alert('❌ Conflit, réessaie');
+  }else{
+    db.ref('shops/'+t+'/stock/'+code).update({[field]:val});
+  }
+}
+//function entree(code){let qty=parseInt(prompt('Qté entrée '+code+'?'));if(!qty)return;let s=SHOP==='ALL'?prompt('Boutique? '+SHOPS_LIST.join('/')):SHOP;let qui=prompt('Qui?','PATRON');db.ref('shops/'+s+'/stock/'+code).once('value').then(snap=>{let p=snap.val();if(p){db.ref('shops/'+s+'/stock/'+code).update({Quantite:(p.Quantite||0)+qty});db.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:code,Designation:p.Designation,boutique:s,qty:qty,vendeur:qui});}});}
+async function entree(code){
+  let qty=parseInt(prompt('Qté entrée '+code+'?'));
+  if(!qty) return;
+  let s=SHOP==='ALL'?prompt('Boutique? '+SHOPS_LIST.join('/')):SHOP;
+  if(!s) return;
+  let qui=prompt('Qui?','PATRON');
+  try{
+    let ref=db.ref('shops/'+s+'/stock/'+code+'/Quantite');
+    let result=await ref.transaction(currentQte=>{
+      if(currentQte===null) return qty;
+      return currentQte + qty;
+    });
+    if(result.committed){
+      db.ref('shops/'+s+'/stock/'+code).once('value').then(snap=>{
+        let p=snap.val();
+        db.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:code,Designation:p?.Designation||code,boutique:s,qty:qty,vendeur:qui});
+      });
+      alert(`✅ Entrée OK: +${qty}. Nouveau stock: ${result.snapshot.val()}`);
+    }else{
+      alert('❌ Entrée annulée');
+    }
+  }catch(e){
+    alert('Erreur: '+e.message);
+  }
+}
 function supp(code){if(!confirm('Supprimer '+code+'?'))return;let s=SHOP==='ALL'?prompt('Boutique?'):SHOP;db.ref('shops/'+s+'/stock/'+code).remove();}
 function saveNewArt(){let code=document.getElementById('newCode').value.trim();if(!code)return;let data={CODE:code,Designation:document.getElementById('newDes').value,'Prix Unit':Number(document.getElementById('newPV').value)||0,'Prix Achat':Number(document.getElementById('newPA').value)||0,Quantite:Number(document.getElementById('newQte').value)||0,seuil:Number(document.getElementById('newSeuil').value)||3,actif:document.getElementById('newActif').checked};let s=SHOP==='ALL'?prompt('Boutique?'):SHOP;db.ref('shops/'+s+'/stock/'+code).set(data);closeModal('modalArt');}
 
