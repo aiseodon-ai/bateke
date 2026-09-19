@@ -98,6 +98,10 @@ input,select{padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;mar
 <div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Heure</th><th>Type</th><th>Montant</th><th>Motif</th></tr></thead><tbody id="caisseList"></tbody></table></div></div></div>
 <div id="synthese" class="sec"><div class="card"><h4>📊 Ma Synthèse</h4>Du: <input type="date" id="du"> Au: <input type="date" id="au"><button class="btn btn-g" onclick="genSyntheseVendeur()">Générer</button><div id="syntheseC" style="margin-top:10px;overflow:auto"></div><button class="btn btn-y" onclick="pdfSynthese()">📄 PDF</button></div></div>
 <script>
+function esc(t){
+  if(t===null||t===undefined) return '';
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 const _shopFromUrl = new URLSearchParams(window.location.search).get('shop');
 if(_shopFromUrl){ localStorage.setItem('vendeur_shop', _shopFromUrl); localStorage.setItem('vendeur_shop_locked', _shopFromUrl); }
 const _lockedShop = localStorage.getItem('vendeur_shop_locked');
