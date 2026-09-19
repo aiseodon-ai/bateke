@@ -60,8 +60,8 @@ if(p==='9999'){
  }
 }
 // La fonction bypassLogin() est supprimée - ne la recrée pas
-function bypassLogin(){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');loadPatronCache();initShopsOffline();}
-document.getElementById('pinPat').addEventListener('keydown',e=>{if(e.key==='Enter')loginPat();});
+//function bypassLogin(){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');loadPatronCache();initShopsOffline();}
+//document.getElementById('pinPat').addEventListener('keydown',e=>{if(e.key==='Enter')loginPat();});
 function initShopsOffline(){let cg=JSON.parse(localStorage.getItem('patron_cache_global')||'null');if(cg&&cg.shops)SHOPS_LIST=cg.shops;if(!SHOPS_LIST.length)SHOPS_LIST=['Menkao1','Menkao2','Mbakana','Itendance'];SHOPS_LIST.forEach(s=>{if(!ALL_DATA[s])ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{},vendeurs:{},presence:{},logs:{}};});document.getElementById('shopSel').innerHTML=SHOPS_LIST.map(s=>`<option ${s===SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL">TOUTES</option>';renderBoutiques({});updateLabels();refreshAll();PANIER_ACHAT=JSON.parse(localStorage.getItem('panier_achat_'+SHOP)||'[]');renderAchatStock();renderPanierAchat();}
 function initShops(){db.ref('shops').on('value',snap=>{let data=snap.val()||{};SHOPS_LIST=Object.keys(data);if(!SHOPS_LIST.length)SHOPS_LIST=['Menkao1','Menkao2','Mbakana','Itendance'];SHOPS_LIST.forEach(s=>{if(!ALL_DATA[s])ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{},vendeurs:{},presence:{},logs:{}};listenShop(s);});document.getElementById('shopSel').innerHTML=SHOPS_LIST.map(s=>`<option ${s===SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL">TOUTES</option>';renderBoutiques(data);updateLabels();refreshAll();loadConfig();savePatronCache();});}
 function switchShop(){SHOP=document.getElementById('shopSel').value;localStorage.setItem('patron_shop',SHOP);PANIER_ACHAT=JSON.parse(localStorage.getItem('panier_achat_'+SHOP)||'[]');updateLabels();refreshAll();renderAchatStock();renderPanierAchat();}
