@@ -290,16 +290,85 @@ function selectArt(code){let p=STOCK.find(x=>x.CODE===code);if(!p)return;documen
 function addPanier(){let code=document.getElementById('codeArt').value;if(!code)return alert('Choisis article');let p=STOCK.find(x=>x.CODE===code);if(!p)return;if(p.actif===false)return alert('Article désactivé');let qte=parseInt(document.getElementById('qteArt').value)||1;if(qte>p.Quantite)return alert('Stock insuffisant: '+p.Quantite);let exist=PANIER.find(x=>x.CODE===code);if(exist)exist.qty+=qte;else PANIER.push({CODE:p.CODE,Designation:p.Designation,Prix:p['Prix Unit'],PA:p['Prix Achat']||Math.round(p['Prix Unit']*0.7),qty:qte});renderPanier();clearArticleFields();}
 function clearArticleFields(){document.getElementById('codeArt').value='';document.getElementById('pvArt').value='';document.getElementById('searchArt').value='';document.getElementById('qteArt').value=1;}
 function renderPanier(){ if(!PANIER.length){ document.getElementById('panierList').innerHTML='Panier vide'; document.getElementById('totalPanier').innerText='0 FC'; document.getElementById('totalFinal').innerText='0 FC'; document.getElementById('remiseInfo').innerText=''; document.getElementById('remiseInfoFC').innerText=''; return; } let {brut,remisePct,remiseVal,final}=getTotals(); document.getElementById('panierList').innerHTML=PANIER.map((it,i)=>`<div class="panierItem"><span>${it.CODE} ${it.Designation} x${it.qty}</span><span>${(it.qty*it.Prix).toLocaleString()} FC <button onclick="PANIER.splice(${i},1);renderPanier()" style="background:red;color:#fff;border:none;border-radius:4px">X</button></span></div>`).join(''); document.getElementById('totalPanier').innerText=brut.toLocaleString()+' FC'; if(remisePct>0){ document.getElementById('remiseInfo').innerText=`Remise ${remisePct}%`; document.getElementById('remiseInfoFC').innerText=`- ${remiseVal.toLocaleString()} FC`; } else { document.getElementById('remiseInfo').innerText='Pas de remise'; document.getElementById('remiseInfoFC').innerText=''; } document.getElementById('totalFinal').innerText=final.toLocaleString()+' FC à payer'; }
-function validerVente(){
+// fonction validervente
+async function validerVente(){
  if(BLOCKED_PINS_CACHE.includes(CURRENT_VENDEUR?.pin)){ alert('🚫 Compte bloqué'); logoutAll(); return; }
- if(!PANIER.length)return alert('Panier vide');let {brut,remisePct,remiseVal,final}=getTotals();let benef=PANIER.reduce((s,i)=>s+i.qty*(i.Prix-(i.PA||0)),0)-remiseVal;
- let clientNom=document.getElementById('clientNom').value||'Comptoir';let clientTel=document.getElementById('clientTel').value||'';let payMode=document.getElementById('payMode').value;let montantPaye=parseFloat(document.getElementById('montantPaye').value)||final;
- let id=Date.now(); let vente={date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'inconnu',vendeurNom:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'inconnu',vendeurPin:CURRENT_VENDEUR?CURRENT_VENDEUR.pin:'',client:{nom:clientNom,tel:clientTel},items:PANIER,totalBrut:brut,remisePct:remisePct,remiseVal:remiseVal,total:final,benefice:benef,payement:payMode,montantPaye:montantPaye,reste:final-montantPaye, offline:!FIREBASE_CONNECTED};
- let stockUpdates=[]; PANIER.forEach(it=>{let st=STOCK.find(s=>s.CODE===it.CODE);if(st){let newQte=st.Quantite-it.qty; stockUpdates.push({CODE:it.CODE,newQte:newQte}); st.Quantite=newQte; }});
- if(FIREBASE_CONNECTED){ db.ref('shops/'+SHOP+'/ventes/'+id).set(vente).then(()=>{ stockUpdates.forEach(u=>{ db.ref('shops/'+SHOP+'/stock/'+u.CODE).update({Quantite:u.newQte}); }); saveStockCache(); }); logPresence('VENTE', vente.total+' FC'); }
- else { OFFLINE_QUEUE.push({type:'vente',shop:SHOP,id:id,data:vente,stockUpdates:stockUpdates}); saveQueue(); saveStockCache(); VENTES.push(vente); }
- PANIER=[];renderPanier();clearArticleFields();document.getElementById('clientNom').value='';document.getElementById('clientTel').value='';document.getElementById('montantPaye').value='';document.getElementById('remise').value=0; renderVentesJour(); renderStock(); updateKPI(); updateOfflineUI(); alert(vente.offline? '✅ Vente OFFLINE (12h max): '+final.toLocaleString()+' FC' : '✅ Vente: '+final.toLocaleString()+' FC');
+ if(!PANIER.length) return alert('Panier vide');
+ let {brut,remisePct,remiseVal,final}=getTotals();
+ let benef=PANIER.reduce((s,i)=>s+i.qty*(i.Prix-(i.PA||0)),0)-remiseVal;
+ let clientNom=document.getElementById('clientNom').value||'Comptoir';
+ let clientTel=document.getElementById('clientTel').value||'';
+ let payMode=document.getElementById('payMode').value;
+ let montantPaye=parseFloat(document.getElementById('montantPaye').value)||final;
+
+ // 1. VERIFICATION STOCK AVANT TOUT - si offline on ne vérifie pas, on met en queue
+ if(FIREBASE_CONNECTED){
+   for(let it of PANIER){
+     let snap=await db.ref('shops/'+SHOP+'/stock/'+it.CODE+'/Quantite').once('value');
+     let stockActuel=snap.val();
+     if(stockActuel===null){ alert(`❌ Article ${it.CODE} n'existe plus`); return; }
+     if(stockActuel < it.qty){ alert(`❌ STOCK INSUFFISANT pour ${it.CODE}\nStock: ${stockActuel} | Demandé: ${it.qty}`); return; }
+   }
+ }
+
+ let id=Date.now();
+ let vente={date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'inconnu',vendeurNom:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'inconnu',vendeurPin:CURRENT_VENDEUR?CURRENT_VENDEUR.pin:'',client:{nom:clientNom,tel:clientTel},items:PANIER,totalBrut:brut,remisePct:remisePct,remiseVal:remiseVal,total:final,benefice:benef,payement:payMode,montantPaye:montantPaye,reste:final-montantPaye, offline:!FIREBASE_CONNECTED};
+
+ // 2. CAS OFFLINE - on garde ton système de queue existant
+ if(!FIREBASE_CONNECTED){
+   let stockUpdates=[];
+   PANIER.forEach(it=>{
+     let st=STOCK.find(s=>s.CODE===it.CODE);
+     if(st){ stockUpdates.push({CODE:it.CODE,newQte:st.Quantite-it.qty}); st.Quantite-=it.qty; }
+   });
+   OFFLINE_QUEUE.push({type:'vente',shop:SHOP,id:id,data:vente,stockUpdates:stockUpdates});
+   saveQueue(); saveStockCache(); VENTES.push(vente);
+   PANIER=[];renderPanier();clearArticleFields();document.getElementById('clientNom').value='';document.getElementById('clientTel').value='';document.getElementById('montantPaye').value='';document.getElementById('remise').value=0; renderVentesJour(); renderStock(); updateKPI(); updateOfflineUI();
+   alert('✅ Vente OFFLINE (12h max): '+final.toLocaleString()+' FC');
+   return;
+ }
+
+ // 3. CAS ONLINE - TRANSACTION SECURISEE POUR CHAQUE ARTICLE
+ try{
+   // On décrémente chaque article avec transaction, un par un
+   for(let it of PANIER){
+     let ref=db.ref('shops/'+SHOP+'/stock/'+it.CODE+'/Quantite');
+     let result=await ref.transaction(currentQte=>{
+       if(currentQte===null) return; // produit supprimé -> annule
+       if(currentQte < it.qty) return; // stock insuffisant -> annule
+       return currentQte - it.qty;
+     });
+     if(!result.committed){
+       // Une des transactions a échoué, on doit remettre les précédentes (rollback simple: on ré-ajoute)
+       alert(`❌ VENTE ANNULEE - Stock insuffisant pour ${it.CODE} pendant la vente. Vente annulée.`);
+       // Rollback des articles déjà décrémentés
+       for(let prev of PANIER){
+         if(prev===it) break;
+         await db.ref('shops/'+SHOP+'/stock/'+prev.CODE+'/Quantite').transaction(q=>{ return (q||0)+prev.qty; });
+       }
+       return;
+     }
+     // Met à jour le cache local
+     let st=STOCK.find(s=>s.CODE===it.CODE);
+     if(st) st.Quantite=result.snapshot.val();
+   }
+
+   // Toutes les transactions OK, on enregistre la vente
+   await db.ref('shops/'+SHOP+'/ventes/'+id).set(vente);
+   saveStockCache();
+   logPresence('VENTE', vente.total+' FC');
+   alert('✅ Vente SECURISEE: '+final.toLocaleString()+' FC');
+
+ }catch(e){
+   alert('❌ Erreur vente: '+e.message);
+   return;
+ }
+
+ // Reset UI - ton code d'origine
+ PANIER=[];renderPanier();clearArticleFields();document.getElementById('clientNom').value='';document.getElementById('clientTel').value='';document.getElementById('montantPaye').value='';document.getElementById('remise').value=0; renderVentesJour(); renderStock(); updateKPI(); updateOfflineUI();
 }
+
+ //
 function renderVentesJour(){ let today=new Date().toDateString(); let vToday=VENTES.filter(v=>new Date(v.date).toDateString()===today).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20); let vQueue=OFFLINE_QUEUE.filter(q=>q.type==='vente').map(q=>q.data).filter(v=>new Date(v.date).toDateString()===today); let all=[...vToday,...vQueue].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20); document.getElementById('ventesJour').innerHTML=all.map(v=>{ let syncLabel=v.offline? '<span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:10px">OFFLINE</span>' : '<span style="background:#22c55e;color:#000;padding:2px 6px;border-radius:10px">SYNC</span>'; return `<tr><td>${new Date(v.date).toLocaleTimeString()}</td><td>${v.vendeurNom||v.vendeur||'?'}</td><td>${v.client?.nom||''}</td><td>${(v.items||[]).map(i=>i.CODE+' x'+i.qty).join(', ')}</td><td>${(v.total||0).toLocaleString()}</td><td>${syncLabel}</td></tr>`; }).join('')||'<tr><td colspan=6>Aucune vente</td></tr>'; }
 //function renderStock(){let q=(document.getElementById('searchS').value||'').toLowerCase();let f=STOCK.filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).slice(0,200);document.getElementById('stockT').innerHTML=f.map(p=>{let actif=p.actif!==false;let statut=p.Quantite<= (p.seuil||3)?`<span style="color:red;font-weight:bold">⚠️ Faible</span>`:`<span style="color:green">OK</span>`;return `<tr style="${!actif?'background:#fee;opacity:0.6':''}"><td>${p.CODE}</td><td>${p.Designation}</td><td>${p.Quantite}</td><td>${p['Prix Unit']?.toLocaleString()}</td><td>${statut}</td><td>${actif?'✅ Actif':'🚫 Désactivé'}</td></tr>`;}).join('');}
 function renderStock(){let q=(document.getElementById('searchS').value||'').toLowerCase();let f=STOCK.filter(p=>p.actif!==false).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).sort((a,b)=>(a.CODE||'').localeCompare(b.CODE||''));document.getElementById('stockT').innerHTML=f.map(p=>{let actif=p.actif!==false;let statut=p.Quantite<= (p.seuil||3)?`<span style="color:red;font-weight:bold">⚠️ Faible</span>`:`<span style="color:green">OK</span>`;return `<tr style="${!actif?'background:#fee;opacity:0.6':''}"><td>${p.CODE}</td><td>${p.Designation}</td><td>${p.Quantite}</td><td>${p['Prix Unit']?.toLocaleString()}</td><td>${statut}</td><td>${actif?'✅ Actif':'🚫 Désactivé'}</td></tr>`;}).join('');}
@@ -329,7 +398,44 @@ function printDoc(htmlContent){let iframe=document.createElement('iframe');ifram
 function printDevisDoc(id){let d=DEVIS.find(x=>x._id===id);if(!d)return;let cfg=d.config||CONFIG_ENT;let logo=cfg.logo?`<img src="${cfg.logo}" style="width:90px">`:'';let html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${d.numero}</title><style>body{font-family:Arial;font-size:13px;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #000;padding:8px}th{background:#1e293b;color:#fff}</style></head><body><div style="display:flex;justify-content:space-between"><div><h2>${cfg.nom}</h2>${cfg.adresse||''}<br>Tel:${cfg.tel||''}</div><div>${logo}</div></div><hr><center><h3 style="background:#0b5e2f;color:#fff;padding:8px">DEVIS ${d.numero} - ${d.devise||'FC'}</h3>Taux: ${d.taux||'1'} - Date:${new Date(d.date).toLocaleDateString('fr-FR')}</center>Client:<b>${d.client?.nom}</b><br><table><tr><th>CODE</th><th>Qté</th><th>PU FC</th><th>Total FC</th></tr>${d.items.map(it=>`<tr><td>${it.CODE}</td><td>${it.qty}</td><td>${it.Prix.toLocaleString()}</td><td>${(it.qty*it.Prix).toLocaleString()}</td></tr>`).join('')}</table><div style="text-align:right">Total FC:${(d.totalTTC_FC||0).toLocaleString()}<br><b>TTC ${d.devise||'FC'}: ${(d.totalTTC||0).toLocaleString()} ${d.devise||'FC'}</b></div></body></html>`;printDoc(html);}
 function printFactDoc(id){let f=FACTURES.find(x=>x._id===id);if(!f)return;let cfg=f.config||CONFIG_ENT;let logo=cfg.logo?`<img src="${cfg.logo}" style="width:90px">`:'';let html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${f.numero}</title><style>body{font-family:Arial;font-size:13px;padding:20px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #000;padding:8px}th{background:#1e293b;color:#fff}</style></head><body><div style="display:flex;justify-content:space-between"><div><h2>${cfg.nom}</h2>${cfg.adresse||''}<br>Tel:${cfg.tel||''}</div><div>${logo}</div></div><hr><center><h3 style="background:#0b5e2f;color:#fff;padding:8px">FACTURE ${f.numero} - ${f.devise||'FC'}</h3>Taux: ${f.taux||'1'}</center>Client:<b>${f.client?.nom}</b><br><table><tr><th>CODE</th><th>Qté</th><th>PU FC</th><th>Total FC</th></tr>${f.items.map(it=>`<tr><td>${it.CODE}</td><td>${it.qty}</td><td>${it.Prix.toLocaleString()}</td><td>${(it.qty*it.Prix).toLocaleString()}</td></tr>`).join('')}</table><div style="text-align:right">Total FC:${(f.totalTTC_FC||0).toLocaleString()}<br><b>TTC ${f.devise||'FC'}: ${(f.totalTTC||0).toLocaleString()} ${f.devise||'FC'}</b></div></body></html>`;printDoc(html);}
 function renderPanierFact(){if(!PANIER_FACT.length){document.getElementById('panierFact').innerHTML='Panier facture vide';document.getElementById('htFact').innerText='0';document.getElementById('tvaValFact').innerText='0';document.getElementById('totalFact').innerText='0';document.getElementById('convertInfoFact').innerText='';return;}let brut=PANIER_FACT.reduce((s,i)=>s+i.qty*i.Prix,0);let rem=parseFloat(document.getElementById('remiseFact').value)||0;let tvaOn=document.getElementById('tvaFact').value==='oui';let remVal=brut*rem/100;let base=brut-remVal;let tva=tvaOn?base*0.16:0;let ttcFC=base+tva;let devise=document.getElementById('deviseFact').value;let ttcDevise=convertFCtoDevise(ttcFC,devise);let taux=getTaux(devise);document.getElementById('panierFact').innerHTML=PANIER_FACT.map((it,i)=>`<div class="panierItem"><span>${it.CODE} x${it.qty}</span><span>${(it.qty*it.Prix).toLocaleString()} FC <button onclick="PANIER_FACT.splice(${i},1);renderPanierFact()" style="background:red;color:#fff;border:none">X</button></span></div>`).join('');document.getElementById('htFact').innerText=base.toLocaleString();document.getElementById('tvaValFact').innerText=tva.toLocaleString();document.getElementById('totalFact').innerText=devise==='FC'?ttcFC.toLocaleString()+' FC':(taux?ttcDevise.toLocaleString()+' '+devise:'Entre taux');document.getElementById('convertInfoFact').innerText=devise!=='FC'&&taux?`Taux: 1 ${devise} = ${taux} FC | FC: ${ttcFC.toLocaleString()}`:(devise!=='FC'?'⚠️ Taux manquant':'');}
-function validerFacture(){if(!PANIER_FACT.length)return alert('Vide');if(!document.getElementById('clientNomFact').value)return alert('Nom client');let brut=PANIER_FACT.reduce((s,i)=>s+i.qty*i.Prix,0);let rem=parseFloat(document.getElementById('remiseFact').value)||0;let tvaOn=document.getElementById('tvaFact').value==='oui';let remVal=brut*rem/100;let base=brut-remVal;let tva=tvaOn?base*0.16:0;let ttcFC=base+tva;let devise=document.getElementById('deviseFact').value;let taux=parseFloat(document.getElementById('tauxFact').value)||getTaux(devise);if(devise!=='FC'&&!taux)return alert('Taux obligatoire');let ttcDevise=convertFCtoDevise(ttcFC,devise);let numero='FACT-'+SHOP+'-'+new Date().getFullYear()+'-'+(FACTURES.length+1).toString().padStart(4,'0');let f={numero,date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',vendeurNom:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',client:{nom:document.getElementById('clientNomFact').value,tel:document.getElementById('clientTelFact').value,rccm:document.getElementById('clientRccmFact').value},items:PANIER_FACT,totalHT:brut,remisePct:rem,remiseVal:remVal,baseHT:base,tva,totalTTC:ttcDevise,totalTTC_FC:ttcFC,totalBrut:brut,tvaAppliquee:tvaOn,devise,taux,config:{...CONFIG_ENT}};db.ref('shops/'+SHOP+'/factures/'+Date.now()).set(f).then(()=>{let vente={date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',vendeurNom:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',vendeurPin:CURRENT_VENDEUR?CURRENT_VENDEUR.pin:'',items:PANIER_FACT,totalBrut:brut,total:ttcFC,totalDevise:ttcDevise,devise,taux,facture:numero};db.ref('shops/'+SHOP+'/ventes/'+Date.now()).set(vente);PANIER_FACT.forEach(it=>{let st=STOCK.find(s=>s.CODE===it.CODE);if(st)db.ref('shops/'+SHOP+'/stock/'+it.CODE).update({Quantite:st.Quantite-it.qty});});PANIER_FACT=[];renderPanierFact();alert('Facture '+numero);});}
+//function validerFacture(){if(!PANIER_FACT.length)return alert('Vide');if(!document.getElementById('clientNomFact').value)return alert('Nom client');let brut=PANIER_FACT.reduce((s,i)=>s+i.qty*i.Prix,0);let rem=parseFloat(document.getElementById('remiseFact').value)||0;let tvaOn=document.getElementById('tvaFact').value==='oui';let remVal=brut*rem/100;let base=brut-remVal;let tva=tvaOn?base*0.16:0;let ttcFC=base+tva;let devise=document.getElementById('deviseFact').value;let taux=parseFloat(document.getElementById('tauxFact').value)||getTaux(devise);if(devise!=='FC'&&!taux)return alert('Taux obligatoire');let ttcDevise=convertFCtoDevise(ttcFC,devise);let numero='FACT-'+SHOP+'-'+new Date().getFullYear()+'-'+(FACTURES.length+1).toString().padStart(4,'0');let f={numero,date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',vendeurNom:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',client:{nom:document.getElementById('clientNomFact').value,tel:document.getElementById('clientTelFact').value,rccm:document.getElementById('clientRccmFact').value},items:PANIER_FACT,totalHT:brut,remisePct:rem,remiseVal:remVal,baseHT:base,tva,totalTTC:ttcDevise,totalTTC_FC:ttcFC,totalBrut:brut,tvaAppliquee:tvaOn,devise,taux,config:{...CONFIG_ENT}};db.ref('shops/'+SHOP+'/factures/'+Date.now()).set(f).then(()=>{let vente={date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',vendeurNom:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',vendeurPin:CURRENT_VENDEUR?CURRENT_VENDEUR.pin:'',items:PANIER_FACT,totalBrut:brut,total:ttcFC,totalDevise:ttcDevise,devise,taux,facture:numero};db.ref('shops/'+SHOP+'/ventes/'+Date.now()).set(vente);PANIER_FACT.forEach(it=>{let st=STOCK.find(s=>s.CODE===it.CODE);if(st)db.ref('shops/'+SHOP+'/stock/'+it.CODE).update({Quantite:st.Quantite-it.qty});});PANIER_FACT=[];renderPanierFact();alert('Facture '+numero);});}
+async function validerFacture(){
+ if(!PANIER_FACT.length) return alert('Vide');
+ if(!document.getElementById('clientNomFact').value) return alert('Nom client');
+ let brut=PANIER_FACT.reduce((s,i)=>s+i.qty*i.Prix,0);
+ let rem=parseFloat(document.getElementById('remiseFact').value)||0;
+ let tvaOn=document.getElementById('tvaFact').value==='oui';
+ let remVal=brut*rem/100;let base=brut-remVal;let tva=tvaOn?base*0.16:0;let ttcFC=base+tva;
+ let devise=document.getElementById('deviseFact').value;let taux=parseFloat(document.getElementById('tauxFact').value)||getTaux(devise);
+ if(devise!=='FC'&&!taux) return alert('Taux obligatoire');
+ let ttcDevise=convertFCtoDevise(ttcFC,devise);
+ // VERIF STOCK
+ if(FIREBASE_CONNECTED){
+   for(let it of PANIER_FACT){
+     let snap=await db.ref('shops/'+SHOP+'/stock/'+it.CODE+'/Quantite').once('value');
+     if((snap.val()||0) < it.qty){ alert(`❌ STOCK INSUFFISANT ${it.CODE} Stock:${snap.val()} Demande:${it.qty}`); return; }
+   }
+ }
+ let numero='FACT-'+SHOP+'-'+new Date().getFullYear()+'-'+(FACTURES.length+1).toString().padStart(4,'0');
+ let f={numero,date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',vendeurNom:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',client:{nom:document.getElementById('clientNomFact').value,tel:document.getElementById('clientTelFact').value,rccm:document.getElementById('clientRccmFact').value},items:PANIER_FACT,totalHT:brut,remisePct:rem,remiseVal:remVal,baseHT:base,tva,totalTTC:ttcDevise,totalTTC_FC:ttcFC,totalBrut:brut,tvaAppliquee:tvaOn,devise,taux,config:{...CONFIG_ENT}};
+ // TRANSACTION STOCK
+ if(FIREBASE_CONNECTED){
+   for(let it of PANIER_FACT){
+     let ref=db.ref('shops/'+SHOP+'/stock/'+it.CODE+'/Quantite');
+     let result=await ref.transaction(q=>{ if(q===null||q<it.qty) return; return q-it.qty; });
+     if(!result.committed){ alert('❌ Facture annulée stock insuffisant '+it.CODE); return; }
+     let st=STOCK.find(s=>s.CODE===it.CODE); if(st) st.Quantite=result.snapshot.val();
+   }
+ }
+ db.ref('shops/'+SHOP+'/factures/'+Date.now()).set(f).then(()=>{
+   let vente={date:new Date().toISOString(),boutique:SHOP,vendeur:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',vendeurNom:CURRENT_VENDEUR?CURRENT_VENDEUR.nom:'',vendeurPin:CURRENT_VENDEUR?CURRENT_VENDEUR.pin:'',items:PANIER_FACT,totalBrut:brut,total:ttcFC,totalDevise:ttcDevise,devise,taux,facture:numero};
+   db.ref('shops/'+SHOP+'/ventes/'+Date.now()).set(vente);
+   PANIER_FACT=[];renderPanierFact();alert('Facture SECURISEE '+numero);
+ });
+}
+
+ 
+ //
 function renderFactList(){document.getElementById('factList').innerHTML=FACTURES.slice(0,30).map(f=>`<tr><td>${f.numero}</td><td>${f.client?.nom}</td><td>${(f.totalTTC||0).toLocaleString()} ${f.devise||'FC'}</td><td>${f.devise||'FC'}</td><td>${f.taux||''}</td><td><button class="btn btn-y" style="width:auto;padding:4px" onclick="printFactDoc('${f._id}')">PDF</button></td></tr>`).join('')||'<tr><td colspan=6>Aucune</td></tr>';}
 document.getElementById('modeFact')?.addEventListener('change',e=>{let sel=document.getElementById('selectDevisFact');sel.style.display=e.target.value==='Depuis devis'?'block':'none';});
 updateOfflineUI();
