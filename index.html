@@ -47,17 +47,17 @@ if(document.getElementById('cAu'))document.getElementById('cAu').valueAsDate=new
 let chartRapport=null;
 //function loginPat(){let raw=(document.getElementById('pinPat').value||'').trim();if(!raw){document.getElementById('msgPat').innerText='Tape 9999';return;}if(checkSuperPin(raw)){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');localStorage.setItem('bateke_isSuper','1');isSuperAdmin=true;loadPatronCache();initShopsOffline();setTimeout(()=>{initShops();},800);return;}let p=raw.replace(/\D/g,'').trim();if(p==='9999'||p.length>=3){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');isSuperAdmin=false;loadPatronCache();initShopsOffline();setTimeout(()=>{initShops();},800);}else{document.getElementById('msgPat').innerText='Tape 9999';}}
 function loginPat(){
-  let raw=(document.getElementById('pinPat').value||'').trim();
-  if(!raw){document.getElementById('msgPat').innerText='Tape ton PIN';return;}
-  let p=raw.replace(/\D/g,'').trim();
-  if(p==='9999'){
-    document.getElementById('loginPat').style.display='none';
-    localStorage.setItem('patron_logged','yes');
-    initShops();
-  }else{
-    document.getElementById('msgPat').innerText='❌ PIN incorrect';
-    document.getElementById('pinPat').value='';
-  }
+let raw=(document.getElementById('pinPat').value||'').trim();
+if(!raw){document.getElementById('msgPat').innerText='Tape ton PIN';return;}
+let p=raw.replace(/\D/g,'').trim();
+if(p==='9999'){
+  document.getElementById('loginPat').style.display='none';
+  localStorage.setItem('patron_logged','yes');
+  initShops();
+}else{
+  document.getElementById('msgPat').innerText='❌ PIN incorrect';
+  document.getElementById('pinPat').value='';
+ }
 }
 // La fonction bypassLogin() est supprimée - ne la recrée pas
 function bypassLogin(){document.getElementById('loginPat').style.display='none';localStorage.setItem('patron_logged','yes');loadPatronCache();initShopsOffline();}
