@@ -144,9 +144,23 @@ function renderStock(){
 function toggleActif(code){let t=SHOP==='ALL'?prompt('Boutique? '+SHOPS_LIST.join('/')):SHOP;let p=ALL_DATA[t]?.stock?.find(x=>x.CODE===code);let cur=p?.actif!==false;if(confirm(cur?'Désactiver '+code+'?':'Activer '+code+'?')){db.ref('shops/'+t+'/stock/'+code).update({actif:!cur});}}
 //function editField(code,field,oldVal){let nv=prompt(`Modifier ${field} pour ${code}\nAncien: ${oldVal}\nNouveau:`,oldVal);if(nv===null||nv==='')return;let val=field==='Designation'?nv.trim():Number(nv);let t=SHOP==='ALL'?prompt('Boutique cible? '+SHOPS_LIST.join('/')):SHOP;if(!t)return;db.ref('shops/'+t+'/stock/'+code).update({[field]:val});}
 async function editField(code,field,oldVal){
-  let nv=prompt(`Modifier ${field} pour ${code}\nAncien: ${oldVal}\nNouveau:`,oldVal);
+  let safeOld = esc(oldVal);
+  let safeCode = esc(code);
+  let nv=prompt(`Modifier ${field} pour ${safeCode}\nAncien: ${safeOld}\nNouveau:`, oldVal);
   if(nv===null||nv==='') return;
-  let val=field==='Designation'?nv.trim():Number(nv);
+
+  // Anti-XSS à l'entrée : on refuse < > dans Designation
+  let val;
+  if(field==='Designation'){
+    if(/[<>]/.test(nv)){
+      alert('⛔ Caractères < > interdits dans la désignation');
+      return;
+    }
+    val = nv.trim();
+  } else {
+    val = Number(nv);
+  }
+
   let t=SHOP==='ALL'?prompt('Boutique cible? '+SHOPS_LIST.join('/')):SHOP;
   if(!t) return;
   if(field==='Quantite'){
