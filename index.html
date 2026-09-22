@@ -99,7 +99,7 @@ function updateKPIs(){let data=getFiltered();let today=new Date().toDateString()
 function fmtVu(ts){if(!ts)return'jamais';let diff=Date.now()-ts;let m=Math.floor(diff/60000);if(m<1)return'à l’instant';if(m<60)return'il y a '+m+' min';let h=Math.floor(m/60);if(h<24)return'il y a '+h+'h';return'il y a '+Math.floor(h/24)+'j';}
 function renderPresenceKPI(){let s=SHOP==='ALL'?SHOPS_LIST[0]:SHOP;let pres=ALL_DATA[s]?.presence||{};let vends=ALL_DATA[s]?.vendeurs||{};let html='';Object.keys(vends).forEach(pin=>{let v=vends[pin];let p=pres[pin]||{};let online=p.online===true&&Date.now()-(p.lastSeen||0)<180000;html+=`<div style="background:#fff;border:1px solid ${online?'#22c55e':'#ef4444'};border-radius:20px;padding:6px 12px"><span class="presence-dot ${online?'online':'offline'}"></span><b>${v.nom}</b> ${online?'En ligne':'Hors ligne'} • ${fmtVu(p.lastSeen)}</div>`;});document.getElementById('presenceKPIList').innerHTML=html||'<small>Aucun</small>';}
 
-function renderVentes(){let data=getFiltered();let rows=[];data.ventes.sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,200).forEach(v=>{(v.items||[]).forEach(i=>{rows.push(`<tr><td>${new Date(v.date).toLocaleString()}</td><td>${esc(v.vendeurNom||v.vendeur)}</td><td>${esc(i.CODE)}</td><td>${esc(i.Designation)}</td><td>${i.qty}</td><td>${(i.qty*i.Prix).toLocaleString()}</td><td>${(v.montantPaye??v.total).toLocaleString()}</td><td>${(v.reste||0).toLocaleString()}</td><td>${esc(v.client?.nom||'Comptoir')}</td><td>${esc(v.payement||'cash')}</td><td><button class="btn btn-r" style="width:auto;font-size:10px" data-id="${esc(v._id)}" data-shop="${esc(v._shop)}" onclick="annulerVente(this.dataset.id,this.dataset.shop)">↩</button></td></tr>`);});});document.getElementById('ventesList').innerHTML=rows.join('')||'<tr><td colspan=11>Aucune</td></tr>';}
+function renderVentes(){let data=getFiltered();let rows=[];data.ventes.sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,200).forEach(v=>{(v.items||[]).forEach(i=>{rows.push(`<tr><td>${new Date(v.date).toLocaleString()}</td><td>${esc(v.vendeurNom||v.vendeur)}</td><td>${esc(i.CODE)}</td><td>${esc(i.Designation)}</td><td>${i.qty}</td><td>${(i.qty*i.Prix).toLocaleString()}</td><td>${(v.montantPaye??v.total).toLocaleString()}</td><td>${(v.reste||0).toLocaleString()}</td><td>${esc(v.client?.nom||'Comptoir')}</td><td>${esc(v.payement||'cash')}</td><td><button class="btn btn-r" style="width:auto;font-size:10px" data-id="${v._id}" data-shop="${v._shop}" onclick="annulerVente(this.dataset.id,this.dataset.shop)">↩</button></td></tr>`);});});document.getElementById('ventesList').innerHTML=rows.join('')||'<tr><td colspan=11>Aucune</td></tr>';}
 //function renderCaisse(){let data=getFiltered();let all=[];data.ventes.forEach(v=>all.push({date:v.date,type:'Vente',motif:(v.items||[]).map(i=>i.CODE).join(','),montant:v.montantPaye??v.total}));data.dep.forEach(d=>all.push({date:d.date,type:'Dépense',motif:d.motif||'',montant:-d.montant}));all.sort((a,b)=>new Date(b.date)-new Date(a.date));document.getElementById('caisseList').innerHTML=all.slice(0,150).map(a=>`<tr><td>${new Date(a.date).toLocaleString()}</td><td>${a.type}</td><td>${a.motif}</td><td style="color:${a.montant<0?'red':'green'}">${a.montant.toLocaleString()}</td></tr>`).join('');}
 function renderCaisse(){
  let data=getFiltered();
@@ -449,38 +449,38 @@ function genGraph(){let data=window._lastRapportData;if(!data){alert('Génère t
 function pdfRapportOnly(){let content=document.getElementById('rapportC').innerHTML;let w=window.open('','','width=1000,height=800');w.document.write(`<html><head><title>Rapport ${SHOP}</title><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px;font-size:11px}th{background:#111;color:#fff}</style></head><body><h2>${CURRENT_CONFIG.nom} - Rapport ${SHOP} - ${new Date().toLocaleDateString()} - V4.9.14</h2><p style="font-size:10px">Légende valorisation: Vente FC = PV x Qté, Achat = PA x Qté, Bénéf latent = Vente-Achat, Stock actuel = reste magasin</p>${content}</body></html>`);w.document.close();w.print();}
 function exportExcelRapport(){let content=document.getElementById('rapportC').innerHTML;let w=window.open('','','width=800');w.document.write(`<html><body>${content}</body></html>`);}
 //function annulerVente(id,shop){if(!confirm('Annuler?'))return;db.ref('shops/'+(shop||SHOP)+'/ventes/'+id).remove();}
-async function annulerVente(id,shop){
-  if(!confirm('SUPPRIMER vente '+esc(id)+' et remettre stock?')) return;
-  let s = shop || SHOP;
-  if(s==='ALL') return alert('Choisis boutique');
-  try{
-    let snap = await db.ref('shops/'+s+'/ventes/'+id).once('value');
-    let v = snap.val();
-    if(!v) return alert('Introuvable');
-    let items = v.items || [];
-    if(!items.length && v.CODE) items=[{CODE:v.CODE, qty:v.qty||v.Quantite||1}];
+async function annulerVente(id, shop) {
+  if (!id) return alert('ID vide');
+  if (!confirm('Supprimer vente ' + id + '? Stock sera remis.')) return;
+  let s = (shop && shop!== 'ALL')? shop : SHOP;
+  if (!s || s === 'ALL') return alert('Choisis boutique');
 
-    // 1. Remet stock
-    for(let it of items){
-      if(!it.CODE) continue;
-      let q = parseInt(it.qty||it.qte||it.Quantite||1)||1;
-      await db.ref('shops/'+s+'/stock/'+it.CODE+'/Quantite').transaction(cur=>(cur||0)+q);
-    }
+  // Ne pas esc() l'id pour Firebase
+  let path = 'shops/' + s + '/ventes/' + id;
+  let snap = await db.ref(path).once('value');
+  if (!snap.exists()) return alert('Vente introuvable: ' + path);
+  let v = snap.val();
 
-    // 2. Supprime Firebase
-    await db.ref('shops/'+s+'/ventes/'+id).remove();
-
-    // 3. FIX FORCE : supprime du cache local pour que tableau disparaisse tout de suite
-    if(ALL_DATA[s] && ALL_DATA[s].ventes){
-      ALL_DATA[s].ventes = ALL_DATA[s].ventes.filter(x=>x._id!==id);
-    }
-    savePatronCache();
-    refreshAll();
-
-    alert('✅ Supprimée + stock remis');
-  }catch(e){
-    alert('Erreur: '+e.message);
+  // Remet stock
+  let items = v.items || [];
+  if (!items.length && v.CODE) items = [{CODE: v.CODE, qty: v.qty || 1}];
+  for (let it of items) {
+    let q = parseInt(it.qty || it.qte || 1) || 1;
+    if (it.CODE) await db.ref('shops/' + s + '/stock/' + it.CODE + '/Quantite').transaction(c => (c || 0) + q);
   }
+
+  // Supprime
+  await db.ref(path).remove();
+
+  // FORCE tableau à disparaitre maintenant
+  if (ALL_DATA[s] && ALL_DATA[s].ventes) {
+    ALL_DATA[s].ventes = ALL_DATA[s].ventes.filter(x => String(x._id)!== String(id));
+  }
+  document.getElementById('ventesList').innerHTML = '';
+  savePatronCache();
+  refreshAll();
+
+  alert('✅ Supprimée + stock remis');
 }
  // 
 function pdfStockTotal(){let d=getFiltered();let totalFC=0,totalPA=0; d.stock.filter(p=>p.actif!==false).forEach(p=>{totalFC+=(p.Quantite||0)*(p['Prix Unit']||0);totalPA+=(p.Quantite||0)*(p['Prix Achat']||0);}); let html=`<html><head><style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #000;padding:6px;font-size:11px}</style></head><body><h2>STOCK ${SHOP} - Valorisation avec légende V4.9.14</h2><p><b>Légende:</b> Valeur Vente = PV x Qté = ${totalFC.toLocaleString()} FC | Valeur Achat = PA x Qté = ${totalPA.toLocaleString()} FC | Bénéf latent = ${ (totalFC-totalPA).toLocaleString()} FC</p><table border=1><tr><th>CODE</th><th>Dés</th><th>Qté</th><th>PV</th><th>PA</th><th>Valeur Vente (PVxQté)</th><th>Valeur Achat (PAxQté)</th><th>Bénéf latent</th></tr>`+d.stock.map(p=>`<tr><td>${p.CODE}</td><td>${p.Designation}</td><td>${p.Quantite}</td><td>${p['Prix Unit']}</td><td>${p['Prix Achat']}</td><td>${((p.Quantite||0)*(p['Prix Unit']||0)).toLocaleString()}</td><td>${((p.Quantite||0)*(p['Prix Achat']||0)).toLocaleString()}</td><td>${((p.Quantite||0)*((p['Prix Unit']||0)-(p['Prix Achat']||0))).toLocaleString()}</td></tr>`).join('')+`</table><p>Total Vente: ${totalFC.toLocaleString()} FC | Total Achat: ${totalPA.toLocaleString()} FC | Bénéf latent total: ${(totalFC-totalPA).toLocaleString()} FC</p></body></html>`;let w=window.open('','','width=1000');w.document.write(html);w.print();}
