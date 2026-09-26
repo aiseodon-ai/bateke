@@ -372,12 +372,20 @@ if(_pinFromUrl){ const pi=document.getElementById('pinInput'); if(pi) pi.value=_
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 </script>
 <script>
-  // Si l'appli est déjà installée, on cache le bouton jaune
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    const btnInstall = document.querySelector('button'); // ou l'id de ton bouton jaune
-    if(btnInstall && btnInstall.textContent.includes('icône')) {
-      btnInstall.style.display = 'none';
+  function cacherBoutonSiInstalle() {
+    const estInstalle = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    
+    if (estInstalle) {
+      // Cherche tous les boutons jaunes
+      document.querySelectorAll('button').forEach(btn => {
+        if (btn.textContent.toLowerCase().includes('icône') || btn.textContent.toLowerCase().includes('icone') || btn.textContent.toLowerCase().includes('installer')) {
+          btn.style.display = 'none';
+        }
+      });
     }
   }
+  // Lance au chargement et 1 sec après (au cas où)
+  window.addEventListener('load', cacherBoutonSiInstalle);
+  setTimeout(cacherBoutonSiInstalle, 1000);
 </script>
 </body></html>
