@@ -1,14 +1,48 @@
-<head>
+<!DOCTYPE html><html lang="fr"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vendeur V5.6.3 SECURE OFFLINE</title>
-<link rel="manifest" href="./manifest.json">
+<link id="manifest-link" rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0b5e2f">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <script>
-  // Pour le dev: affiche le nom de la boutique dans l'onglet
-  const shop = new URLSearchParams(location.search).get('shop');
-  if(shop) document.title = shop + ' - BATEKE';
+  // Récupère le nom boutique ?shop=Mbakana
+  const shopParam = new URLSearchParams(location.search).get('shop');
+  const shopName = shopParam ? shopParam : 'Bateke';
+
+  // Change le titre de l'onglet
+  if(shopParam) document.title = shopName + ' - BATEKE';
+
+  // Crée un manifest dynamique avec le nom de la boutique
+  // C'est ça qui va afficher "Mbakana" dans la popup Installer
+  const dynManifest = {
+    "name": shopName,
+    "short_name": shopName,
+    "start_url": "./vendeur.html?shop=" + encodeURIComponent(shopName),
+    "scope": "./",
+    "id": "./vendeur.html?shop=" + encodeURIComponent(shopName),
+    "display": "standalone",
+    "background_color": "#0b5e2f",
+    "theme_color": "#0b5e2f",
+    "icons": [
+      {
+        "src": "https://cdn-icons-png.flaticon.com/512/3081/3081840.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "https://cdn-icons-png.flaticon.com/512/3081/3081840.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ]
+  };
+
+  const blob = new Blob([JSON.stringify(dynManifest)], {type: 'application/json'});
+  const dynUrl = URL.createObjectURL(blob);
+  document.getElementById('manifest-link').setAttribute('href', dynUrl);
 </script>
 <style>
 body{margin:0;font-family:Arial;background:#f5f6fa}header{background:#0b5e2f;color:#fff;padding:12px;text-align:center;position:sticky;top:0;z-index:30}
