@@ -1,7 +1,15 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Vendeur V5.6.3 SECURE OFFLINE</title>
-<link rel="manifest" href="manifest.json">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vendeur V5.6.3 SECURE OFFLINE</title>
+<link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0b5e2f">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<script>
+  // Pour le dev: affiche le nom de la boutique dans l'onglet
+  const shop = new URLSearchParams(location.search).get('shop');
+  if(shop) document.title = shop + ' - BATEKE';
+</script>
 <style>
 body{margin:0;font-family:Arial;background:#f5f6fa}header{background:#0b5e2f;color:#fff;padding:12px;text-align:center;position:sticky;top:0;z-index:30}
 .card{background:#fff;border-radius:12px;padding:12px;margin:8px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
