@@ -371,4 +371,13 @@ const _pinFromUrl = new URLSearchParams(window.location.search).get('pin');
 if(_pinFromUrl){ const pi=document.getElementById('pinInput'); if(pi) pi.value=_pinFromUrl; }
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 </script>
+<script>
+  // Si l'appli est déjà installée, on cache le bouton jaune
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    const btnInstall = document.querySelector('button'); // ou l'id de ton bouton jaune
+    if(btnInstall && btnInstall.textContent.includes('icône')) {
+      btnInstall.style.display = 'none';
+    }
+  }
+</script>
 </body></html>
