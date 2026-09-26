@@ -372,20 +372,43 @@ if(_pinFromUrl){ const pi=document.getElementById('pinInput'); if(pi) pi.value=_
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 </script>
 <script>
-  function cacherBoutonSiInstalle() {
-    const estInstalle = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    
-    if (estInstalle) {
-      // Cherche tous les boutons jaunes
-      document.querySelectorAll('button').forEach(btn => {
-        if (btn.textContent.toLowerCase().includes('icône') || btn.textContent.toLowerCase().includes('icone') || btn.textContent.toLowerCase().includes('installer')) {
-          btn.style.display = 'none';
-        }
-      });
-    }
+  const params = new URLSearchParams(window.location.search);
+  const shopActuel = params.get('shop') || 'Bateke';
+  const cleStockage = 'icone_installee_' + shopActuel;
+
+  function cacherBoutonJaune() {
+    document.querySelectorAll('button').forEach(btn => {
+      const txt = btn.textContent.toLowerCase();
+      if (txt.includes('icône') || txt.includes('icone') || txt.includes('installer l')) {
+        btn.textContent = '✓ Icône ' + shopActuel + ' déjà sur le bureau';
+        btn.style.background = '#22c55e';
+        btn.style.opacity = '0.7';
+        btn.disabled = true;
+      }
+    });
   }
-  // Lance au chargement et 1 sec après (au cas où)
-  window.addEventListener('load', cacherBoutonSiInstalle);
-  setTimeout(cacherBoutonSiInstalle, 1000);
+
+  // 1. Si déjà installé en appli principale
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    cacherBoutonJaune();
+  }
+
+  // 2. Si déjà installé en raccourci (on se souvient)
+  if (localStorage.getItem(cleStockage) === 'oui') {
+    cacherBoutonJaune();
+  }
+
+  // 3. Quand il clique sur installer, on s'en souvient
+  window.addEventListener('load', () => {
+    document.querySelectorAll('button').forEach(btn => {
+      const txt = btn.textContent.toLowerCase();
+      if (txt.includes('icône') || txt.includes('icone')) {
+        btn.addEventListener('click', () => {
+          localStorage.setItem(cleStockage, 'oui');
+          setTimeout(cacherBoutonJaune, 500);
+        });
+      }
+    });
+  });
 </script>
 </body></html>
