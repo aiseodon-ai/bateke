@@ -304,72 +304,72 @@ function genRapport(){
      return `<tr><td>${esc(a.CODE)}</td><td>${esc(a.Des)}</td><td>${a.qty}</td><td>${a.ca.toLocaleString()}</td><td style="color:#0b5e2f">${a.benef.toLocaleString()}</td><td>${a.ca?((a.benef/a.ca)*100).toFixed(1):0}%</td><td style="background:#fef3c7;text-align:center"><b>${a.stockActuel}</b></td><td style="text-align:center">${rotation.toFixed(1)}%</td><td style="text-align:center">${couv>365?'∞':couv.toFixed(0)+'j'}</td></tr>`;
    }).join('')+`</table><p><small>*Rotation = Qté vendue / stock moyen. >100% = très bon. Jours couverture = combien de jours ton stock tient.</small></p>`;
 
- } else if(type==='synthese_entrees'){
-   // ⭐ FIX PRINCIPAL - TON BUG ICI
-   let all=[]; SHOPS_LIST.forEach(s=>{
-     (ALL_DATA[s]?.entrees||[]).forEach(e=>{
-       let d=new Date(e.date); if(d>=du&&d<=au) all.push({...e,shop:s});
+  } else if(type==='synthese_entrees'){
+   // FIX BOUTIQUE - respecte SHOP sélectionné
+   let all=[];
+   if(SHOP==='ALL'){
+     SHOPS_LIST.forEach(s=>{
+       (ALL_DATA[s]?.entrees||[]).forEach(e=>{
+         let d=new Date(e.date); if(d>=du&&d<=au) all.push({...e,shop:s});
+       });
      });
-   });
+   } else {
+     // Si une boutique choisie, on ne prend QUE ses entrées
+     (data.entrees||[]).forEach(e=>{
+       let d=new Date(e.date); if(d>=du&&d<=au) all.push({...e,shop:SHOP});
+     });
+   }
    all.sort((a,b)=> new Date(b.date)-new Date(a.date));
    let totalQte = all.reduce((s,e)=> s+getQteEntree(e),0);
-   html=`<h3>📥 ENTREES STOCK DETAIL - ${all.length} mouvements - ${totalQte} pcs</h3>
-   <table><tr><th>Date</th><th>Heure</th><th>Boutique</th><th>CODE</th><th>Désignation</th><th>Qté Entrée</th><th>Auteur Opération</th><th>Stock Actuel</th></tr>`+
+   html=`<h3>📥 ENTREES - ${esc(SHOP)} - ${all.length} mouvements - ${totalQte} pcs</h3>
+   <table><tr><th>Date</th><th>Heure</th><th>Boutique</th><th>CODE</th><th>Dés</th><th>Qté</th><th>Auteur</th><th>Stock</th></tr>`+
    all.slice(0,500).map(e=>{
      let st=stockMap[e.CODE];
-     return `<tr><td>${new Date(e.date).toLocaleDateString('fr-FR')}</td><td>${esc(e.heure||new Date(e.date).toLocaleTimeString())}</td><td>${esc(e.shop||e.boutique||'')}</td><td><b>${esc(e.CODE||'')}</b></td><td>${esc(e.Designation||st?.Designation||'')}</td><td style="background:#dcfce7;font-weight:bold;text-align:center;font-size:14px">${getQteEntree(e)}</td><td style="background:#f0fdf4"><b>${getAuteur(e)}</b></td><td style="text-align:center">${st?.Quantite??''}</td></tr>`;
+     return `<tr><td>${new Date(e.date).toLocaleDateString('fr-FR')}</td><td>${esc(e.heure||new Date(e.date).toLocaleTimeString())}</td><td style="background:#fef3c7"><b>${esc(e.shop||e.boutique||SHOP)}</b></td><td><b>${esc(e.CODE||'')}</b></td><td>${esc(e.Designation||st?.Designation||'')}</td><td style="background:#dcfce7;text-align:center"><b>${getQteEntree(e)}</b></td><td><b>${getAuteur(e)}</b></td><td style="text-align:center">${st?.Quantite??''}</td></tr>`;
    }).join('')+`</table>`;
 
  } else if(type==='entree_stock_detail' || type==='synthese_achats'){
-   let all=[]; SHOPS_LIST.forEach(s=>{
-     (ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au) all.push({...e,shop:s});});
-   });
+   let all=[];
+   if(SHOP==='ALL'){
+     SHOPS_LIST.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au) all.push({...e,shop:s});});});
+   } else {
+     (data.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au) all.push({...e,shop:SHOP});});
+   }
    let map={}; all.forEach(e=>{
      let q=getQteEntree(e); let st=stockMap[e.CODE];
-     if(!map[e.CODE]) map[e.CODE]={CODE:e.CODE,Des:e.Designation||st?.Designation||e.CODE,qty:0,pa:st?.['Prix Achat']||0,pv:st?.['Prix Unit']||0,stock:st?.Quantite||0,auteurs:new Set()};
+     if(!map[e.CODE]) map[e.CODE]={CODE:e.CODE,Des:e.Designation||st?.Designation||e.CODE,qty:0,pa:st?.['Prix Achat']||0,stock:st?.Quantite||0,auteurs:new Set(),boutique:e.shop||SHOP};
      map[e.CODE].qty+=q; map[e.CODE].auteurs.add(getAuteur(e));
-     if(st?.['Prix Achat']) map[e.CODE].pa=st['Prix Achat'];
    });
    let list=Object.values(map).sort((a,b)=>b.qty-a.qty);
-   let totQ=list.reduce((s,a)=>s+a.qty,0); let totPA=list.reduce((s,a)=>s+a.qty*a.pa,0);
-   html=`<h3>📥 SYNTHESE ENTREES / ACHATS - ${totQ} pcs - ${totPA.toLocaleString()} FC d'achat</h3>
-   <table><tr><th>CODE</th><th>Dés</th><th>Qté Entrée</th><th>Auteurs</th><th>PA</th><th>Total PA</th><th>Stock</th><th>Rotation</th></tr>`+
-   list.map(a=>{
-     let rot = a.stock>0 ? (a.qty/((a.stock+a.qty)/2||1)*100) : 0;
-     return `<tr><td><b>${esc(a.CODE)}</b></td><td>${esc(a.Des)}</td><td style="background:#dcfce7;text-align:center"><b>${a.qty}</b></td><td>${esc(Array.from(a.auteurs).join(', '))}</td><td>${a.pa.toLocaleString()}</td><td>${(a.qty*a.pa).toLocaleString()}</td><td style="background:#e0f2fe;text-align:center">${a.stock}</td><td>${rot.toFixed(1)}%</td></tr>`;
-   }).join('')+`</table>`;
+   html=`<h3>📥 SYNTHESE ENTREES - ${esc(SHOP)} - ${list.length} articles</h3>
+   <table><tr><th>CODE</th><th>Dés</th><th>Qté</th><th>Boutique</th><th>Auteurs</th><th>Stock</th></tr>`+
+   list.map(a=>`<tr><td><b>${esc(a.CODE)}</b></td><td>${esc(a.Des)}</td><td style="background:#dcfce7;text-align:center"><b>${a.qty}</b></td><td><b>${esc(a.boutique)}</b></td><td>${esc(Array.from(a.auteurs).join(', '))}</td><td style="background:#e0f2fe;text-align:center">${a.stock}</td></tr>`).join('')+`</table>`;
 
  } else if(type==='entree_article' || type==='entree_par_article'){
-   let all=[]; SHOPS_LIST.forEach(s=>{
-     (ALL_DATA[s]?.entrees||[]).forEach(e=>{
+   let all=[];
+   if(SHOP==='ALL'){
+     SHOPS_LIST.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{
        let d=new Date(e.date); if(d>=du&&d<=au){
          if(codeFiltre &&!(e.CODE||'').toLowerCase().includes(codeFiltre) &&!(e.Designation||'').toLowerCase().includes(codeFiltre)) return;
          all.push({...e,shop:s});
        }
+     });});
+   } else {
+     (data.entrees||[]).forEach(e=>{
+       let d=new Date(e.date); if(d>=du&&d<=au){
+         if(codeFiltre &&!(e.CODE||'').toLowerCase().includes(codeFiltre) &&!(e.Designation||'').toLowerCase().includes(codeFiltre)) return;
+         all.push({...e,shop:SHOP});
+       }
      });
-   });
+   }
    all.sort((a,b)=> new Date(b.date)-new Date(a.date));
-   html=`<h3>📦 ENTREE PAR ARTICLE ${codeFiltre?'- '+esc(codeFiltre.toUpperCase()):''} - ${all.length} lignes</h3>
-   <table><tr><th>Date</th><th>CODE</th><th>Dés</th><th>Qté</th><th>Auteur</th><th>Boutique</th><th>Stock Actuel</th></tr>`+
+   html=`<h3>📦 ENTREE PAR ARTICLE - ${esc(SHOP)} ${codeFiltre?'- '+esc(codeFiltre.toUpperCase()):''} - ${all.length} lignes</h3>
+   <table><tr><th>Date</th><th>Boutique</th><th>CODE</th><th>Qté</th><th>Auteur</th><th>Stock</th></tr>`+
    all.slice(0,400).map(e=>{
      let st=stockMap[e.CODE];
-     return `<tr><td>${new Date(e.date).toLocaleString()}</td><td><b>${esc(e.CODE)}</b></td><td>${esc(e.Designation||st?.Designation||'')}</td><td style="background:#dcfce7;text-align:center"><b>${getQteEntree(e)}</b></td><td>${getAuteur(e)}</td><td>${esc(e.shop||'')}</td><td style="text-align:center">${st?.Quantite||''}</td></tr>`;
+     return `<tr><td>${new Date(e.date).toLocaleString()}</td><td style="background:#fef3c7"><b>${esc(e.shop||SHOP)}</b></td><td><b>${esc(e.CODE)}</b></td><td style="background:#dcfce7;text-align:center"><b>${getQteEntree(e)}</b></td><td>${getAuteur(e)}</td><td style="text-align:center">${st?.Quantite||''}</td></tr>`;
    }).join('')+`</table>`;
-
- } else if(type==='vente_article'){
-   let parArticle={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{
-     if(codeFiltre &&!i.CODE.toLowerCase().includes(codeFiltre) &&!(i.Designation||'').toLowerCase().includes(codeFiltre)) return;
-     if(!parArticle[i.CODE])parArticle[i.CODE]={CODE:i.CODE,Des:i.Designation,qty:0,ca:0,stock:stockMap[i.CODE]?.Quantite||0};
-     parArticle[i.CODE].qty+=Number(i.qty||0); parArticle[i.CODE].ca+=Number(i.qty||0)*Number(i.Prix||0);
-   }));
-   let list=Object.values(parArticle).sort((a,b)=>b.ca-a.ca);
-   html=`<h3>📦 VENTE PAR ARTICLE + ROTATION</h3><table><tr><th>CODE</th><th>Dés</th><th>Qté</th><th>CA</th><th>Stock</th><th>Rotation</th><th>Alerte</th></tr>`+
-   list.map(a=>{
-     let rot = a.stock>0 ? (a.qty/((a.stock+a.qty)/2||1)*100):0;
-     let alerte = rot>150?'🔥 Très fort': rot>80?'✅ Bon' : rot>30?'⚠️ Lent' : '💤 Mort';
-     return `<tr><td>${esc(a.CODE)}</td><td>${esc(a.Des)}</td><td>${a.qty}</td><td>${a.ca.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${a.stock}</td><td>${rot.toFixed(1)}%</td><td>${alerte}</td></tr>`;
-   }).join('')+`</table>`;
-
+   
  } else if(type==='top'){
    let map={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{if(!map[i.CODE])map[i.CODE]={CODE:i.CODE,Des:i.Designation,qty:0,ca:0,stock:stockMap[i.CODE]?.Quantite||0};map[i.CODE].qty+=Number(i.qty||0);map[i.CODE].ca+=Number(i.qty||0)*Number(i.Prix||0);}));
    let top=Object.values(map).sort((a,b)=>b.qty-a.qty).slice(0,20);
