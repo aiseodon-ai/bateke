@@ -1,0 +1,4546 @@
+[
+  {
+    "CODE": "AC001",
+    "Designation": "ACIDE",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 10,
+    "seuil": 5
+  },
+  {
+    "CODE": "AD001",
+    "Designation": "ADAPTATEUR CM GF",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "AD002",
+    "Designation": "ADAPTATEUR 12 DVD ",
+    "Prix Unit": 8000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "AD003",
+    "Designation": "ADAPTATEUR 12V TV",
+    "Prix Unit": 18000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "AL002",
+    "Designation": "ALLONGE 3P PF",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "AL001",
+    "Designation": "ALLONGE 4P GF",
+    "Prix Unit": 6500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "AL003",
+    "Designation": "ALLUMETTE",
+    "Prix Unit": 100,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AL004",
+    "Designation": "ALLONGE 5P",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AMP01",
+    "Designation": "AMPLIFICATEUR 12V",
+    "Prix Unit": 45000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM001",
+    "Designation": "AMPOULES ECON 18/20W",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM002",
+    "Designation": "AMPOULE EN COULEUR  9W",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM003",
+    "Designation": "AMPOULE ECON 40W",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM004",
+    "Designation": "AMPOULE RECT",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "AMLD5",
+    "Designation": "AMPOULE EN COULEUR",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM005",
+    "Designation": "AMPOULE H4",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM006",
+    "Designation": "AMPOULE JEUX DE LUMIERE BAT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM007",
+    "Designation": "AMPOULE LED CROISE PF",
+    "Prix Unit": 4500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM008",
+    "Designation": "AMPOULE LED CROISE GF",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "AMLD2",
+    "Designation": "AMPOULE LED 15W LC STAR",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 14,
+    "seuil": 5
+  },
+  {
+    "CODE": "AMLD1",
+    "Designation": "AMPOULE LED 18W LC STAR",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM009",
+    "Designation": "AMPOULE LED 1W 12V/S",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM010",
+    "Designation": "AMPOULE LED 3W 12V/S",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM011",
+    "Designation": "AMPOULE LED 3W PBT",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 9,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM012",
+    "Designation": "AMPOULE LED 5W 12V/S",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM013",
+    "Designation": "AMPOULE LED 5W PBT",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM014",
+    "Designation": "AMPOULE LED 7W PBT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM015",
+    "Designation": "AMPOULE LED 10W PBT",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 12,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM017",
+    "Designation": "AMPOULE LED AC  LC STAR 5W",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM016",
+    "Designation": "AMPOULE LED AC  LC STAR 10W",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 7,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM018",
+    "Designation": "AMPOULE LED AC 7W",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM019",
+    "Designation": "AMPOULE LED PAN+TELEC",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM020",
+    "Designation": "AMPOULE LED USB",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM021",
+    "Designation": "AMPOULE ORD 100W APPOLO",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM022",
+    "Designation": "AMPOULE ORD 100W SIMPLE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM023",
+    "Designation": "AMPOULE ORD 75W APPOLO",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM024",
+    "Designation": "AMPOULE ORD 75W SIMPLE",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AMLD3",
+    "Designation": "AMPOULE PLUSIEUR LED GF",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "AMPL4",
+    "Designation": "AMPOULE PLUSIEUR LED PF",
+    "Prix Unit": 4500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM025",
+    "Designation": "AMPOULE PLUSIEUR LED MOYE",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM026",
+    "Designation": "AMPOULE RECHARGEABLE 5W",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM027",
+    "Designation": "AMPOULE RECHARGEABLE 7W",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AM028",
+    "Designation": "AMPLIFICATEUR 12V",
+    "Prix Unit": 40000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AN001",
+    "Designation": "ANTENNE PARABOLIQUE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AN002",
+    "Designation": "ANTENNE RADIO GF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AN003",
+    "Designation": "ANTENNE RADIO M",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AN004",
+    "Designation": "ANTENNE RADIO PF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AN005",
+    "Designation": "ANTENNE ROBO",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AN006",
+    "Designation": "ANTENNE TNT",
+    "Prix Unit": 20000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "AN007",
+    "Designation": "ANTENNE STARTIME D'ORA",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "AN008",
+    "Designation": "ANTI CASSE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AN009",
+    "Designation": "ANTONOIRE MOY",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AN010",
+    "Designation": "ANTONOIRE PF",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AP001",
+    "Designation": "APPAREIL DE MESURE",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "AS001",
+    "Designation": "ASSIETE JEUX DE 3",
+    "Prix Unit": 20000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AS002",
+    "Designation": "ASSIETTE METAL 20CM",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AS003",
+    "Designation": "ASSIETTE METAL 24CM",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AS004",
+    "Designation": "ASSIETE PLAST PM",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AT001",
+    "Designation": "ATTACHE CEINTURE (CRAQUAT)",
+    "Prix Unit": 100,
+    "Prix Achat": 0,
+    "Quantite": 293,
+    "seuil": 5
+  },
+  {
+    "CODE": "AT002",
+    "Designation": "ATTACHE N°9",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AT003",
+    "Designation": "ATTACHE N°12",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AT004",
+    "Designation": "ATTACHE N°14",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AT005",
+    "Designation": "ATTACHE N°16",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AT006",
+    "Designation": "ATTACHE N°18",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AT007",
+    "Designation": "ATTACHE N°5",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AT008",
+    "Designation": "ATTACHE N°6",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "AT009",
+    "Designation": "ATTACHE N°7",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "AT010",
+    "Designation": "ATTACHE N°8",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "BAB01",
+    "Designation": "BABOUCHE TIGO",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA001",
+    "Designation": "BABOUCHE DAMME 1",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA002",
+    "Designation": "BABOUCHE  EPAISSEUR",
+    "Prix Unit": 4500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "BAB03",
+    "Designation": "BABOUCHE BRASIL",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA003",
+    "Designation": "BABOUCHE BRAZZA",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA004",
+    "Designation": "BABOUCHE RELAXE 1/SPORT",
+    "Prix Unit": 8000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA005",
+    "Designation": "BALADEUR RECHARGEABLEL  P47",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA006",
+    "Designation": "BALADEUR RECHARGEABLEL  P9",
+    "Prix Unit": 20000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA007",
+    "Designation": "BALADEUR A 2 PILE",
+    "Prix Unit": 20000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA008",
+    "Designation": "BALLON D'AIR gf",
+    "Prix Unit": 100,
+    "Prix Achat": 0,
+    "Quantite": 40,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA009",
+    "Designation": "BALLON ENFANT SIMPLE",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA010",
+    "Designation": "BALLON ENFANT TOP",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA036",
+    "Designation": "BALLON ENFANT MY",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 7,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA011",
+    "Designation": "BALLON D'AIR Pf",
+    "Prix Unit": 50,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BAN",
+    "Designation": "BALLON ENFANT TOP gf",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "BAT1",
+    "Designation": "BANDE HYGIENIQUE",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 15,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA012",
+    "Designation": "BATTERIE ACIDE  65AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA013",
+    "Designation": "BATTERIE ACIDE 100AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA014",
+    "Designation": "BATTERIE ACIDE 120AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA015",
+    "Designation": "BATTERIE ACIDE 20AH",
+    "Prix Unit": 60000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA016",
+    "Designation": "BATTERIE ACIDE 40AH",
+    "Prix Unit": 100000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BAT2",
+    "Designation": "BATTERIE ACIDE 45",
+    "Prix Unit": 110000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA017",
+    "Designation": "BATTERIE ACIDE 50/55AH",
+    "Prix Unit": 120000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA018",
+    "Designation": "BATTERIE ACIDE 70/75AH",
+    "Prix Unit": 195000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA019",
+    "Designation": "BATTERIE ACIDE 7AH",
+    "Prix Unit": 30000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA020",
+    "Designation": "BATTERIE ACIDE 80AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA021",
+    "Designation": "BATTERIE ACIDE 9AH",
+    "Prix Unit": 30000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA022",
+    "Designation": "BATTERIE SEC 100AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA023",
+    "Designation": "BATTERIE SEC 120AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA024",
+    "Designation": "BATTERIE SEC 150AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA025",
+    "Designation": "BATTERIE SEC 17/20AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA026",
+    "Designation": "BATTERIE SEC 36AH",
+    "Prix Unit": 115000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA027",
+    "Designation": "BATTERIE SEC 12AH",
+    "Prix Unit": 50000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA028",
+    "Designation": "BATTERIE SEC 6,5AH",
+    "Prix Unit": 30000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA029",
+    "Designation": "BATTERIE SEC 40/45 AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA030",
+    "Designation": "BATTERIE SEC 50/55AH",
+    "Prix Unit": 150000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA031",
+    "Designation": "BATTERIE SEC 60/65AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA032",
+    "Designation": "BATTERIE SEC 70/75AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA033",
+    "Designation": "BATTERIE SEC 7AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA034",
+    "Designation": "BATTERIE SEC 80AH",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BA035",
+    "Designation": "BATTERIE SEC 9AH",
+    "Prix Unit": 40000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "BAT3",
+    "Designation": "BATTERIR ACIDE 36AH",
+    "Prix Unit": 75000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "BIC01",
+    "Designation": "BIC MARKER",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "BI001",
+    "Designation": "BIC GILETTE",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BIS001",
+    "Designation": "BISCUIT TWINGO",
+    "Prix Unit": 300,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO001",
+    "Designation": "BODY DAMME SIMPLE",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO002",
+    "Designation": "BODY ENFANT",
+    "Prix Unit": 6000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO003",
+    "Designation": "BOITE DE DERIVATION",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO004",
+    "Designation": "BOITE D'ENCASTREMENT",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 16,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO005",
+    "Designation": "BOITIER ALIM CIGAR GF",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 9,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO006",
+    "Designation": "BOITIER ALIM CIGAR PF",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO007",
+    "Designation": "BOITIER USB GF ",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 7,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO008",
+    "Designation": "BOITIER USB PF ",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO009",
+    "Designation": "BOITIER USB +CABLE PF ORAIMO",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO013",
+    "Designation": "BOITIER USB+CABLE GF ",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO00",
+    "Designation": "BOUGIE GROUPE",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO010",
+    "Designation": "BOL VUE CLAIRE GF",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO011",
+    "Designation": "BOL VUE CLAIRE MF",
+    "Prix Unit": 8000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BO012",
+    "Designation": "BOL VUE CLAIRE PF",
+    "Prix Unit": 6000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "BR001",
+    "Designation": "BROSSE A CIRAGE",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "BR003",
+    "Designation": "BROSSE A DENT",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "BR002",
+    "Designation": "BROSSE A MAISON",
+    "Prix Unit": 7000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "BR004",
+    "Designation": "BROSSE A DENT  ENFANT",
+    "Prix Unit": 300,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "BR005",
+    "Designation": "BROSSE LESSIVE",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA001",
+    "Designation": "CABLE ANTENNE",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 22,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA002",
+    "Designation": "CABLE ANTENNE 10m",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA003",
+    "Designation": "CABLE  FANTOME",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 18,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA004",
+    "Designation": "CABLE IPHONE",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA005",
+    "Designation": "CABLE USB GF",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA006",
+    "Designation": "CABLE USB PF",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 13,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA007",
+    "Designation": "CADENA 30mL",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA008",
+    "Designation": "CADENA 32mm",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA009",
+    "Designation": "CADENA 40 L",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA010",
+    "Designation": "CADENA 50 L",
+    "Prix Unit": 4500,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA011",
+    "Designation": "CADENA 60 L",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA012",
+    "Designation": "CADENA 70 L",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA013",
+    "Designation": "CABLE HDMI",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA014",
+    "Designation": "CADENA  ALARME",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA015",
+    "Designation": "CALCULATRICE PF",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA016",
+    "Designation": "CARTE MEMOIR 1G",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA017",
+    "Designation": "CARTE MEMOIR 2G ",
+    "Prix Unit": 4500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA018",
+    "Designation": "CARTE MÉMOIRE 4G D'ORIGINE",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CART",
+    "Designation": "CARTE MEMOIRE 4G SIMPLE",
+    "Prix Unit": 4500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA019",
+    "Designation": "CARTE MÉMOIRE 2G D'ORIGINE",
+    "Prix Unit": 8000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA020",
+    "Designation": "CASSEROL J3",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA021",
+    "Designation": "CASSEROL J5",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CA022",
+    "Designation": "CACHE COUCHE BB",
+    "Prix Unit": 200,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CD001",
+    "Designation": "CD",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CE001",
+    "Designation": "CEINTURE DAMME",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CE002",
+    "Designation": "CEINTURE HOMME",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 7,
+    "seuil": 5
+  },
+  {
+    "CODE": "CE003",
+    "Designation": "CERSCEAU FILLE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH001",
+    "Designation": "CHAPEAU BONNET",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH002",
+    "Designation": "CHAPEAU BONET GF",
+    "Prix Unit": 11500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH003",
+    "Designation": "CHAPEAU KEPI",
+    "Prix Unit": 7000,
+    "Prix Achat": 0,
+    "Quantite": 4,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH004",
+    "Designation": "CHAPEAU LARGE BORD",
+    "Prix Unit": 8500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH005",
+    "Designation": "CHAGEUR  DVD",
+    "Prix Unit": 12000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH006",
+    "Designation": "CHAPEAU MAZOPO",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH007",
+    "Designation": "CHAPEAU MUNYERE",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH008",
+    "Designation": "CHARGEUR MULTI 16PORT USB",
+    "Prix Unit": 13000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "CHA",
+    "Designation": "CHARGEUR MULTI 3PORT USB",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH009",
+    "Designation": "CHARGEUR UNIVERSEL 4PORT USB",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH010",
+    "Designation": "CHARGEUR UNIV ORDINATEUR",
+    "Prix Unit": 28000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CHAR02",
+    "Designation": "CHARGEUR MULTI 5PORT USB",
+    "Prix Unit": 12500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CHAR01",
+    "Designation": "CHARGEUR MULTI 10PORT USB",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 7,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH012",
+    "Designation": "CHARGEUR UNIVERSEL AC",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH013",
+    "Designation": "CHARGEUR UNIVERSEL PBT",
+    "Prix Unit": 4500,
+    "Prix Achat": 0,
+    "Quantite": 4,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH014",
+    "Designation": "CHASSETTE LONGUE",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH015",
+    "Designation": "CHAUSSETE HOMME",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 12,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH016",
+    "Designation": "CHEMISE HOMME",
+    "Prix Unit": 20000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CH017",
+    "Designation": "CHEMISE SIMPLE",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CIR01",
+    "Designation": "CIRAGE ",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 11,
+    "seuil": 5
+  },
+  {
+    "CODE": "CI001",
+    "Designation": "CIRCUIT INTEGRE D8002A",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 16,
+    "seuil": 5
+  },
+  {
+    "CODE": "CI002",
+    "Designation": "CIRCUIT INTEGRE KA2206B",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 7,
+    "seuil": 5
+  },
+  {
+    "CODE": "CI003",
+    "Designation": "CIRCUIT INTEGRE TDA2822M",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CI004",
+    "Designation": "CIRCUIT INTEGRE TDA7266A",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 7,
+    "seuil": 5
+  },
+  {
+    "CODE": "CI005",
+    "Designation": "CISEAU",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL001",
+    "Designation": "CLEF CROIX GF",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL002",
+    "Designation": "CLEF CROIX PF",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL003",
+    "Designation": "CLEF N° 13",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL004",
+    "Designation": "CLEF N°10",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL005",
+    "Designation": "CLEF N°11",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL006",
+    "Designation": "CLEF N°12",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL007",
+    "Designation": "CLEF N°14",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL008",
+    "Designation": "CLEF N°15",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL009",
+    "Designation": "CLEF N°16",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL010",
+    "Designation": "CLEF N°17",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL011",
+    "Designation": "CLEF N°18",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL012",
+    "Designation": "CLEF N°19",
+    "Prix Unit": 4500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL013",
+    "Designation": "CLEF N°6",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL014",
+    "Designation": "CLEF N°8",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL015",
+    "Designation": "CLEF N°9",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL016",
+    "Designation": "CLEF T N°8",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CL017",
+    "Designation": "CLEF T N°10",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "Cl018",
+    "Designation": "CLEF T N°13",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO002",
+    "Designation": "COLLE ARGENT",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO003",
+    "Designation": "COMPLET DAMME",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO004",
+    "Designation": "COMPLET ENFANT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO005",
+    "Designation": "COMPLET ENFANT 0 à 2ans",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO006",
+    "Designation": "COMPLET ENFANT 3 à 4ans",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO007",
+    "Designation": "COMPLET FILLE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO008",
+    "Designation": "COMPLET FILLE 5 à 8ans",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO009",
+    "Designation": "COMPLET PENTAGONE 2,3ANS",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO010",
+    "Designation": "CONNECTEUR ANDROID",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO011",
+    "Designation": "CONVERTISSEUR 150W",
+    "Prix Unit": 38000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO012",
+    "Designation": "CONVERTISSEUR 200W",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO013",
+    "Designation": "CONVERTISSEUR 300W",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO014",
+    "Designation": "CONVERTISSEUR 500W",
+    "Prix Unit": 50000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO015",
+    "Designation": "CONVERTISSEUR MINI 220",
+    "Prix Unit": 25000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CO016",
+    "Designation": "COUTEAU PF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CR001",
+    "Designation": "CRAVATTE",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "CR002",
+    "Designation": "CREPE DAMME",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CR003",
+    "Designation": "CREPE ENFANT FILLE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CR004",
+    "Designation": "CREPE ENFANT GARCON",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CR005",
+    "Designation": "CREPE HOMME",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CR006",
+    "Designation": "CRACA MOTO",
+    "Prix Unit": 100,
+    "Prix Achat": 0,
+    "Quantite": 300,
+    "seuil": 5
+  },
+  {
+    "CODE": "CUR01",
+    "Designation": "CURE DENT",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CY002",
+    "Designation": "CYCLISTE DAMME",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "CY001",
+    "Designation": "CYCLISTE HOMME",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "DE001",
+    "Designation": "DECALE ENFANT",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "DE002",
+    "Designation": "DECALE HOMME",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "DE003",
+    "Designation": "DECAMETRE 50M",
+    "Prix Unit": 12500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "DE004",
+    "Designation": "DECODEUR TNT",
+    "Prix Unit": 45000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "DE005",
+    "Designation": "DECORATION ANANAS",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "DE006",
+    "Designation": "DEO SMART GOLD",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "DE007",
+    "Designation": "DEO TONY MONTANA",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "DI001",
+    "Designation": "DIODE PANNEAU GF",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 14,
+    "seuil": 5
+  },
+  {
+    "CODE": "DI002",
+    "Designation": "DIODE PANNEAU PF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "DO001",
+    "Designation": "DOMINO",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "DV001",
+    "Designation": "DVD PORTABLE 10''",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "EC001",
+    "Designation": "ECHARPE",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "EC002",
+    "Designation": "ECOUTER CASQUE",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "EC003",
+    "Designation": "ECOUTEUR  IPOD",
+    "Prix Unit": 12000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "EC004",
+    "Designation": "ECOUTEUR IPHONE /BORIS",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "EC005",
+    "Designation": "ECORSE BATTERIE",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "EC006",
+    "Designation": "ECOUTEUR BT",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "EK001",
+    "Designation": "EKOLO",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "EP001",
+    "Designation": "EPOXY",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "ET001",
+    "Designation": "ETAIN",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 83,
+    "seuil": 5
+  },
+  {
+    "CODE": "ET002",
+    "Designation": "ETIQUETTE",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 20,
+    "seuil": 5
+  },
+  {
+    "CODE": "ET003",
+    "Designation": "ETAGERE ",
+    "Prix Unit": 70000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "FE001",
+    "Designation": "FER MAKALA",
+    "Prix Unit": 28000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "FE002",
+    "Designation": "FER A SOUDER",
+    "Prix Unit": 6500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI001",
+    "Designation": "FICCHE AUDIO/DJEK",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI002",
+    "Designation": "FICHE ANTENNE SIMPLE",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 33,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI003",
+    "Designation": "FICHE D'ALIMENTATION DVD",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI004",
+    "Designation": "FICHE D'ALIMENTATION DVD/D",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI005",
+    "Designation": "FICHE D'ALIMENTATION TV",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI006",
+    "Designation": "FICHE MAL GF",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 10,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI007",
+    "Designation": "FICHE DOMINO plat",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI008",
+    "Designation": "FICHE DOMINO PF",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI009",
+    "Designation": "FICHE DVD 1×1",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 4,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI010",
+    "Designation": "FICHE DVD 1×2",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI011",
+    "Designation": "FICHE DVD 1×3",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI012",
+    "Designation": "FICHE DVD 3×3",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI013",
+    "Designation": "FICHE F ",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 96,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI014",
+    "Designation": "FICHE RF",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 109,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI015",
+    "Designation": "FICHE MAL PF",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 8,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI016",
+    "Designation": "FICHE RADIO COURANT PF",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI017",
+    "Designation": "FICHE RADIO COURANT GF",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI018",
+    "Designation": "FIL REGIDE 0,5mm",
+    "Prix Unit": 250,
+    "Prix Achat": 0,
+    "Quantite": 36,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI019",
+    "Designation": "FIL SOLAIRE 1,5",
+    "Prix Unit": 600,
+    "Prix Achat": 0,
+    "Quantite": 45,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI020",
+    "Designation": "FIL SOLAIRE 2,5",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 45,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI021",
+    "Designation": "FIL SOUPLE 0,5mm",
+    "Prix Unit": 300,
+    "Prix Achat": 0,
+    "Quantite": 23,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI022",
+    "Designation": "FIL V.O.B 1,5",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "FI023",
+    "Designation": "FIL V.O.B 2,5",
+    "Prix Unit": 700,
+    "Prix Achat": 0,
+    "Quantite": 85,
+    "seuil": 5
+  },
+  {
+    "CODE": "FIL024",
+    "Designation": "FIL HABIT",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 11,
+    "seuil": 5
+  },
+  {
+    "CODE": "FL001",
+    "Designation": "FLASH 16G",
+    "Prix Unit": 22000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "FL002",
+    "Designation": "FLASH 1G",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "FL003",
+    "Designation": "FLASH 2G",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "FL004",
+    "Designation": "FLASH 32G",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "FL005",
+    "Designation": "FLASH 4G",
+    "Prix Unit": 12000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "FL006",
+    "Designation": "FLASH 8G",
+    "Prix Unit": 16000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "FO001",
+    "Designation": "FORFLEX",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "FO002",
+    "Designation": "FOURCHETTE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "FU001",
+    "Designation": "FUSIBLE G1",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "FU002",
+    "Designation": "FUSIBLE G2",
+    "Prix Unit": 7000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "GA001",
+    "Designation": "GAMME ENFANT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "GOB01",
+    "Designation": "GOBELET SAKOMBI",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "GU001",
+    "Designation": "GURLANDE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "GI001",
+    "Designation": "GILETTE DORCO",
+    "Prix Unit": 150,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "IN001",
+    "Designation": "INTERRUPTEUR APP DOUBLE PF",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 4,
+    "seuil": 5
+  },
+  {
+    "CODE": "IN002",
+    "Designation": "INTERRUPTEUR APP PF",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 7,
+    "seuil": 5
+  },
+  {
+    "CODE": "IN003",
+    "Designation": "INTERRUPTEUR ENCASTRE",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "JE001",
+    "Designation": "JEUX DE LUMIERE A PILE",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JE002",
+    "Designation": "JEUX DE LUMIERE COURANT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JE003",
+    "Designation": "JEUX DE LUMIERE PBT",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JO001",
+    "Designation": "JOUER ARME GF",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JO002",
+    "Designation": "JOUER ARME M",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JO003",
+    "Designation": "JOUER ARME PF",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JO004",
+    "Designation": "JOUER POUPE GF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JO005",
+    "Designation": "JOUER POUPE M",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JO006",
+    "Designation": "JOUER POUPE PF",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JO007",
+    "Designation": "JOUER SOLDAT GM",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JO008",
+    "Designation": "JOUER SOLDAT M",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JO009",
+    "Designation": "JOUER SOLDAT PM",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JU001",
+    "Designation": "JUPE BAZOKA COURT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JU002",
+    "Designation": "JUPE BAZOKA LONG",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JU003",
+    "Designation": "JUPE CUIRE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JU004",
+    "Designation": "JUPE ETIRETTE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JU005",
+    "Designation": "JUPE POINSON",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JU006",
+    "Designation": "JUPE ROBO",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "JU007",
+    "Designation": "JUPE ROBO ENFANT",
+    "Prix Unit": 9000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "KE001",
+    "Designation": "KETCH GM",
+    "Prix Unit": 21500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "KE002",
+    "Designation": "KETCH PM",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "KI001",
+    "Designation": "KIT COMPLET LUMIERE GF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "KI002",
+    "Designation": "KIT COMPLET LUMIERE PF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "LA001",
+    "Designation": "LAMPADAIRE SOLAIRE PF",
+    "Prix Unit": 30000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "LA002",
+    "Designation": "LAIT A SACHET SIMPLE",
+    "Prix Unit": 250,
+    "Prix Achat": 0,
+    "Quantite": 27,
+    "seuil": 5
+  },
+  {
+    "CODE": "LA003",
+    "Designation": "LAME DE SCIE",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 7,
+    "seuil": 5
+  },
+  {
+    "CODE": "MA001",
+    "Designation": "MARKET USOFIA GF/SIMPLE",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "MA002",
+    "Designation": "MARKET USOFIA PF/SIMPLE",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "MA003",
+    "Designation": "MARKET USOFIA/DUR GF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "MA004",
+    "Designation": "MARKET KILELO PF",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 27,
+    "seuil": 5
+  },
+  {
+    "CODE": "MA006",
+    "Designation": "MARKET SIMPLE",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 29,
+    "seuil": 5
+  },
+  {
+    "CODE": "MA005",
+    "Designation": "MARKET KILELO",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 13,
+    "seuil": 5
+  },
+  {
+    "CODE": "MA008",
+    "Designation": "MARKET KILELO gf",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "MA009",
+    "Designation": "MAXAM",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 10,
+    "seuil": 5
+  },
+  {
+    "CODE": "MAR001",
+    "Designation": "MAEREAU PF",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "MO000",
+    "Designation": "MOUCHASHINO POITRINE",
+    "Prix Unit": 12500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "MO001",
+    "Designation": "MOUCHASHINO ",
+    "Prix Unit": 8000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "MO002",
+    "Designation": "MOUCHASHINO CUIRE 2POCHES pf",
+    "Prix Unit": 13000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "MO003",
+    "Designation": "MOUCHASHINO CUIRE 2POCHES gf",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "MO004",
+    "Designation": "MONTRE ENFANT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "MO005",
+    "Designation": "MONTRE HOMME",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "MO006",
+    "Designation": "MOQUETTE",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "MP001",
+    "Designation": "MP3 AUTO",
+    "Prix Unit": 11500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "MP002",
+    "Designation": "MP3 ECOUTEUR",
+    "Prix Unit": 12000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "MP003",
+    "Designation": "MP3 ENFANT",
+    "Prix Unit": 6000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "MU002",
+    "Designation": "MOUSTIQAIRE BEBE",
+    "Prix Unit": 12500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "OU001",
+    "Designation": "OUVRE BOUTEILLE",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 14,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA001",
+    "Designation": "PANNEAU CHARGEUR GF",
+    "Prix Unit": 40000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA002",
+    "Designation": "PANNEAU CHARGEUR PF",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA003",
+    "Designation": "PANNEAU CHARGEUR MOY",
+    "Prix Unit": 22500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA004",
+    "Designation": "PANNEAU SOLAIRE 100W",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA005",
+    "Designation": "PANNEAU SOLAIRE 10W",
+    "Prix Unit": 27500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA006",
+    "Designation": "PANNEAU SOLAIRE 120W",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA007",
+    "Designation": "PANNEAU SOLAIRE 130W",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA008",
+    "Designation": "PANNEAU SOLAIRE 150W",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA009",
+    "Designation": "PANNEAU SOLAIRE 15W",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA010",
+    "Designation": "PANNEAU SOLAIRE 20W",
+    "Prix Unit": 40000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA011",
+    "Designation": "PANNEAU SOLAIRE 30W",
+    "Prix Unit": 50000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA012",
+    "Designation": "PANNEAU SOLAIRE 40W",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA013",
+    "Designation": "PANNEAU SOLAIRE 50W",
+    "Prix Unit": 80000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA014",
+    "Designation": "PANNEAU SOLAIRE 5W",
+    "Prix Unit": 12000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA015",
+    "Designation": "PANNEAU SOLAIRE 60W",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA016",
+    "Designation": "PANNEAU SOLAIRE 70W",
+    "Prix Unit": 110000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA017",
+    "Designation": "PANNEAU SOLAIRE 80W",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA018",
+    "Designation": "PANTALON JEAN ENFANT",
+    "Prix Unit": 18500,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA019",
+    "Designation": "PANTALON JEAN FEMME",
+    "Prix Unit": 17500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA020",
+    "Designation": "PANTALON JEAN HOMME",
+    "Prix Unit": 22500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA021",
+    "Designation": "PAPIER MOUCHOIR",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 32,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA022",
+    "Designation": "PAPIER HYGIENIQUE",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 18,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA023",
+    "Designation": "PARARASOLEIL",
+    "Prix Unit": 6500,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA024",
+    "Designation": "PARFUM CECILE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA025",
+    "Designation": "PARFUM ELEMENT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA026",
+    "Designation": "PARFUM TONY MONTANA",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA027",
+    "Designation": "PARFUM COPRESS",
+    "Prix Unit": 250,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PA028",
+    "Designation": "PAMPEX BB",
+    "Prix Unit": 350,
+    "Prix Achat": 0,
+    "Quantite": 22,
+    "seuil": 5
+  },
+  {
+    "CODE": "PE001",
+    "Designation": "PENDILE GF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PE002",
+    "Designation": "PEIGNEN COIFFE",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "PE003",
+    "Designation": "PENDILE PF",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PE004",
+    "Designation": "PENTALON  TUSSI HOMME",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PE005",
+    "Designation": "PENTALON TUSSI ENFANT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PE006",
+    "Designation": "PENTALON KAKI",
+    "Prix Unit": 20000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI001",
+    "Designation": "PIL CRAYON ALKILINNE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI002",
+    "Designation": "PIL CRAYON VININIC",
+    "Prix Unit": 400,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI003",
+    "Designation": "PIL CRAYON SIMPLE",
+    "Prix Unit": 300,
+    "Prix Achat": 0,
+    "Quantite": 60,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI004",
+    "Designation": "PIL CRAYON VININIC EXTRA",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI005",
+    "Designation": "PIL ITEL BL15",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI006",
+    "Designation": "PIL ITEL BL19",
+    "Prix Unit": 8000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI007",
+    "Designation": "PIL ITEL BL21",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI008",
+    "Designation": "PIL ITEL BL25",
+    "Prix Unit": 9000,
+    "Prix Achat": 0,
+    "Quantite": 4,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI009",
+    "Designation": "PIL ITEL BL29",
+    "Prix Unit": 8000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI010",
+    "Designation": "PIL ITEL BL5 ORIGINAL",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI011",
+    "Designation": "PIL ITEL BL5 SIMPLE",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI012",
+    "Designation": "PIL ITEL BL 24EI",
+    "Prix Unit": 9000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI013",
+    "Designation": "PIL MICRO",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 12,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI014",
+    "Designation": "PIL ITEL BL 38CI",
+    "Prix Unit": 9000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI015",
+    "Designation": "PIL MONTRE G1",
+    "Prix Unit": 200,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI016",
+    "Designation": "PIL MONTRE G10",
+    "Prix Unit": 300,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI017",
+    "Designation": "PIL MONTRE G13",
+    "Prix Unit": 300,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI018",
+    "Designation": "PIL MONTRE G3",
+    "Prix Unit": 300,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI019",
+    "Designation": "PIL MONTRE GF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI020",
+    "Designation": "PIL BALANCE",
+    "Prix Unit": 700,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI021",
+    "Designation": "PIL RECHARGEABLE/VENTILAT",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 17,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI022",
+    "Designation": "PIL RECHARGEABLE/VENTILAT+FIL",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 13,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI023",
+    "Designation": "PIL SAMSUNG 5820",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI024",
+    "Designation": "PIL SAMSUNG 7275",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI025",
+    "Designation": "PIL SAMSUNG 7898",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI026",
+    "Designation": "PIL SAMSUNG LC 1700",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI027",
+    "Designation": "PIL SAMSUNG S1",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI028",
+    "Designation": "PIL SAMSUNG S2",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI029",
+    "Designation": "PIL SAMSUNG S3",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI030",
+    "Designation": "PIL SAMSUNG S3 MINI",
+    "Prix Unit": 8000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI031",
+    "Designation": "PIL SAMSUNG S4",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI032",
+    "Designation": "PIL SAMSUNG S4 MINI",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI033",
+    "Designation": "PIL SAMSUNG S5570",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI034",
+    "Designation": "PIL TELECOMANDE/MOTO",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI035",
+    "Designation": "PIL TIGER",
+    "Prix Unit": 700,
+    "Prix Achat": 0,
+    "Quantite": 8,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI036",
+    "Designation": "PIL TOUCHE SIMPLE",
+    "Prix Unit": 250,
+    "Prix Achat": 0,
+    "Quantite": 47,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI037",
+    "Designation": "PIL TOUCHE VINNIC",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI038",
+    "Designation": "PIL VINIC GF",
+    "Prix Unit": 1200,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI039",
+    "Designation": "PIL WAWEI 4DENT",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI040",
+    "Designation": "PILE TECHNO",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI041",
+    "Designation": "PINCE BATTERIE",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 23,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI042",
+    "Designation": "PINCE UNIVERSEL GF",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI043",
+    "Designation": "PINCEAU DÉCOR",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 10,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI044",
+    "Designation": "PINCE BATTERIE GF",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 10,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI045",
+    "Designation": "PINCEAU GF",
+    "Prix Unit": 800,
+    "Prix Achat": 0,
+    "Quantite": 12,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI046",
+    "Designation": "PINCEAU  PEINTURE PF",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "PI047",
+    "Designation": "PINCEAU EN ROULEAU PF",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO004",
+    "Designation": "POCHETTE UNIVERSEL",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO005",
+    "Designation": "POLO BODY",
+    "Prix Unit": 11500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO006",
+    "Designation": "POLO SIMPLE",
+    "Prix Unit": 8000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO007",
+    "Designation": "POLO LACOSTE",
+    "Prix Unit": 12500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO008",
+    "Designation": "POLO DAMME SIMPLE",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO009",
+    "Designation": "POMPE A AIRE",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO010",
+    "Designation": "PORTABLE 7,8",
+    "Prix Unit": 100000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO011",
+    "Designation": "PORTABLE 9,8",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO012",
+    "Designation": "PORTABLE PF",
+    "Prix Unit": 60000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO013",
+    "Designation": "PORTE MONAIE TROUSSE",
+    "Prix Unit": 4500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO014",
+    "Designation": "PORTE MONAIE PF",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PO015",
+    "Designation": "POWER BANK GF",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "PR016",
+    "Designation": "PRISE ENCASTRE",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "PR001",
+    "Designation": "PROJECTEUR SOLAIR PF",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PR002",
+    "Designation": "PRISE APP SIMPLE",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PR003",
+    "Designation": "PROJECTEUR SOLAIR",
+    "Prix Unit": 30000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PR004",
+    "Designation": "PHAR LED 120W",
+    "Prix Unit": 45000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "PV001",
+    "Designation": "PHAR LED 72W",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA001",
+    "Designation": "PHAR LED 42W",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RAC01",
+    "Designation": "RACLETTE",
+    "Prix Unit": 7000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA002",
+    "Designation": "RADIO 161 MOYEN 23",
+    "Prix Unit": 28000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA003",
+    "Designation": "RADIO 1BAFLE  LONG MICRO ",
+    "Prix Unit": 78000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA004",
+    "Designation": "RADIO 321  + PANNEAU  1521",
+    "Prix Unit": 28000,
+    "Prix Achat": 0,
+    "Quantite": 4,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA005",
+    "Designation": "RADIO 1BAFLE  LONG MICRO GM",
+    "Prix Unit": 85000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA006",
+    "Designation": "RADIO MICRO GM",
+    "Prix Unit": 75000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA007",
+    "Designation": "RADIO MICRO PF",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA008",
+    "Designation": "RADIO BT L9",
+    "Prix Unit": 22000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA009",
+    "Designation": "RADIO BT MOY + PANNEAU pf",
+    "Prix Unit": 24000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA010",
+    "Designation": "RADIO BT MOY SANS PANNEAU",
+    "Prix Unit": 25000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA011",
+    "Designation": "RADIO BT 200L",
+    "Prix Unit": 28000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA013",
+    "Designation": "RADIO BT MDL 35",
+    "Prix Unit": 38000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA014",
+    "Designation": "RADIO MOTO GF",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA015",
+    "Designation": "RADIO MOTO PF",
+    "Prix Unit": 30000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA016",
+    "Designation": "RADIO FM PF",
+    "Prix Unit": 25000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA017",
+    "Designation": "RADIO BT PMDL",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "RA018",
+    "Designation": "RADIO BT PMDL 2",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "RE001",
+    "Designation": "REGULATEUR DIG 10A",
+    "Prix Unit": 25000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "RE002",
+    "Designation": "REGULATEUR DIG 30A",
+    "Prix Unit": 40000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RE003",
+    "Designation": "REGULATEUR SIMPLE 10A",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RE004",
+    "Designation": "REGULATEUR SIMPLE 20A",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RI001",
+    "Designation": "RIDEAU",
+    "Prix Unit": 6000,
+    "Prix Achat": 0,
+    "Quantite": 3,
+    "seuil": 5
+  },
+  {
+    "CODE": "RO001",
+    "Designation": "ROBE ENFANT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RO002",
+    "Designation": "ROBE CHEMISE ",
+    "Prix Unit": 23000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "RO003",
+    "Designation": "ROULEAU PEINTURE",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA001",
+    "Designation": "SAC KILELO MIXT 2ETIRET NMDL",
+    "Prix Unit": 12000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA002",
+    "Designation": "SAC A DOS HP pf",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA003",
+    "Designation": "SAC MUPANZI moy",
+    "Prix Unit": 18000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA004",
+    "Designation": "SAC  MUPANZI",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA005",
+    "Designation": "SAC MUPANZI VIP",
+    "Prix Unit": 27000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA006",
+    "Designation": "SAC mupanzi simple",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA007",
+    "Designation": "SAC KILELO MIXT 3ETIRET",
+    "Prix Unit": 13500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA008",
+    "Designation": "SAC KILELO MIXT 2ETIRET",
+    "Prix Unit": 12000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA009",
+    "Designation": "SAC UDJANA",
+    "Prix Unit": 4000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA010",
+    "Designation": "SAC KILELO MIXT TORONTO",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA011",
+    "Designation": "SAC KILELO MIXT TORONTO MOY",
+    "Prix Unit": 17000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA012",
+    "Designation": "SAC KILELO MIXT 3ETIRET rond",
+    "Prix Unit": 13500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA013",
+    "Designation": "SAC KILELO MIXT TORONTO PM",
+    "Prix Unit": 12500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA014",
+    "Designation": "SAC BAND NOIR",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA015",
+    "Designation": "SAC BAND VERT",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA016",
+    "Designation": "SAC MOUSHASHINO PF",
+    "Prix Unit": 13500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA017",
+    "Designation": "SAC KILELO MIXT 2ETIRET GM",
+    "Prix Unit": 16500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SA018",
+    "Designation": "SAC ANTIBAL",
+    "Prix Unit": 27000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SE001",
+    "Designation": "SECHE LINGE",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SI001",
+    "Designation": "SILICONE ",
+    "Prix Unit": 3500,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "SC002",
+    "Designation": "SCOTCH",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "SI003",
+    "Designation": "SIM ORANGE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SI004",
+    "Designation": "SIM VODACOM",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SI005",
+    "Designation": "SINGLE DAMME",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SI006",
+    "Designation": "SINGLE ENFANT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SI007",
+    "Designation": "SINGLE HOMME",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SI008",
+    "Designation": "SIXAU",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SL001",
+    "Designation": "SLIP DAMME SIMPLE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SL002",
+    "Designation": "SLIP DAMME VIP",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SL003",
+    "Designation": "SLIP ENFANT",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SO001",
+    "Designation": "SOCKET  MURAL",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SO002",
+    "Designation": "SOCKET  PORCRLENE",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 19,
+    "seuil": 5
+  },
+  {
+    "CODE": "SO003",
+    "Designation": "SOCKET ORD",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 18,
+    "seuil": 5
+  },
+  {
+    "CODE": "SO004",
+    "Designation": "SAVON POUSSIERE",
+    "Prix Unit": 250,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "SU001",
+    "Designation": "SUPPER GLUE",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 19,
+    "seuil": 5
+  },
+  {
+    "CODE": "SU002",
+    "Designation": "SUPPORT TV",
+    "Prix Unit": 7500,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE001",
+    "Designation": "TALOCHE",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE002",
+    "Designation": "TELECOMANDE SHARP",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE003",
+    "Designation": "TELECOMANDE SONNY TV",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE004",
+    "Designation": "TELEPHONE ITEL 15$/OR",
+    "Prix Unit": 50000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE005",
+    "Designation": "TELEPHONE ITEL 10$/OR",
+    "Prix Unit": 40000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE006",
+    "Designation": "TELECOMANDE UNIVERSAL/OR",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE007",
+    "Designation": "TELEPHONE ITEL 10$",
+    "Prix Unit": 25000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE008",
+    "Designation": "TELEPHONE ITEL 15$",
+    "Prix Unit": 40000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE009",
+    "Designation": "TELEPHONE ITEL 20$",
+    "Prix Unit": 55000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE010",
+    "Designation": "TELEPHONE NODANY M2160",
+    "Prix Unit": 45000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE011",
+    "Designation": "TELEPHONE WIOO K5520",
+    "Prix Unit": 40000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE012",
+    "Designation": "TELEPHONE SAMSUNG ANDR 4G",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE013",
+    "Designation": "TELEPHONE SAMSUNG ANDR 8G",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE014",
+    "Designation": "TELEPHONE ANDROID 128G",
+    "Prix Unit": 250000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE015",
+    "Designation": "TELEVISION 19''AC/DC",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE016",
+    "Designation": "TELEVISION 22''AC/DC",
+    "Prix Unit": 150000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE017",
+    "Designation": "TELEVISION 24''AC/DC",
+    "Prix Unit": 170000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE018",
+    "Designation": "TELEVISION 26'' AC",
+    "Prix Unit": 180000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE019",
+    "Designation": "TELEVISION 32''AC/DC",
+    "Prix Unit": 250000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE020",
+    "Designation": "TELEVISION 42'' AC",
+    "Prix Unit": 420000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE021",
+    "Designation": "TELEVISION 55'' AC",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE022",
+    "Designation": "TELEVISION PORTABLE 15'' 12V",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE023",
+    "Designation": "TESTEUR GF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE024",
+    "Designation": "TESTEUR PF",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 7,
+    "seuil": 5
+  },
+  {
+    "CODE": "TE025",
+    "Designation": "TELEPHONE HUAWEI",
+    "Prix Unit": 65000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TH001",
+    "Designation": "THERMOS",
+    "Prix Unit": 25000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TH002",
+    "Designation": "THERMOS PF",
+    "Prix Unit": 1600,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TIG01",
+    "Designation": "TIGE COTON",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TIR01",
+    "Designation": "TIRBOUCHON",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO001",
+    "Designation": "TOIL ISOLANT",
+    "Prix Unit": 500,
+    "Prix Achat": 0,
+    "Quantite": 23,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO002",
+    "Designation": "TONDEUSE A PILE",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO003",
+    "Designation": "TONDEUSE RECHARGEABLE GM",
+    "Prix Unit": 25000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO004",
+    "Designation": "TORCHE 310",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO005",
+    "Designation": "TORCHE 616",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 13,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO006",
+    "Designation": "TORCHE A 1 PIL CRAYON",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO007",
+    "Designation": "TORCHE A PANNEAU GF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO008",
+    "Designation": "TORCHE + PANNEAU PF TUBE",
+    "Prix Unit": 12500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO009",
+    "Designation": "TORCHE DE TETE 50/100 GF",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO010",
+    "Designation": "TORCHE RECHARGEABLE CA /7639",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO011",
+    "Designation": "TORCHE RECHARGEABLE+PILE  GF",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO012",
+    "Designation": "TORCHE LX 15 +350",
+    "Prix Unit": 4500,
+    "Prix Achat": 0,
+    "Quantite": 5,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO013",
+    "Designation": "TORCHE MINI 2270",
+    "Prix Unit": 1500,
+    "Prix Achat": 0,
+    "Quantite": 6,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO014",
+    "Designation": "TORCHE POLICE GF",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO015",
+    "Designation": "TORCHE PROJECTEUR PAN MINI",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 4,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO016",
+    "Designation": "TORCHE RECHARGEABLE GF/8809",
+    "Prix Unit": 28000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO017",
+    "Designation": "TORCHE RECHARGEABLE+2AMPOUL",
+    "Prix Unit": 28000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO018",
+    "Designation": "TORCHE XF GF",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 9,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO019",
+    "Designation": "TORCHE XF PF",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO020",
+    "Designation": "TOURNE VIS GF",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO021",
+    "Designation": "TOURNE VIS NKINKI",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 11,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO022",
+    "Designation": "TOURNE VIS PF",
+    "Prix Unit": 1000,
+    "Prix Achat": 0,
+    "Quantite": 9,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO023",
+    "Designation": "TOURNE VIS USA",
+    "Prix Unit": 2500,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO024",
+    "Designation": "TORCHE MULTI FONCTION 2002",
+    "Prix Unit": 28000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO025",
+    "Designation": "TORCHE MULTI 2002 PF/8806",
+    "Prix Unit": 25000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO026",
+    "Designation": "TORCHE MULTI FONCTION SIMPLE",
+    "Prix Unit": 15000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TO027",
+    "Designation": "TORCHE POLICE GF",
+    "Prix Unit": 8000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TR001",
+    "Designation": "TROUSSE DAMME",
+    "Prix Unit": 0,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TU001",
+    "Designation": "TUBE LED 2W T8",
+    "Prix Unit": 3000,
+    "Prix Achat": 0,
+    "Quantite": 9,
+    "seuil": 5
+  },
+  {
+    "CODE": "TU002",
+    "Designation": "TUBE LED 4W T8",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 4,
+    "seuil": 5
+  },
+  {
+    "CODE": "TU003",
+    "Designation": "TUBE LED 7W T8",
+    "Prix Unit": 5000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TUB04",
+    "Designation": "TUBE LED 1W T8",
+    "Prix Unit": 2000,
+    "Prix Achat": 0,
+    "Quantite": 2,
+    "seuil": 5
+  },
+  {
+    "CODE": "TU004",
+    "Designation": "TUBE LED RECHARGEABLE GF",
+    "Prix Unit": 16500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "TU005",
+    "Designation": "TUBE LED RECHARGEABLE PF",
+    "Prix Unit": 13500,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "VA001",
+    "Designation": "VALISE N°1",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "VA002",
+    "Designation": "VALISE N°2",
+    "Prix Unit": 50000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "VA003",
+    "Designation": "VALISE N°3",
+    "Prix Unit": 55000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "VE001",
+    "Designation": "VENTILATEUR 12V DC",
+    "Prix Unit": 85000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  },
+  {
+    "CODE": "VE002",
+    "Designation": "VENTILATEUR RECHARGEABLE R8",
+    "Prix Unit": 40000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "VE003",
+    "Designation": "VENTILATEUR USB",
+    "Prix Unit": 10000,
+    "Prix Achat": 0,
+    "Quantite": 1,
+    "seuil": 5
+  },
+  {
+    "CODE": "VE004",
+    "Designation": "VENTILATEUR RECHARGEABLE M",
+    "Prix Unit": 35000,
+    "Prix Achat": 0,
+    "Quantite": 0,
+    "seuil": 5
+  }
+]
