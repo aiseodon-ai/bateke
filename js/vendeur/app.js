@@ -1,4 +1,3 @@
-
 function esc(t){ if(t===null||t===undefined) return ''; return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 const _shopFromUrl = new URLSearchParams(window.location.search).get('shop');
 if(_shopFromUrl){ localStorage.setItem('vendeur_shop', _shopFromUrl); localStorage.setItem('vendeur_shop_locked', _shopFromUrl); }
