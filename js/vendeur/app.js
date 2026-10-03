@@ -1,4 +1,4 @@
-<script>
+
 function esc(t){ if(t===null||t===undefined) return ''; return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 const _shopFromUrl = new URLSearchParams(window.location.search).get('shop');
 if(_shopFromUrl){ localStorage.setItem('vendeur_shop', _shopFromUrl); localStorage.setItem('vendeur_shop_locked', _shopFromUrl); }
@@ -203,4 +203,3 @@ async function validerFacture(){
 function renderFactList(){document.getElementById('factList').innerHTML=FACTURES.slice(0,30).map(f=>`<tr><td>${f.numero}</td><td>${f.client?.nom}</td><td>${(f.totalTTC||0).toLocaleString()} ${f.devise||'FC'}</td><td>${f.devise||'FC'}</td><td>${f.taux||''}</td><td><button class="btn btn-y" style="width:auto;padding:4px" onclick="printFactDoc('${f._id}')">PDF</button></td></tr>`).join('')||'<tr><td colspan=6>Aucune</td></tr>';}
 document.getElementById('modeFact')?.addEventListener('change',e=>{let sel=document.getElementById('selectDevisFact');sel.style.display=e.target.value==='Depuis devis'?'block':'none';});
 updateOfflineUI();
-</script>
