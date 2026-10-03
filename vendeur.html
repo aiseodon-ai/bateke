@@ -129,7 +129,8 @@
 <div style="margin-top:10px"><h5>Versements</h5><input id="montVers" type="number" placeholder="Montant versé"><input id="descVers" placeholder="À qui"><button class="btn btn-b" onclick="addVersement()">📤 Versement</button></div>
 <div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Heure</th><th>Type</th><th>Montant</th><th>Motif</th></tr></thead><tbody id="caisseList"></tbody></table></div></div></div>
 <div id="synthese" class="sec"><div class="card"><h4>📊 Ma Synthèse</h4>Du: <input type="date" id="du"> Au: <input type="date" id="au"><button class="btn btn-g" onclick="genSyntheseVendeur()">Générer</button><div id="syntheseC" style="margin-top:10px;overflow:auto"></div><button class="btn btn-y" onclick="pdfSynthese()">📄 PDF</button></div></div>
-<script src="js/vendeur/app.js"><script>
+<script src="js/vendeur/app.js"></script>
+<script>
 // === ICONE BUREAU PWA - AJOUT SEUL - NE TOUCHE PAS LE RESTE ===
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e=>{
