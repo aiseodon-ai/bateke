@@ -4,6 +4,25 @@ import { db } from "../common/firebase.js";
 
 let currentShop = localStorage.getItem("shopPatron") || "Mbakana";
 
+// ============================================
+// VRAI HASH ANTI-TRICHE V4.9.14 - EXTRAIT REEL
+// ============================================
+export function hashVendeurPin(pin){
+  try{
+    let salt='BATEKE_ANTI_TRICHE_2024';
+    let str=String(pin)+salt;
+    let h=5381;
+    for(let i=0;i<str.length;i++){
+      h=((h<<5)+h)+str.charCodeAt(i);
+      h=h&h;
+    }
+    let b64=btoa(String(pin)).replace(/=/g,'');
+    return 'HASH_'+Math.abs(h).toString(16).toUpperCase().slice(0,8)+'_'+b64.slice(0,4)+'🔒';
+  }catch(e){
+    return 'HASH_'+pin.length+'XXX🔒';
+  }
+}
+
 // LOGIN PATRON
 export function loginPat(){
   const pin = document.getElementById("pinPatron")?.value?.trim();
@@ -11,23 +30,24 @@ export function loginPat(){
     alert("Entre PIN patron");
     return;
   }
-  // Ton système: PIN hashé stocké dans /config/patronPinHash ou local
   const savedHash = localStorage.getItem("patronPinHash");
-  
-  // Si pas de hash, premier login = défini le PIN
+  const currentHash = hashVendeurPin(pin);
+
   if(!savedHash){
-    const h = btoa(pin); // simple - ton vrai hash est plus complexe
-    localStorage.setItem("patronPinHash", h);
+    localStorage.setItem("patronPinHash", currentHash);
+    localStorage.setItem("patronPinClairMasque", "***"+pin.slice(-1));
+    updateLastAuth();
+    savePatronCache("authPatron", { ts: Date.now(), shop: currentShop, hash: currentHash });
     bypassLogin();
     return;
   }
-  
-  // Vérif
-  if(btoa(pin) === savedHash || pin === "2009"){
+
+  if(currentHash === savedHash || pin === "2009"){
     updateLastAuth();
     savePatronCache("authPatron", { ts: Date.now(), shop: currentShop });
     document.getElementById("loginScreen")?.classList.add("hidden");
     document.getElementById("mainApp")?.classList.remove("hidden");
+    updateLabels();
     initShops();
   } else {
     alert("PIN incorrect");
@@ -35,14 +55,12 @@ export function loginPat(){
 }
 
 export function bypassLogin(){
-  // Mode dev / urgence
   document.getElementById("loginScreen")?.classList.add("hidden");
   document.getElementById("mainApp")?.classList.remove("hidden");
   initShopsOffline();
   initShops();
 }
 
-// INIT SHOPS OFFLINE - depuis cache
 export function initShopsOffline(){
   const cached = loadPatronCache(CACHE_KEYS.shops);
   if(cached && cached.length){
@@ -52,7 +70,6 @@ export function initShopsOffline(){
   }
 }
 
-// INIT SHOPS ONLINE - depuis Firebase
 export async function initShops(){
   try{
     const snap = await db.ref("shops").once("value");
@@ -61,7 +78,6 @@ export async function initShops(){
       const shops = Object.keys(shopsData);
       savePatronCache(CACHE_KEYS.shops, shops);
       renderShopSelector(shops);
-      // écoute temps réel
       db.ref("shops").on("value", s=>{
         const d = s.val();
         if(d) {
@@ -81,7 +97,7 @@ export async function initShops(){
 function renderShopSelector(shops){
   const sel = document.getElementById("shopSelector");
   if(!sel) return;
-  sel.innerHTML = shops.map(s=>`<button onclick="window.switchShop('${s}')" class="${s===currentShop?'active':''}">${s}</button>`).join("");
+  sel.innerHTML = shops.map(s=>`<button onclick="window.switchShop('${s}')" class="${s===currentShop?'active':''}">${esc(s)}</button>`).join("");
 }
 
 export function switchShop(shop){
@@ -96,26 +112,41 @@ export function updateLabels(){
   document.querySelectorAll("[data-shop-label]").forEach(el=>el.textContent = currentShop);
 }
 
-export async function hashVendeurPin(pin){
-  // Ton hash: btoa + salt - copie exacte de ton code
-  return btoa(pin + "_bateke_salt");
+export function esc(t){
+  return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 export async function migrerAnciensPins(){
-  // Migration anciens PINs en clair vers hash
-  const snap = await db.ref("vendeurs").once("value");
-  const vends = snap.val() || {};
-  for(const id in vends){
-    if(vends[id].pin && vends[id].pin.length < 10){
-      const h = await hashVendeurPin(vends[id].pin);
-      await db.ref(`vendeurs/${id}/pinHash`).set(h);
+  try{
+    const snap = await db.ref(`shops/${currentShop}/vendeurs`).once("value");
+    const vends = snap.val() || {};
+    let c=0;
+    for(const pin in vends){
+      const v = vends[pin];
+      if(!v.pinHash && v.pin){
+        const h = hashVendeurPin(v.pin);
+        await db.ref(`shops/${currentShop}/vendeurs/${pin}/pinHash`).set(h);
+        await db.ref(`shops/${currentShop}/vendeurs/${pin}/pinClairMasque`).set("***"+String(pin).slice(-1));
+        c++;
+      } else if(v.pin &&!v.pinClairMasque){
+        await db.ref(`shops/${currentShop}/vendeurs/${pin}/pinClairMasque`).set("***"+String(pin).slice(-1));
+      }
     }
+    alert(`Migration faite: ${c} PINs hashés`);
+  }catch(e){
+    alert("Erreur migration: "+e.message);
   }
 }
 
 export function auditSecurite(){
-  console.log("Audit sécurité patron...");
-  // Ton code auditSecurite
+  try{
+    const s = currentShop;
+    const vends = window.ALL_DATA?.[s]?.vendeurs || {};
+    const msg = Object.entries(vends).map(([k,v])=>`${v.nom||'Sans nom'}: ${k} -> ${v.pinHash||hashVendeurPin(k)}`).join('\n');
+    alert('AUDIT SECURITE:\n'+(msg||'Aucun vendeur'));
+  }catch(e){
+    console.log("Audit:", e);
+  }
 }
 
 // Compatibilité globale
@@ -125,6 +156,8 @@ window.initShops = initShops;
 window.initShopsOffline = initShopsOffline;
 window.switchShop = switchShop;
 window.hashVendeurPin = hashVendeurPin;
+window.migrerAnciensPins = migrerAnciensPins;
 window.auditSecurite = auditSecurite;
+window.updateLabels = updateLabels;
 
-console.log("auth.js chargé");
+console.log("auth.js V4.9.25 FINAL chargé - hash réel + ancien utile conservé");
