@@ -1,73 +1,26 @@
-import { STATE, db, esc } from '../core/state.js';
+function initShopsOffline(){let cg=JSON.parse(localStorage.getItem('patron_cache_global')||'null');if(cg&&cg.shops)SHOPS_LIST=cg.shops;if(!SHOPS_LIST.length)SHOPS_LIST=['Menkao1','Menkao2','Mbakana','Itendance'];SHOPS_LIST.forEach(s=>{if(!ALL_DATA[s])ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{},vendeurs:{},presence:{},logs:{}};});document.getElementById('shopSel').innerHTML=SHOPS_LIST.map(s=>`<option ${s===SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL">TOUTES</option>';renderBoutiques({});updateLabels();refreshAll();PANIER_ACHAT=JSON.parse(localStorage.getItem('panier_achat_'+SHOP)||'[]');renderAchatStock();renderPanierAchat();}
 
-export function savePatronCache(){
-  try{
-    localStorage.setItem('patron_cache_'+STATE.SHOP, JSON.stringify({shops:STATE.SHOPS_LIST,data:STATE.ALL_DATA,config:STATE.CURRENT_CONFIG}));
-    localStorage.setItem('patron_cache_global', JSON.stringify({shops:STATE.SHOPS_LIST}));
-  }catch(e){}
-}
-export function loadPatronCache(){
-  try{
-    let c=JSON.parse(localStorage.getItem('patron_cache_'+STATE.SHOP)||'null');
-    if(c&&c.data){STATE.ALL_DATA=c.data;STATE.SHOPS_LIST=c.shops||STATE.SHOPS_LIST;if(c.config)STATE.CURRENT_CONFIG={...STATE.CURRENT_CONFIG,...c.config};sync();return true;}
-  }catch(e){} return false;
-}
-function sync(){window.SHOP=STATE.SHOP;window.SHOPS_LIST=STATE.SHOPS_LIST;window.ALL_DATA=STATE.ALL_DATA;window.CURRENT_CONFIG=STATE.CURRENT_CONFIG;}
+function initShops(){db.ref('shops').on('value',snap=>{let data=snap.val()||{};SHOPS_LIST=Object.keys(data);if(!SHOPS_LIST.length)SHOPS_LIST=['Menkao1','Menkao2','Mbakana','Itendance'];SHOPS_LIST.forEach(s=>{if(!ALL_DATA[s])ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{},vendeurs:{},presence:{},logs:{}};listenShop(s);});document.getElementById('shopSel').innerHTML=SHOPS_LIST.map(s=>`<option ${s===SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL">TOUTES</option>';renderBoutiques(data);updateLabels();refreshAll();loadConfig();savePatronCache();});}
 
-export function getFiltered(){
-  if(STATE.SHOP==='ALL'){
-    let agg={ventes:[],dep:[],vers:[],stock:[],entrees:[]};
-    STATE.SHOPS_LIST.forEach(s=>{
-      let d=STATE.ALL_DATA[s]||{};
-      agg.ventes=agg.ventes.concat(d.ventes||[]);
-      agg.dep=agg.dep.concat(d.dep||[]);
-      agg.stock=agg.stock.concat(d.stock||[]);
-      agg.entrees=agg.entrees.concat((d.entrees||[]).map(e=>({...e,_shop:s})));
-    }); return agg;
-  }else{
-    let d=STATE.ALL_DATA[STATE.SHOP]||{ventes:[],dep:[],vers:[],stock:[],entrees:[]};
-    return {...d,vers:(d.vers||[]).map(v=>({...v,_shop:STATE.SHOP})),entrees:(d.entrees||[]).map(e=>({...e,_shop:STATE.SHOP}))};
-  }
+function switchShop(){SHOP=document.getElementById('shopSel').value;localStorage.setItem('patron_shop',SHOP);PANIER_ACHAT=JSON.parse(localStorage.getItem('panier_achat_'+SHOP)||'[]');updateLabels();refreshAll();renderAchatStock();renderPanierAchat();}
+
+function updateLabels(){document.getElementById('labVenteShop').innerText=SHOP;document.getElementById('labVendShop').innerText=SHOP;document.getElementById('presenceShopLab').innerText=SHOP;document.getElementById('lienV').innerText='https://aiseodon-ai.github.io/bateke/vendeur.html?shop='+SHOP;document.getElementById('paramShopName').innerText=SHOP;document.getElementById('headerEntreprise').innerHTML=(isSuperAdmin?'👑 SUPER - ':'👑 ')+(CURRENT_CONFIG.nom||'ETS BATEKE')+' - '+SHOP;}
+
+function listenShop(s){
+db.ref('shops/'+s+'/stock').on('value',snap=>{ALL_DATA[s].stock=Object.values(snap.val()||{});savePatronCache();if(SHOP===s||SHOP==='ALL'){renderStock();renderAchatStock();updateKPIs();}});
+db.ref('shops/'+s+'/ventes').on('value',snap=>{let raw=snap.val()||{};ALL_DATA[s].ventes=Object.entries(raw).map(([k,v])=>({...v,_id:k,_shop:s}));savePatronCache();if(SHOP===s||SHOP==='ALL'){renderVentes();updateKPIs();renderCaisse();renderCRM();renderDettes();if(document.getElementById('rapport')?.classList.contains('active'))genRapport();}});
+db.ref('shops/'+s+'/depenses').on('value',snap=>{let raw=snap.val()||{};ALL_DATA[s].dep=Object.entries(raw).map(([k,v])=>({...v,_id:k}));savePatronCache();});
+db.ref('shops/'+s+'/entrees').on('value',snap=>{let raw=snap.val()||{};ALL_DATA[s].entrees=Object.entries(raw).map(([k,v])=>({...v,_id:k,_shop:s}));savePatronCache();});
+db.ref('shops/'+s+'/vendeurs').on('value',snap=>{ALL_DATA[s].vendeurs=snap.val()||{};savePatronCache();if(SHOP===s)renderVendeurs();renderPresenceKPI();});
+db.ref('shops/'+s+'/config_entreprise').on('value',snap=>{if(snap.val()&&(SHOP===s||SHOP==='ALL')){let c=snap.val();CURRENT_CONFIG={...CURRENT_CONFIG,...c,compta:{...CURRENT_CONFIG.compta,...(c.compta||{})}};applyConfigToUI();savePatronCache();}});
+db.ref('shops/'+s+'/presence').on('value',snap=>{ALL_DATA[s].presence=snap.val()||{};savePatronCache();renderPresenceKPI();});
+db.ref('shops/'+s+'/versements').on('value',snap=>{let raw=snap.val()||{};ALL_DATA[s].vers=Object.entries(raw).map(([k,v])=>({...v,_id:k}));savePatronCache();});
+db.ref('shops/'+s+'/logs').on('value',snap=>{ALL_DATA[s].logs=snap.val()||{};savePatronCache();});
 }
 
-export function listenShop(s){
-  db.ref('shops/'+s+'/stock').on('value',snap=>{
-    let v=snap.val()||{}; let arr=Array.isArray(v)?v:Object.values(v);
-    if(arr.length>0){STATE.ALL_DATA[s].stock=arr; savePatronCache(); sync(); if(window.renderStock)window.renderStock(); if(window.updateKPIs)window.updateKPIs(); console.log(`✅ ${s}: ${arr.length}`);}
-  });
-  db.ref('shops/'+s+'/ventes').on('value',snap=>{let raw=snap.val()||{};STATE.ALL_DATA[s].ventes=Object.entries(raw).map(([k,v])=>({...v,_id:k,_shop:s})); savePatronCache(); if(window.renderVentes)window.renderVentes();});
-  db.ref('shops/'+s+'/depenses').on('value',snap=>{let raw=snap.val()||{};STATE.ALL_DATA[s].dep=Object.entries(raw).map(([k,v])=>({...v,_id:k})); savePatronCache();});
-  db.ref('shops/'+s+'/entrees').on('value',snap=>{let raw=snap.val()||{};STATE.ALL_DATA[s].entrees=Object.entries(raw).map(([k,v])=>({...v,_id:k,_shop:s})); savePatronCache();});
-  db.ref('shops/'+s+'/vendeurs').on('value',snap=>{STATE.ALL_DATA[s].vendeurs=snap.val()||{}; savePatronCache();});
-  db.ref('shops/'+s+'/presence').on('value',snap=>{STATE.ALL_DATA[s].presence=snap.val()||{}; savePatronCache(); if(window.renderPresenceKPI)window.renderPresenceKPI();});
-  db.ref('shops/'+s+'/versements').on('value',snap=>{let raw=snap.val()||{};STATE.ALL_DATA[s].vers=Object.entries(raw).map(([k,v])=>({...v,_id:k})); savePatronCache();});
-}
+function getFiltered(){if(SHOP==='ALL'){let agg={ventes:[],dep:[],vers:[],stock:[],entrees:[]};SHOPS_LIST.forEach(s=>{let d=ALL_DATA[s]||{};agg.ventes=[...agg.ventes,...(d.ventes||[])];agg.dep=[...agg.dep,...(d.dep||[])];agg.stock=[...agg.stock,...(d.stock||[])];agg.entrees=[...agg.entrees,...(d.entrees||[]).map(e=>({...e,_shop:s}))];});return agg;}else{let d=ALL_DATA[SHOP]||{ventes:[],dep:[],vers:[],stock:[],entrees:[]};let versRaw=ALL_DATA[SHOP]?.vers||[];return {...d,vers:versRaw.map(v=>({...v,_shop:SHOP})),entrees:(d.entrees||[]).map(e=>({...e,_shop:SHOP}))};}}
 
-export function initShops(){
-  db.ref('shops').on('value',snap=>{
-    let data=snap.val()||{}; STATE.SHOPS_LIST=Object.keys(data); if(!STATE.SHOPS_LIST.length)STATE.SHOPS_LIST=['Menkao1','Menkao2','Mbakana','Itendance'];
-    STATE.SHOPS_LIST.forEach(s=>{if(!STATE.ALL_DATA[s])STATE.ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[]}; listenShop(s);});
-    document.getElementById('shopSel').innerHTML=STATE.SHOPS_LIST.map(s=>`<option ${s===STATE.SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL">TOUTES</option>';
-    sync(); if(window.refreshAll)window.refreshAll(); savePatronCache();
-  });
-}
-export function initShopsOffline(){
-  let cg=JSON.parse(localStorage.getItem('patron_cache_global')||'null'); if(cg&&cg.shops)STATE.SHOPS_LIST=cg.shops; if(!STATE.SHOPS_LIST.length)STATE.SHOPS_LIST=['Menkao1','Menkao2','Mbakana','Itendance'];
-  STATE.SHOPS_LIST.forEach(s=>{if(!STATE.ALL_DATA[s])STATE.ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[]};}); sync();
-}
-
-export function updateLabels(){
-  document.getElementById('labVenteShop').innerText=STATE.SHOP;
-  document.getElementById('labVendShop').innerText=STATE.SHOP;
-  document.getElementById('presenceShopLab').innerText=STATE.SHOP;
-  document.getElementById('lienV').innerText='https://aiseodon-ai.github.io/bateke/vendeur.html?shop='+STATE.SHOP;
-  document.getElementById('paramShopName').innerText=STATE.SHOP;
-  document.getElementById('headerEntreprise').innerHTML=(STATE.isSuperAdmin?'👑 SUPER - ':'👑 ')+(STATE.CURRENT_CONFIG.nom||'ETS BATEKE')+' - '+STATE.SHOP;
-}
-export function switchShop(){
-  let sel=document.getElementById('shopSel').value; STATE.SHOP=sel; localStorage.setItem('patron_shop',sel); STATE.PANIER_ACHAT=JSON.parse(localStorage.getItem('panier_achat_'+sel)||'[]');
-  sync(); updateLabels(); if(window.refreshAll)window.refreshAll();
-}
-
-window.getFiltered=getFiltered; window.listenShop=listenShop; window.initShops=initShops; window.initShopsOffline=initShopsOffline;
-window.savePatronCache=savePatronCache; window.loadPatronCache=loadPatronCache; window.updateLabels=updateLabels; window.switchShop=switchShop;
+function updateKPIs(){let data=getFiltered();let today=new Date().toDateString();let vToday=data.ventes.filter(v=>new Date(v.date).toDateString()===today);let caJ=vToday.reduce((s,v)=>s+(v.total||0),0);document.getElementById('caJour').innerText=caJ.toLocaleString()+' FC';document.getElementById('caJourDetail').innerText='Encaissé: '+vToday.reduce((s,v)=>s+(v.montantPaye??v.total),0).toLocaleString();document.getElementById('benefJour').innerText=(vToday.reduce((s,v)=>s+(v.benefice||0),0)-data.dep.filter(d=>new Date(d.date).toDateString()===today).reduce((s,d)=>s+d.montant,0)).toLocaleString()+' FC';document.getElementById('aVerser').innerText=document.getElementById('caJourDetail').innerText;document.getElementById('detteJour').innerText=vToday.reduce((s,v)=>s+(v.reste||0),0).toLocaleString()+' FC';}
+function fmtVu(ts){if(!ts)return'jamais';let diff=Date.now()-ts;let m=Math.floor(diff/60000);if(m<1)return'à l\'instant';if(m<60)return'il y a '+m+'m';let h=Math.floor(m/60);if(h<24)return'il y a '+h+'h';return new Date(ts).toLocaleDateString();}
+function renderPresenceKPI(){let s=SHOP;let vends=ALL_DATA[s]?.vendeurs||{};let pres=ALL_DATA[s]?.presence||{};let html=Object.entries(vends).map(([pin,v])=>{let p=pres[pin]||{};let online=p.online===true&&Date.now()-(p.lastSeen||0)<300000;return `<div style="background:${online?'#dcfce7':'#fee2e2'};padding:6px 12px;border-radius:20px;font-size:12px"><span class="presence-dot ${online?'online':'offline'}"></span><b>${esc(v.nom||pin)}</b> ${online?'🟢 En ligne':'🔴 Hors ligne'} • ${fmtVu(p.lastSeen)}</div>`;}).join('');let box=document.getElementById('presenceKPIList');if(box)box.innerHTML=html||'<small>Aucun vendeur</small>';}
+function refreshAll(){updateLabels();updateKPIs();renderPresenceKPI();renderVentes();renderStock();renderAchatStock();renderPanierAchat();renderCaisse();renderCRM();renderDettes();renderVendeurs();renderBoutiques(ALL_DATA);}
