@@ -138,7 +138,7 @@ function initShopsOffline(){
   SHOPS_LIST.forEach(s=>{
     if(!ALL_DATA[s]) ALL_DATA[s]={ventes:[], dep:[], vers:[], stock:[], entrees:[], clients:{}, vendeurs:{}, presence:{}, logs:{}};
   });
-
+  window.ALL_DATA = ALL_DATA;
   loadPatronCache();
 
   // FIX: écoute Firebase et convertit objet -> tableau
