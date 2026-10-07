@@ -3,42 +3,63 @@ import { db } from "../common/firebase.js";
 import { esc } from "../common/utils.js";
 
 // ============================================================
-// VARIABLES GLOBALES ORIGINALES - NE PAS SIMPLIFIER
-// ============================================================
-// ============================================================
 // VARIABLES GLOBALES ORIGINALES - CORRIGÉES SANS SIMPLIFIER
 // ============================================================
-export let isSuperAdmin = localStorage.getItem('bateke_isSuper')==='1';
-export let SHOP = localStorage.getItem('patron_shop') || localStorage.getItem('shopPatron') || 'Menkao1';
-export let SHOPS_LIST = ['Menkao1','Menkao2','Mbakana','Itendance']; // ← CORRIGÉ: ton original avait les 4 shops, pas []
-export let ALL_DATA = {};
-export let FB_CONNECTED = false;
-export let CURRENT_CONFIG = {
-  nom:"ETS BATEKE", slogan:"Qualité et confiance", adresse:"Menkao, Kinshasa",
-  tel:"+243...", email:"", rccm:"", devise:"FC", deviseBase:"FC",
-  taux:2850, tauxUSD:2850, tauxEUR:3100, tauxXAF:0, tauxXOF:0,
-  taux:{USD:2850, EUR:3100, XAF:0, XOF:0}, logo:"",
-  piedFacture:"Merci.", piedDevis:"Devis 7j.",
-  imprimante:{type:"pdf", nom:"", largeur:"58mm", print_logo:"oui", copies:1},
-  compta:{base:50000, comPct:10, loyer:100000, autreFixe:0, emprunt:0, primePct:25, patronPct:45, devPct:30, exclus:[]}
-};
-export let PANIER_ACHAT = JSON.parse(localStorage.getItem('panier_achat_'+SHOP)||'[]');
+import { STATE } from '../core/state.js';
 
-// ← AJOUT VITAL: Initialise la structure pour chaque boutique (ta ligne originale)
-SHOPS_LIST.forEach(s=>{
-  if(!ALL_DATA[s]) ALL_DATA[s]={ventes:[], dep:[], vers:[], stock:[], entrees:[], clients:{}, vendeurs:{}, presence:{}, logs:{}};
-});
+// On utilise STATE, on ne recrée pas
+const SHOPS_LIST = STATE.SHOPS_LIST;
 
-// ← AJOUT VITAL: Expose en window pour que stock.js voie les mêmes données (compatibilité avec ton ancien mono-fichier)
-window.SHOP = SHOP;
-window.SHOPS_LIST = SHOPS_LIST;
-window.ALL_DATA = ALL_DATA;
-window.CURRENT_CONFIG = CURRENT_CONFIG;
-window.PANIER_ACHAT = PANIER_ACHAT;
-window.FB_CONNECTED = FB_CONNECTED;
-
-// Auth anonyme Firebase (ton code original)
+// Auth Firebase
 try{ firebase.auth().signInAnonymously().catch(()=>{}); }catch(e){}
+
+export function initShopsOffline(){
+  // Charge cache
+  try{
+    let cached = localStorage.getItem('patron_cache_Menkao1');
+    if(cached){
+      let parsed = JSON.parse(cached);
+      if(parsed.data){
+        // FUSIONNE, n'écrase pas tout
+        Object.keys(parsed.data).forEach(s=>{
+          if(STATE.ALL_DATA[s] && parsed.data[s].stock){
+            // Si cache vide mais Firebase a 446, garde Firebase
+            if(parsed.data[s].stock.length > 0 || STATE.ALL_DATA[s].stock.length===0){
+              STATE.ALL_DATA[s] = {...STATE.ALL_DATA[s],...parsed.data[s]};
+            }
+          }
+        });
+      }
+    }
+  }catch(e){}
+
+  // Écoute Firebase - UNE SEULE FOIS, remplit STATE
+  STATE.SHOPS_LIST.forEach(s=>{
+    firebase.database().ref('shops/'+s+'/stock').on('value', snap=>{
+      let v = snap.val()||{};
+      let arr = Array.isArray(v)? v : Object.values(v);
+      if(arr.length>0){ // Ne remplace que si Firebase a des données
+        STATE.ALL_DATA[s].stock = arr;
+        window.ALL_DATA = STATE.ALL_DATA; // sync
+        if(typeof renderStock==="function" && (STATE.SHOP===s || STATE.SHOP==='ALL')) renderStock();
+        if(typeof updateKPIs==="function") updateKPIs();
+        console.log(`✅ ${s}: ${arr.length} articles chargés`);
+      }
+    });
+  });
+}
+
+export function checkLogin(code){
+  if(code==='9999'){
+    localStorage.setItem('bateke_isSuper','1');
+    STATE.isSuperAdmin=true;
+    localStorage.setItem('patron_shop','Menkao1');
+    STATE.SHOP='Menkao1';
+    window.SHOP='Menkao1';
+    return true;
+  }
+  return false;
+}
 // ============================================================
 // VRAI HASH ANTI-TRICHE V4.9.14
 // ============================================================
