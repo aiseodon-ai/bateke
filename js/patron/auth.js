@@ -133,26 +133,31 @@ export function bypassLogin(){
 // ============================================================
 // INIT SHOPS OFFLINE - VERSION COMPLETE ORIGINALE
 // ============================================================
-export function initShopsOffline(){
-  let cg=JSON.parse(localStorage.getItem('patron_cache_global')||'null');
-  if(cg&&cg.shops) SHOPS_LIST=cg.shops;
-  if(!SHOPS_LIST.length) SHOPS_LIST=['Menkao1','Menkao2','Mbakana','Itendance'];
-
+function initShopsOffline(){
+  // TA LIGNE ORIGINALE - garde-la
   SHOPS_LIST.forEach(s=>{
     if(!ALL_DATA[s]) ALL_DATA[s]={ventes:[], dep:[], vers:[], stock:[], entrees:[], clients:{}, vendeurs:{}, presence:{}, logs:{}};
   });
 
-  const shopSel = document.getElementById('shopSel') || document.getElementById('shopSelector');
-  if(shopSel){
-    shopSel.innerHTML=SHOPS_LIST.map(s=>`<option ${s===SHOP?'selected':''} value="${esc(s)}">${esc(s)}</option>`).join('')+'<option value="ALL">TOUTES</option>';
-  }
+  loadPatronCache();
 
-  if(typeof window.renderBoutiques==="function") window.renderBoutiques({});
-  updateLabels();
-  if(typeof window.refreshAll==="function") window.refreshAll();
-  PANIER_ACHAT=JSON.parse(localStorage.getItem('panier_achat_'+SHOP)||'[]');
-  if(typeof window.renderAchatStock==="function") window.renderAchatStock();
-  if(typeof window.renderPanierAchat==="function") window.renderPanierAchat();
+  // FIX: écoute Firebase et convertit objet -> tableau
+  SHOPS_LIST.forEach(s=>{
+    if(typeof listenShop === "function"){
+      listenShop(s);
+    } else {
+      // Fallback si listenShop pas chargé
+      db.ref('shops/'+s+'/stock').on('value', snap=>{
+        let v = snap.val()||{};
+        ALL_DATA[s].stock = Array.isArray(v)? v : Object.values(v);
+        savePatronCache();
+        if(SHOP===s || SHOP==='ALL'){
+          if(typeof renderStock==="function") renderStock();
+          if(typeof updateKPIs==="function") updateKPIs();
+        }
+      });
+    }
+  });
 }
 
 // ============================================================
