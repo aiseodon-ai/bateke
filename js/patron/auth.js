@@ -5,9 +5,12 @@ import { esc } from "../common/utils.js";
 // ============================================================
 // VARIABLES GLOBALES ORIGINALES - NE PAS SIMPLIFIER
 // ============================================================
+// ============================================================
+// VARIABLES GLOBALES ORIGINALES - CORRIGÉES SANS SIMPLIFIER
+// ============================================================
 export let isSuperAdmin = localStorage.getItem('bateke_isSuper')==='1';
 export let SHOP = localStorage.getItem('patron_shop') || localStorage.getItem('shopPatron') || 'Menkao1';
-export let SHOPS_LIST = [];
+export let SHOPS_LIST = ['Menkao1','Menkao2','Mbakana','Itendance']; // ← CORRIGÉ: ton original avait les 4 shops, pas []
 export let ALL_DATA = {};
 export let FB_CONNECTED = false;
 export let CURRENT_CONFIG = {
@@ -21,9 +24,21 @@ export let CURRENT_CONFIG = {
 };
 export let PANIER_ACHAT = JSON.parse(localStorage.getItem('panier_achat_'+SHOP)||'[]');
 
+// ← AJOUT VITAL: Initialise la structure pour chaque boutique (ta ligne originale)
+SHOPS_LIST.forEach(s=>{
+  if(!ALL_DATA[s]) ALL_DATA[s]={ventes:[], dep:[], vers:[], stock:[], entrees:[], clients:{}, vendeurs:{}, presence:{}, logs:{}};
+});
+
+// ← AJOUT VITAL: Expose en window pour que stock.js voie les mêmes données (compatibilité avec ton ancien mono-fichier)
+window.SHOP = SHOP;
+window.SHOPS_LIST = SHOPS_LIST;
+window.ALL_DATA = ALL_DATA;
+window.CURRENT_CONFIG = CURRENT_CONFIG;
+window.PANIER_ACHAT = PANIER_ACHAT;
+window.FB_CONNECTED = FB_CONNECTED;
+
 // Auth anonyme Firebase (ton code original)
 try{ firebase.auth().signInAnonymously().catch(()=>{}); }catch(e){}
-
 // ============================================================
 // VRAI HASH ANTI-TRICHE V4.9.14
 // ============================================================
