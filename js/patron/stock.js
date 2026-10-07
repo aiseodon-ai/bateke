@@ -2,7 +2,7 @@ import { esc } from "../common/utils.js";
 
 // PAS de let SHOP = () =>... -> on utilise directement window.SHOP comme ton original
 
-let DATA_MAP = {};
+let DATA_MAP = {}; 
 
 function buildDataMap(stock){ DATA_MAP={}; stock.forEach(p=>{DATA_MAP[p.CODE]=p;}); window.DATA_MAP=DATA_MAP; }
 
