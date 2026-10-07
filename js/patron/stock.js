@@ -22,6 +22,20 @@ function renderStock(){
  document.getElementById('valStockUSDDetail').innerText='Taux 1$='+tauxUSD.toLocaleString()+' FC - Conversion PV total';
  document.getElementById('valStockPA').innerText=totalPA.toLocaleString()+' FC';
  document.getElementById('valStockBenef').innerText=benefLatent.toLocaleString()+' FC';
+   // AUTO-RECOVERY si ALL_DATA vide mais Firebase a des données
+  if(f.length===0 && data.stock.length===0 && window.db && window.SHOP){
+    window.db.ref('shops/'+window.SHOP+'/stock').once('value').then(snap=>{
+      let v = snap.val()||{};
+      let arr = Array.isArray(v)? v : Object.values(v);
+      if(arr.length>0){
+        if(!window.ALL_DATA[window.SHOP]) window.ALL_DATA[window.SHOP]={ventes:[],dep:[],vers:[],stock:[],entrees:[]};
+        window.ALL_DATA[window.SHOP].stock = arr;
+        console.log("Recovery: "+arr.length+" articles chargés");
+        renderStock();
+      }
+    });
+    return;
+  }
  buildDataMap(f);
  document.getElementById('stockT').innerHTML=f.map(p=>`<tr style="${p.actif===false?'opacity:.5;background:#fee':''}"><td>${esc(p.CODE)}</td><td class="editable" data-code="${esc(p.CODE)}" data-field="Designation" onclick="editField(this.dataset.code,this.dataset.field,DATA_MAP[this.dataset.code]?.Designation||'')">${esc(p.Designation)} ✏</td><td class="editable" data-code="${esc(p.CODE)}" data-field="Quantite" onclick="editField(this.dataset.code,this.dataset.field,DATA_MAP[this.dataset.code]?.Quantite||0)">${p.Quantite} ✏</td><td class="editable" data-code="${esc(p.CODE)}" data-field="seuil" onclick="editField(this.dataset.code,this.dataset.field,DATA_MAP[this.dataset.code]?.seuil||3)">${p.seuil||3} ✏</td><td class="editable" data-code="${esc(p.CODE)}" data-field="Prix Unit" onclick="editField(this.dataset.code,this.dataset.field,DATA_MAP[this.dataset.code]?.['Prix Unit']||0)">${(p['Prix Unit']||0).toLocaleString()} ✏</td><td class="editable" data-code="${esc(p.CODE)}" data-field="Prix Achat" onclick="editField(this.dataset.code,this.dataset.field,DATA_MAP[this.dataset.code]?.['Prix Achat']||0)">${(p['Prix Achat']||0).toLocaleString()} ✏</td><td>${((p['Prix Unit']||0)-(p['Prix Achat']||0)).toLocaleString()}</td><td>${p.actif!==false?'✅ Actif':'🚫'}</td><td><button class="btn ${p.actif!==false?'btn-r':'btn-g'}" style="width:auto" onclick="toggleActif('${esc(p.CODE)}')">${p.actif!==false?'Désactiver':'Activer'}</button> <button class="btn btn-g" style="width:auto" onclick="entree('${esc(p.CODE)}')">+Entrée</button> <button class="btn btn-r" style="width:auto" onclick="supp('${esc(p.CODE)}')">X</button></td></tr>`).join('');
 }
