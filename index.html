@@ -38,31 +38,6 @@
 <!-- UN SEUL point d'entrée, pas 5 -->
 <!--<script type="module" src="js/patron/app.js"></script>-->
 
-<!-- Firebase compat - OBLIGATOIRE AVANT modules -->
-
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- CORE GLOBALS FIDÈLES V4.9.25 - DOIT ÊTRE EN GLOBAL, PAS MODULE -->
-<script>
-  window.SHOPS_LIST = ["Menkao1","Menkao2","Menkao3","ALL"];
-  window.SHOP = localStorage.getItem('patron_shop') || "Menkao1";
-  window.ALL_DATA = {};
-  SHOPS_LIST.forEach(s=>{ ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],vendeurs:{},presence:{},logs:{}}; });
-  window.CURRENT_CONFIG = {nom:"BATEKE",taux:2850,tauxUSD:2850,taux:{USD:2850},compta:{base:50000,comPct:10,loyer:100000,autreFixe:0,emprunt:0,primePct:25,patronPct:45,devPct:30,exclus:[]},logo:""};
-  window.PANIER_ACHAT = JSON.parse(localStorage.getItem('panier_achat_'+SHOP)||'[]');
-  window.DATA_MAP = {};
-  window.esc = (s)=>{ if(s==null) return ''; return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); };
-  window.savePatronCache = ()=>{ localStorage.setItem('patron_cache', JSON.stringify(ALL_DATA)); };
-  window.loadPatronCache = ()=>{ try{ let c=JSON.parse(localStorage.getItem('patron_cache')||'{}'); if(c&&Object.keys(c).length) window.ALL_DATA={...ALL_DATA,...c}; }catch(e){} };
-  loadPatronCache();
-  // Firebase - TA CONFIG EXISTANTE
-  //const firebaseConfig = { apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY", authDomain: "bateke-v4.firebaseapp.com", databaseURL: "https://bateke-v4-default-rtdb.firebaseio.com", projectId: "bateke-v4" };
-  //if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-  window.db = firebase.database();
-  //window.auth = firebase.auth();
-</script>
-
 <!-- UN SEUL point d'entrée modulaire FIDÈLE -->
 <script type="module" src="js/patron/app.js?v=4.9.26"></script>
 <div style="text-align:center;font-size:10px;color:#888;padding:12px">V4.9.25 - TA V4.9.14 STABLE EXACTE INTACTE + SEULEMENT COMPTA V4.9.10 EXACT - Base totale ${vals.length} x base + Emprunt + Seuil corrigé ✅ VITAL - Rien d'autre touché</div></body></html>
