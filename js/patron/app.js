@@ -1,4 +1,6 @@
 // app.js - ORCHESTRATEUR FIDÈLE V4.9.25 - 12 ONGLETS
+import "../core/firebase.js"; // EN PREMIER
+import "../core/state.js";
 import "./sync.js";
 import "./auth.js";
 import "./tabs.js";
