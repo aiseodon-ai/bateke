@@ -1,6 +1,5 @@
-// firebase.js - INIT UNIQUE - COLLE TA VRAIE CONFIG ICI
-// ==== TA VRAIE CONFIG FIREBASE - BATEKE-V4 ====
-export const FIREBASE_CONFIG = {
+// js/core/firebase.js - BATEKE V4 - CONFIG RÉELLE EXTRAITE DE pantron.txt
+const firebaseConfig = {
   apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",
   authDomain: "bateke-v4.firebaseapp.com",
   databaseURL: "https://bateke-v4-default-rtdb.firebaseio.com",
@@ -10,11 +9,22 @@ export const FIREBASE_CONFIG = {
   appId: "1:321333206282:web:6d1603446be3d195de6ef3"
 };
 
-
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
-export const db = firebase.database();
-export const auth = firebase.auth();
+
+const db = firebase.database();
+const auth = firebase.auth();
+
+// Expose global pour compatibilité avec tes anciens fichiers
 window.db = db;
 window.auth = auth;
+window.firebaseConfig = firebaseConfig;
+
+// Auth anonyme comme dans ton V4.9.25 original
+try {
+  firebase.auth().signInAnonymously().catch(()=>{});
+} catch(e) {}
+
+export { db, auth };
+console.log("🔥 Firebase OK - bateke-v4 connecté:", firebaseConfig.projectId);
