@@ -1,7 +1,3 @@
-function esc(t){
-  if(t===null||t===undefined) return '';
-  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
 // state.js - FIDÈLE V4.9.25 - SINGLE SOURCE OF TRUTH
 export const STATE = {
   SHOPS_LIST: ["Menkao1","Menkao2","Menkao3","ALL"],
