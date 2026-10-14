@@ -1,11 +1,4 @@
 // app.js - ORCHESTRATEUR FIDÈLE V4.9.25 - 12 ONGLETS
-// PATCH XSS GLOBAL V4.9.26 - à mettre ligne 1 de app.js
-window.esc = (t) => String(t==null?'':t)
-  .replace(/&/g,'&amp;')
-  .replace(/</g,'&lt;')
-  .replace(/>/g,'&gt;')
-  .replace(/"/g,'&quot;')
-  .replace(/'/g,'&#039;');
 import "../core/firebase.js"; // EN PREMIER
 import "../core/state.js";
 import "./sync.js";
