@@ -1,5 +1,6 @@
 // js/core/firebase.js - BATEKE V4 - CONFIG RÉELLE EXTRAITE DE pantron.txt
 window.esc = (t) => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+export const esc = window.esc; // export pour modules qui veulent l'importer direct
 const firebaseConfig = {
   apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",
   authDomain: "bateke-v4.firebaseapp.com",
