@@ -18,9 +18,9 @@ if (!firebase.apps.length) {
 
 // 🔐 BLINDAGE APP CHECK - Fraud Defense
 // Debug pour localhost
-//if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
   self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-//}
+}
 
 try {
   const appCheck = firebase.appCheck();
