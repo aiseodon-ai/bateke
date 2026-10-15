@@ -1,6 +1,7 @@
-// js/core/firebase.js - BATEKE V4 - CONFIG RÉELLE EXTRAITE DE pantron.txt
+// js/core/firebase.js - BATEKE V4 - BLINDÉ APP CHECK
 window.esc = (t) => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-export const esc = window.esc; // export pour modules qui veulent l'importer direct
+export const esc = window.esc;
+
 const firebaseConfig = {
   apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",
   authDomain: "bateke-v4.firebaseapp.com",
@@ -15,18 +16,33 @@ if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
+// 🔐 BLINDAGE APP CHECK - Fraud Defense
+// Debug pour localhost
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+
+try {
+  const appCheck = firebase.appCheck();
+  appCheck.activate(
+    new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lflq-8tAAAAAO2coZRnGbdUuaH6c2zUOkGyxIL1'),
+    true // auto refresh
+  );
+  console.log("🛡️ App Check activé - Fraud Defense");
+} catch(e) {
+  console.warn("App Check non chargé:", e);
+}
+
 const db = firebase.database();
 const auth = firebase.auth();
 
-// Expose global pour compatibilité avec tes anciens fichiers
 window.db = db;
 window.auth = auth;
 window.firebaseConfig = firebaseConfig;
 
-// Auth anonyme comme dans ton V4.9.25 original
 try {
   firebase.auth().signInAnonymously().catch(()=>{});
 } catch(e) {}
 
 export { db, auth };
-console.log("🔥 Firebase OK - bateke-v4 connecté:", firebaseConfig.projectId);
+console.log("🔥 Firebase OK - bateke-v4 connecté + App Check:", firebaseConfig.projectId);
