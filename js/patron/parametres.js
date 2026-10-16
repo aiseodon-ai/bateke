@@ -2,6 +2,8 @@ import { esc } from "../common/utils.js";
 
 let BT_DEVICE = null;
 let BT_CHAR = null;
+window.BT_DEVICE = null;
+window.BT_CHAR = null;
 
 export async function connecterImprimanteUniverselle() {
   try {
@@ -46,6 +48,9 @@ export async function connecterImprimanteUniverselle() {
     return false;
   }
 }
+window.BT_DEVICE = BT_DEVICE;
+window.BT_CHAR = BT_CHAR;
+localStorage.setItem('bateke_printer_universal', BT_DEVICE.name);
 
 function buildTicket(vente){
   const c = window.CURRENT_CONFIG || {};
