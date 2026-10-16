@@ -1,4 +1,4 @@
-// RAPPORT SAFE V4.9.25 - FULL 19 RAPPORTS - FIX SYNTAX 48-50 - FIDÈLE
+// RAPPORT SAFE V4.9.26 - FULL 19 RAPPORTS - PDF FIX TECNO/PC
 export function onTypeChange(){
  try{
   let t=document.getElementById('typeRapport')?.value;
@@ -137,8 +137,20 @@ export function genRapport(){
    html=`<h3>RAPPORT ${escFn(type)} - ${ca.toLocaleString()} FC - Bénéf ${benef.toLocaleString()} FC - ${vPeriode.length} ventes</h3><table><tr><th>Date</th><th>Vendeur</th><th>Total</th></tr>`+vPeriode.slice(0,200).map(v=>`<tr><td>${new Date(v.date).toLocaleString()}</td><td>${escFn(v.vendeurNom||'')}</td><td>${(parseFloat(v.total||0)||0).toLocaleString()}</td></tr>`).join('')+`</table>`;
  }
 
+ // INJECTE LE HTML + BOUTONS PDF (FIX)
  let rc=document.getElementById('rapportC');
- if(rc) rc.innerHTML=html;
+ if(rc){
+   let cfg = window.CURRENT_CONFIG || {};
+   let entete = `<div style="background:#f0fdf4;padding:10px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+     <div><b>${escFn(cfg.nom||'BATEKE')}</b> - ${escFn(cfg.tel||'')} - ${new Date().toLocaleString()}<br><small>${du.toLocaleDateString()} au ${au.toLocaleDateString()} - ${escFn(type)}</small></div>
+     <div style="display:flex;gap:6px">
+       <button onclick="window.exportRapportPDF()" style="padding:10px 14px;background:#111;color:#fff;border-radius:8px">📄 Export PDF</button>
+       <button onclick="window.printRapport()" style="padding:10px 14px;background:#0b5e2f;color:#fff;border-radius:8px">🖨️ Imprimer</button>
+       <button onclick="window.shareRapport()" style="padding:10px 14px;background:#2563eb;color:#fff;border-radius:8px">📤 Partager</button>
+     </div>
+   </div>`;
+   rc.innerHTML = entete + html;
+ }
  if(window.genGraph) window.genGraph(vPeriode, dPeriode);
 
  }catch(e){
@@ -148,7 +160,67 @@ export function genRapport(){
  }
 }
 
+// ====== PDF FIX POUR TECNO SPARK 10 + PC ======
+export function exportRapportPDF(){
+  let rc=document.getElementById('rapportC');
+  if(!rc ||!rc.innerHTML.trim()){ alert('Génère d\'abord le rapport'); return; }
+  let cfg = window.CURRENT_CONFIG || {};
+  let content = rc.innerHTML;
+  let isAndroid = /Android/i.test(navigator.userAgent);
+
+  // Sur Android Tecno, on utilise RawBT si imprimante dispo, sinon partage PDF natif
+  if(isAndroid && window.CURRENT_CONFIG?.imprimante?.type==='rawbt'){
+    if(confirm('📱 Android détecté\n\n1. PDF = Partager le rapport en fichier\n2. Ticket = Imprimer résumé sur T58_AFC6 via RawBT\n\nVeux-tu imprimer le résumé du rapport sur imprimante thermique?')){
+      // Imprime résumé via RawBT
+      let caMatch = content.match(/CA[^0-9]*([0-9.,]+)/);
+      let txt = `BATEKE RAPPORT\n${new Date().toLocaleString()}\n${document.getElementById('typeRapport')?.value||''}\n${content.replace(/<[^>]*>/g,' ').substring(0,800)}\n`;
+      let bytes = new TextEncoder().encode('\x1B\x40'+txt+'\n\n\n\x1D\x56\x00');
+      let b64=''; bytes.forEach(b=>b64+=String.fromCharCode(b)); b64=btoa(b64);
+      window.location.href=`rawbt:base64,${b64}`;
+      return;
+    }
+  }
+
+  // Méthode PDF universelle qui marche PC + Android Chrome
+  let win = window.open('', '_blank');
+  if(!win){ alert('Popup bloquée. Autorise les popups pour exporter PDF'); return; }
+  win.document.write(`
+  <html><head><title>Rapport BATEKE - ${new Date().toLocaleDateString()}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:20px;font-size:12px}
+    table{width:100%;border-collapse:collapse;margin:10px 0}
+    th,td{border:1px solid #ccc;padding:6px;text-align:left;font-size:11px}
+    th{background:#111;color:#fff}
+    h3{background:#f0fdf4;padding:10px;border-radius:6px}
+    @media print{button{display:none}}
+  </style></head><body>
+  <h2>${cfg.nom||'ETS BATEKE'} - RAPPORT</h2>
+  <p>${cfg.adresse||''} - ${cfg.tel||''} - ${new Date().toLocaleString()}</p>
+  ${content}
+  <script>window.onload=function(){ setTimeout(()=>window.print(), 500); }<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+export function printRapport(){
+  exportRapportPDF();
+}
+
+export function shareRapport(){
+  let rc=document.getElementById('rapportC');
+  if(!rc){ alert('Rien à partager'); return; }
+  let text = rc.innerText.substring(0,2000);
+  if(navigator.share){
+    navigator.share({title:'Rapport BATEKE', text:text}).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(text).then(()=>alert('Rapport copié'));
+  }
+}
+
 window.onTypeChange=onTypeChange;
 window.getPeriodeData=getPeriodeData;
 window.genRapport=genRapport;
-console.log("✅ rapport.js FULL 19 RAPPORTS SAFE FIX 48-50 chargé");
+window.exportRapportPDF=exportRapportPDF;
+window.printRapport=printRapport;
+window.shareRapport=shareRapport;
+console.log("✅ rapport.js V4.9.26 PDF FIX TECNO+PC chargé");
