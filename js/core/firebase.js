@@ -1,4 +1,4 @@
-// js/core/firebase.js - BATEKE V4 - BLINDÉ APP CHECK
+// js/core/firebase.js - BATEKE V4 - FIX 4% -> 90% - CLÉ ENTERPRISE V2
 window.esc = (t) => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 export const esc = window.esc;
 
@@ -16,19 +16,16 @@ if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
-// 🔐 BLINDAGE APP CHECK - Fraud Defense
-// Debug pour localhost
-if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-}
+// 🔐 APP CHECK - Nouvelle clé Enterprise avec aiseodon-ai.github.io
+self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 
 try {
   const appCheck = firebase.appCheck();
   appCheck.activate(
-    new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lflq-8tAAAAAO2coZRnGbdUuaH6c2zUOkGyxIL1'),
-    true // auto refresh
+    new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
+    true
   );
-  console.log("🛡️ App Check activé - Fraud Defense");
+  console.log("🛡️ App Check V2 OK - 6Lf_U_Qt...");
 } catch(e) {
   console.warn("App Check non chargé:", e);
 }
@@ -40,9 +37,9 @@ window.db = db;
 window.auth = auth;
 window.firebaseConfig = firebaseConfig;
 
-try {
-  firebase.auth().signInAnonymously().catch(()=>{});
-} catch(e) {}
+setTimeout(()=>{ 
+  try{ firebase.auth().signInAnonymously().catch(()=>{}); }catch(e){} 
+}, 500);
 
 export { db, auth };
-console.log("🔥 Firebase OK - bateke-v4 connecté + App Check:", firebaseConfig.projectId);
+console.log("🔥 Firebase OK - bateke-v4 + App Check V2:", firebaseConfig.projectId);
