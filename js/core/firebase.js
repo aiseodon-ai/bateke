@@ -1,4 +1,4 @@
-// js/core/firebase.js - BATEKE V4 - FIX TECNO 4% -> 90% - V2.1 FINAL
+// js/core/firebase.js - BATEKE V4 - FINAL PROD 90% - TOUS TELEPHONES OK
 window.esc = (t) => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 export const esc = window.esc;
 
@@ -16,29 +16,8 @@ if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
-// 🔐 APP CHECK - Mode DEBUG activé pour capturer token Tecno
-self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-
-// Capture du token pour l'afficher sur Tecno
-const _origLog = console.log;
-const _origWarn = console.warn;
-function checkToken(...args){
-  let msg = args.join(' ');
-  if(msg.includes('App Check debug token:')){
-    let token = msg.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-    if(token){
-      console.log("📱 TOKEN TECNO DÉTECTÉ:", token[0]);
-      // Sur Android, on l'affiche 3 secondes après chargement
-      if(/Android/i.test(navigator.userAgent)){
-        setTimeout(()=>{
-          alert('📱 TOKEN TÉLÉPHONE À ENVOYER AU DG:\n\n'+token[0]+'\n\nCopie ce code et envoie sur WhatsApp PC');
-        }, 3000);
-      }
-    }
-  }
-}
-console.log = function(...a){ _origLog.apply(console, a); checkToken(...a); };
-console.warn = function(...a){ _origWarn.apply(console, a); checkToken(...a); };
+// 🔐 APP CHECK PROD - 90% auto, tous téléphones (Tecno, Samsung, Infinix, iPhone)
+self.FIREBASE_APPCHECK_DEBUG_TOKEN = false;
 
 try {
   const appCheck = firebase.appCheck();
@@ -46,9 +25,9 @@ try {
     new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
     true
   );
-  console.log("🛡️ App Check V2 OK - 6Lf_U_Qt...");
+  console.log("🛡️ App Check PROD V2 OK");
 } catch(e) {
-  console.warn("App Check non chargé:", e);
+  console.warn("App Check:", e);
 }
 
 const db = firebase.database();
@@ -56,11 +35,10 @@ const auth = firebase.auth();
 
 window.db = db;
 window.auth = auth;
-window.firebaseConfig = firebaseConfig;
 
 setTimeout(()=>{ 
   try{ firebase.auth().signInAnonymously().catch(()=>{}); }catch(e){} 
 }, 500);
 
 export { db, auth };
-console.log("🔥 Firebase OK - bateke-v4 + App Check V2:", firebaseConfig.projectId);
+console.log("🔥 BATEKE V4 FINAL - PROD");
