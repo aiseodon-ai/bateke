@@ -1,4 +1,4 @@
-// js/core/firebase.js - BATEKE V4 - FIX 4% -> 90% - CLÉ ENTERPRISE V2
+// js/core/firebase.js - BATEKE V4 - FIX TECNO 4% -> 90% - V2.1 FINAL
 window.esc = (t) => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 export const esc = window.esc;
 
@@ -16,8 +16,29 @@ if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
-// 🔐 APP CHECK - Nouvelle clé Enterprise avec aiseodon-ai.github.io
+// 🔐 APP CHECK - Mode DEBUG activé pour capturer token Tecno
 self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+
+// Capture du token pour l'afficher sur Tecno
+const _origLog = console.log;
+const _origWarn = console.warn;
+function checkToken(...args){
+  let msg = args.join(' ');
+  if(msg.includes('App Check debug token:')){
+    let token = msg.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    if(token){
+      console.log("📱 TOKEN TECNO DÉTECTÉ:", token[0]);
+      // Sur Android, on l'affiche 3 secondes après chargement
+      if(/Android/i.test(navigator.userAgent)){
+        setTimeout(()=>{
+          alert('📱 TOKEN TÉLÉPHONE À ENVOYER AU DG:\n\n'+token[0]+'\n\nCopie ce code et envoie sur WhatsApp PC');
+        }, 3000);
+      }
+    }
+  }
+}
+console.log = function(...a){ _origLog.apply(console, a); checkToken(...a); };
+console.warn = function(...a){ _origWarn.apply(console, a); checkToken(...a); };
 
 try {
   const appCheck = firebase.appCheck();
