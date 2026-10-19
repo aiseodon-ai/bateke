@@ -18,10 +18,16 @@ import "./parametres.js";
 
 console.log("✅ BATEKE MODULAIRE 12 ONGLETS CHARGÉS - SHOP:", window.SHOP, "ALL_DATA:", Object.keys(window.ALL_DATA));
 
-// INIT après chargement
+// INIT après chargement - UNE SEULE FOIS
+let _initDone = false;
 window.addEventListener('DOMContentLoaded', ()=>{
+  if(_initDone) return; _initDone=true;
   if(typeof window.initShops === 'function') window.initShops();
-  if(typeof window.listenShop === 'function'){
-    SHOPS_LIST.forEach(s=>{ if(s!=='ALL') window.listenShop(s); });
-  }
 });
+// INIT après chargement
+//window.addEventListener('DOMContentLoaded', ()=>{
+//  if(typeof window.initShops === 'function') window.initShops();
+//  if(typeof window.listenShop === 'function'){
+//    SHOPS_LIST.forEach(s=>{ if(s!=='ALL') window.listenShop(s); });
+//  }
+//});
