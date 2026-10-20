@@ -24,10 +24,4 @@ window.addEventListener('DOMContentLoaded', ()=>{
   if(_initDone) return; _initDone=true;
   if(typeof window.initShops === 'function') window.initShops();
 });
-// INIT après chargement
-//window.addEventListener('DOMContentLoaded', ()=>{
-//  if(typeof window.initShops === 'function') window.initShops();
-//  if(typeof window.listenShop === 'function'){
-//    SHOPS_LIST.forEach(s=>{ if(s!=='ALL') window.listenShop(s); });
-//  }
-//});
+
