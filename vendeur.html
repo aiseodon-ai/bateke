@@ -25,7 +25,6 @@
   };
   const blob = new Blob([JSON.stringify(dynManifest)], {type: 'application/json'});
   const dynUrl = URL.createObjectURL(blob);
-  // attendre que le DOM soit prêt pour le manifest
   document.addEventListener('DOMContentLoaded', ()=>{
     let m=document.getElementById('manifest-link'); if(m) m.setAttribute('href', dynUrl);
   });
@@ -75,6 +74,12 @@
 <div id="vente" class="sec active">
 <div class="card">
 <h4>Nouvelle Vente</h4>
+<!-- ✅ BOUTONS TICKET 58MM PRO -->
+<div style="display:flex;gap:6px;margin-bottom:8px">
+  <button onclick="printLastSale()" style="background:#111;color:#fff;padding:8px 12px;border-radius:6px">🖨️ Ticket</button>
+  <button onclick="testTicketUniversel()" style="background:#22c55e;color:#fff;padding:8px 12px;border-radius:6px">🧾 TEST</button>
+  <button onclick="connecterImprimanteUniverselle()" style="background:#3b82f6;color:#fff;padding:8px 12px;border-radius:6px">📡 BT</button>
+</div>
 <div class="searchBox"><input id="searchArt" placeholder="🔍 CODE ou Nom..." oninput="searchArticle()"><div id="suggest" class="suggest"></div></div>
 <div style="display:grid;grid-template-columns:1fr 90px 70px 50px;gap:5px;margin-top:8px"><input id="codeArt" placeholder="CODE" readonly><input id="pvArt" placeholder="PV" type="number" readonly><input id="qteArt" placeholder="Qté" type="number" value="1"><button class="btn btn-b" onclick="addPanier()">+</button></div>
 <div id="panierList" style="margin-top:10px;min-height:60px;background:#fafafa;border-radius:8px;padding:8px">Panier vide</div>
@@ -98,6 +103,7 @@
 </div>
 <div class="card"><h4>Dernières ventes aujourd'hui</h4><div style="overflow:auto"><table><thead><tr><th>Heure</th><th>Vendeur</th><th>Client</th><th>Articles</th><th>Total</th><th>Sync</th></tr></thead><tbody id="ventesJour"></tbody></table></div></div>
 </div>
+<!-- ... reste de tes div devis/facture/stock/caisse/synthese identique ... -->
 <div id="devis" class="sec"><div class="card"><h4>📑 Devis</h4><div id="devisConfigInfo" style="font-size:11px;background:#f0fdf4;padding:6px;border-radius:6px"></div>
 <div class="deviseBox"><div>Devise <select id="deviseDevis" onchange="onDeviseDevisChange()"><option value="FC" selected>FC</option><option value="USD">USD</option><option value="XAF">XAF</option><option value="XOF">XOF</option><option value="EUR">EUR</option></select></div><div>Taux <input id="tauxDevis" type="number" oninput="renderPanierDevis()"></div></div>
 <div class="searchBox" style="margin-top:8px"><input id="searchArtDevis" placeholder="CODE ou Nom devis..." oninput="searchArticleDevis()"><div id="suggestDevis" class="suggest"></div></div><div style="display:grid;grid-template-columns:1fr 90px 70px 50px;gap:5px;margin-top:8px"><input id="codeArtDevis" placeholder="CODE" readonly><input id="pvArtDevis" placeholder="PV FC" readonly><input id="qteArtDevis" type="number" value="1"><button class="btn btn-b" onclick="addPanierDevis()">+</button></div><div id="panierDevis" style="margin-top:10px;background:#fffde7;padding:8px;border-radius:8px;border:1px dashed #facc15;min-height:50px">Panier devis vide</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px"><div>TVA <select id="tvaDevis" onchange="renderPanierDevis()"><option value="oui" selected>Avec TVA 16%</option><option value="non">Sans TVA</option></select></div><div>Remise %<input id="remiseDevis" type="number" value="0" oninput="renderPanierDevis()"></div></div><div style="text-align:right;margin-top:8px;background:#fff;padding:8px;border-radius:8px">Total FC: <span id="totalDevisFC">0</span><br><small id="convertInfoDevis" style="color:#0b5e2f;font-weight:bold"></small><br><b id="totalDevis" style="font-size:20px;color:#0b5e2f">0 FC</b><br><small id="detailDevis"></small></div><hr><input id="clientNomDevis" placeholder="Nom client *"><input id="clientTelDevis" placeholder="Tél"><button class="btn btn-g" onclick="validerDevis()">💾 Créer Devis</button></div><div class="card"><h4>Liste Devis</h4><div style="overflow:auto"><table><thead><tr><th>Num</th><th>Client</th><th>TTC</th><th>Devise</th><th>Taux</th><th>Action</th></tr></thead><tbody id="devisList"></tbody></table></div></div></div>
@@ -115,11 +121,9 @@
 <div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Heure</th><th>Type</th><th>Montant</th><th>Motif</th></tr></thead><tbody id="caisseList"></tbody></table></div></div></div>
 <div id="synthese" class="sec"><div class="card"><h4>📊 Ma Synthèse</h4>Du: <input type="date" id="du"> Au: <input type="date" id="au"><button class="btn btn-g" onclick="genSyntheseVendeur()">Générer</button><div id="syntheseC" style="margin-top:10px;overflow:auto"></div><button class="btn btn-y" onclick="pdfSynthese()">📄 PDF</button></div></div>
 
-<!-- ✅ MODULAIRE - UNE SEULE LIGNE CHANGE : type="module" -->
 <script type="module" src="js/vendeur/app.js"></script>
 
 <script>
-// === ICONE BUREAU PWA ===
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e=>{
   e.preventDefault(); deferredPrompt=e;
