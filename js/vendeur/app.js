@@ -10,6 +10,7 @@ import "./modules/caisse.js";
 import "./modules/devis.js";
 import "./modules/facture.js";
 import "./modules/synthese.js";
+import "./modules/ticket.js";
 
 window.STATE = STATE;
 window.SHOP = STATE.SHOP;
@@ -63,4 +64,14 @@ window.addEventListener('DOMContentLoaded', ()=>{
   }
   let sess=JSON.parse(localStorage.getItem('vendeur_session_'+STATE.SHOP)||'null'); if(sess && (Date.now()-sess.ts)<12*60*60*1000){ let pinEl=document.getElementById('pinInput'); if(pinEl) pinEl.value=sess.pin; }
   console.log("Vendeur prêt - Stock:", STATE.STOCK.length);
+});
+
+window.db.ref('shops/'+STATE.SHOP+'/config_entreprise').on('value',s=>{
+  if(s.val()){
+    STATE.TICKET_CONFIG = s.val();
+    STATE.CONFIG_ENTREPRISE = s.val();
+    window.CURRENT_CONFIG = s.val();
+    localStorage.setItem('bateke_printer_cfg_'+STATE.SHOP, JSON.stringify(s.val()));
+    console.log("🎫 Config patron 58mm reçue pour vendeur");
+  }
 });
