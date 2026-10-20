@@ -41,18 +41,29 @@ export function renderPanier(){
   if(document.getElementById('totalPanier')) document.getElementById('totalPanier').innerText=brut.toLocaleString()+' FC';
   if(document.getElementById('totalFinal')) document.getElementById('totalFinal').innerText=final.toLocaleString()+' FC';
   if(document.getElementById('remiseInfo')) document.getElementById('remiseInfo').innerText= rem>0?`Remise ${rem}% = -${remVal.toLocaleString()} FC`:'';
+
+  // Ajoute si pas déjà
+  window.printLastSale = ()=>{ 
+  let v=STATE.LAST_VENTE || JSON.parse(localStorage.getItem('last_vente_'+STATE.SHOP)||'null'); 
+  if(!v) return alert('Aucune vente'); 
+  window.imprimerVenteUniverselle(v); 
+};
 }
 
 export function removePanier(i){ STATE.PANIER.splice(i,1); renderPanier(); }
 export function checkRemise(){ let r=parseFloat(document.getElementById('remise')?.value||0); if(r>5){ alert('Max 5%'); document.getElementById('remise').value=5; renderPanier(); } }
+
 export async function validerVente(){
   if(!STATE.PANIER.length) return alert('Panier vide'); 
   if(!STATE.CURRENT_VENDEUR) return alert('Login requis');
+  
   let brut=STATE.PANIER.reduce((s,p)=>s+((p.prix||p.Prix||0)*p.qty),0); 
   let rem=parseFloat(document.getElementById('remise')?.value||0)||0; 
   let final=brut-brut*rem/100;
   let id=Date.now(); 
+  
   let vente={
+    id:id,
     date:new Date().toISOString(), 
     boutique:STATE.SHOP, 
     vendeur:STATE.CURRENT_VENDEUR.nom, 
@@ -64,6 +75,8 @@ export async function validerVente(){
     payMode:document.getElementById('payMode')?.value||'cash', 
     offline:!STATE.FIREBASE_CONNECTED
   };
+
+  // ---- STOCK TRANSACTION ----
   if(!STATE.IS_ONLINE||!STATE.FIREBASE_CONNECTED){
     let updates=STATE.PANIER.map(it=>{ let st=STATE.STOCK.find(s=>s.CODE===it.CODE); return {CODE:it.CODE, newQte:Math.max(0,(st?.Quantite||0)-it.qty)}; });
     STATE.OFFLINE_QUEUE.push({type:'vente', id, shop:STATE.SHOP, data:vente, stockUpdates:updates}); saveQueue();
@@ -79,12 +92,39 @@ export async function validerVente(){
       await window.db.ref('shops/'+STATE.SHOP+'/ventes/'+id).set(vente); saveStockCache(); 
     }catch(e){ alert('❌ '+e.message); return; }
   }
-  STATE.PANIER=[]; renderPanier(); 
-  document.getElementById('codeArt').value=''; document.getElementById('qteArt').value='1'; document.getElementById('remise').value=0; 
-  window.renderVentesJour?.(); window.renderStock?.(); window.updateKPI?.(); updateOfflineUI(); 
-  alert('✅ Vente: '+final.toLocaleString()+' FC');
-}
 
+  // ---- RESET UI ----
+  STATE.PANIER=[]; 
+  STATE.LAST_VENTE=vente; // pour réimpression
+  window.LAST_VENTE=vente;
+  localStorage.setItem('last_vente_'+STATE.SHOP, JSON.stringify(vente));
+  
+  renderPanier(); 
+  document.getElementById('codeArt').value=''; 
+  document.getElementById('qteArt').value='1'; 
+  document.getElementById('remise').value=0; 
+  window.renderVentesJour?.(); 
+  window.renderStock?.(); 
+  window.updateKPI?.(); 
+  updateOfflineUI(); 
+
+  // ---- 🖨️ IMPRESSION TICKET 58MM PRO ----
+  let cfg = STATE.TICKET_CONFIG || window.CURRENT_CONFIG || {};
+  let autoPrint = cfg.imprimante?.autoPrint || cfg.autoPrint || false;
+  let msg = `✅ Vente: ${final.toLocaleString()} FC\n\n🖨️ Imprimer ticket 58mm ?`;
+  
+  if(autoPrint){
+    // impression auto sans demander
+    window.imprimerVenteUniverselle?.(vente);
+    alert(`✅ Vente: ${final.toLocaleString()} FC\n🖨️ Ticket envoyé vers ${localStorage.getItem('bateke_printer_universal')||'T58_AFC6'}`);
+  } else {
+    if(confirm(msg)){
+      window.imprimerVenteUniverselle?.(vente);
+    } else {
+      alert(`✅ Vente enregistrée\nTicket disponible via bouton 🖨️ Réimprimer`);
+    }
+  }
+}
 export function renderVentesJour(){
   let el=document.getElementById('ventesJour'); if(!el) return;
   let today=new Date().toDateString(); 
