@@ -1,9 +1,16 @@
-// js/vendeur/modules/stock.js - FIX ORIGINAL V5.6.3
+// js/vendeur/modules/stock.js - FIX V5.6.4 APP CHECK + ASCII
 import { STATE } from '../core/state.js';
 import { saveStockCache, saveQueue, updateOfflineUI } from '../core/offline.js';
+
+const CACHE_VERSION = 'v5.6.4-appcheck-20261020'; // 👈 FORCER MAJ PWA
+
 function esc(t){ return window.esc?window.esc(t):String(t||''); }
 
-// RENDER STOCK ORIGINAL 100% - Prix Unit + tout le scroll
+// ✅ FIX PRIX ASCII PUR
+function formatPrix(n){
+  return String(Math.round(parseFloat(n)||0));
+}
+
 export function renderStock(){
   let q=(document.getElementById('searchS')?.value||'').toLowerCase().trim();
   let f=STATE.STOCK.filter(p=>p.actif!==false).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).sort((a,b)=>(a.CODE||'').localeCompare(b.CODE||''));
@@ -14,19 +21,18 @@ export function renderStock(){
     let seuil=p.seuil||3;
     let statut=p.Quantite<=seuil?`<span style="color:red;font-weight:bold">⚠️ Faible (${p.Quantite})</span>`:`<span style="color:green">OK</span>`;
     let prix=p['Prix Unit']||p.Prix||p.PV||0;
-    return `<tr style="${!actif?'background:#fee;opacity:0.6':''}"><td><b>${esc(p.CODE)}</b></td><td>${esc(p.Designation)}</td><td>${p.Quantite}</td><td>${prix.toLocaleString()} FC</td><td>${statut}</td><td>${actif?'✅ Actif':'🚫 Désactivé'}</td></tr>`;
+    return `<tr style="${!actif?'background:#fee;opacity:0.6':''}"><td><b>${esc(p.CODE)}</b></td><td>${esc(p.Designation)}</td><td>${p.Quantite}</td><td>${formatPrix(prix)} FC</td><td>${statut}</td><td>${actif?'✅ Actif':'🚫 Désactivé'}</td></tr>`;
   }).join('');
   if(window.updateOfflineUI) window.updateOfflineUI();
 }
 
-// SEARCH ARTICLE ORIGINAL
 export function searchArticle(){
   let q=document.getElementById('searchArt')?.value?.toLowerCase().trim()||''; 
   let sug=document.getElementById('suggest'); if(!sug) return;
   if(!q){ sug.style.display='none'; return; }
   let f=STATE.STOCK.filter(p=>p.actif!==false).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).slice(0,10);
   if(!f.length){ sug.style.display='none'; return; }
-  sug.innerHTML=f.map(p=>`<div onclick="selectArt('${esc(p.CODE)}')"><b>${esc(p.CODE)}</b> - ${esc(p.Designation)} - ${(p['Prix Unit']||0).toLocaleString()} FC - Stock:${p.Quantite}</div>`).join('');
+  sug.innerHTML=f.map(p=>`<div onclick="selectArt('${esc(p.CODE)}')"><b>${esc(p.CODE)}</b> - ${esc(p.Designation)} - ${formatPrix(p['Prix Unit']||0)} FC - Stock:${p.Quantite}</div>`).join('');
   sug.style.display='block';
 }
 export function selectArt(code){
@@ -39,7 +45,6 @@ export function selectArt(code){
 }
 export function selectArticle(code){ return selectArt(code); }
 
-// ENTREE STOCK VENDEUR ORIGINAL - FIX COMPLET
 export function openEntree(){
   let code=prompt('CODE article entrée?'); if(!code) return;
   code=code.toUpperCase().trim();
@@ -79,4 +84,4 @@ window.searchArticle=searchArticle;
 window.selectArt=selectArt;
 window.selectArticle=selectArt;
 window.openEntree=openEntree;
-console.log("stock.js FIX Prix Unit OK -", STATE.STOCK.length, "articles");
+console.log("stock.js V5.6.4 APP CHECK + ASCII OK -", STATE.STOCK.length, "articles - CACHE:", CACHE_VERSION);
