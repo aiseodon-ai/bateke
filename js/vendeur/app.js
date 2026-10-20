@@ -1,6 +1,22 @@
-// js/vendeur/app.js - ORCHESTRATEUR FINAL V5.6.3 - FIX ENTREE + BOUTIQUE LOCK
+// js/vendeur/app.js - ORCHESTRATEUR FINAL V5.6.4 - APP CHECK + FIX ENTREE + BOUTIQUE LOCK
 import "./core/firebase.js";
 import { STATE } from "./core/state.js";
+
+// ✅ APP CHECK VENDEUR - DOIT ÊTRE JUSTE APRES FIREBASE, AVANT TOUT LE RESTE
+try {
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // pour tester en localhost, laisse true pour l'instant
+  const appCheck = firebase.appCheck();
+  appCheck.activate(
+    // 👇 COLLE ICI LA MÊME CLÉ QUE DANS PATRON (reCAPTCHA Enterprise)
+    // Firebase Console > App Check > Web app vendeur > Realtime Database
+    new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
+    true // auto-refresh
+  );
+  console.log("✅ APP CHECK VENDEUR ACTIVÉ - SHOP:", STATE.SHOP);
+} catch(e){
+  console.warn("⚠️ App Check vendeur non actif:", e.message);
+}
+
 import "./core/offline.js";
 import "./core/presence.js";
 import { doLogin, logoutAll, switchShop } from "./modules/auth.js";
@@ -17,7 +33,6 @@ window.SHOP = STATE.SHOP;
 
 window.esc = (t)=>{ if(t==null) return ''; return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
 
-// ✅ FIX - ON GARDE LE VRAI openEntree DE stock.js - PLUS DE PLACEHOLDER
 window.doLogin = doLogin;
 window.logoutAll = logoutAll;
 window.switchShop = switchShop;
@@ -25,7 +40,7 @@ window.renderStock = renderStock;
 window.searchArticle = searchArticle;
 window.selectArt = selectArt;
 window.selectArticle = selectArticle;
-window.openEntree = openEntree; // ← LE VRAI FIX, pas l'alert !
+window.openEntree = openEntree;
 
 window.switchTab = function(id){
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
@@ -34,7 +49,7 @@ window.switchTab = function(id){
   document.getElementById(id)?.classList.add('active');
 };
 
-console.log("✅ VENDEUR MODULAIRE 7 MODULES CHARGÉS - SHOP:", STATE.SHOP, "- openEntree FIX ACTIF");
+console.log("✅ VENDEUR MODULAIRE V5.6.4 + APP CHECK - SHOP:", STATE.SHOP);
 
 window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('shopName').innerText=STATE.SHOP;
@@ -56,9 +71,8 @@ window.addEventListener('DOMContentLoaded', ()=>{
     window.db.ref('shops/'+STATE.SHOP+'/versements').on('value',s=>{ STATE.VERS=Object.values(s.val()||{}); window.renderCaisse?.(); window.updateKPI?.(); });
     window.db.ref('shops/'+STATE.SHOP+'/devis').on('value',s=>{ if(s.val()){ STATE.DEVIS=Object.entries(s.val()).map(([k,v])=>({...v,_id:k})); window.renderDevisList?.(); } });
     window.db.ref('shops/'+STATE.SHOP+'/factures').on('value',s=>{ if(s.val()){ STATE.FACTURES=Object.entries(s.val()).map(([k,v])=>({...v,_id:k})); window.renderFactList?.(); } });
-    // 🔒 BOUTIQUE LOCK - si vendeur verrouillé, on ne re-remplit pas le select avec toutes les boutiques
     window.db.ref('shops').on('value',snap=>{ 
-      if(STATE._lockedShop || (STATE.CURRENT_VENDEUR && !STATE.CURRENT_VENDEUR.isAdmin)) return; // ne pas écraser si verrouillé
+      if(STATE._lockedShop || (STATE.CURRENT_VENDEUR && !STATE.CURRENT_VENDEUR.isAdmin)) return;
       let data=snap.val()||{}; let list=Object.keys(data); let sel=document.getElementById('shopSel'); if(sel) sel.innerHTML=list.map(ss=>`<option ${ss===STATE.SHOP?'selected':''} value="${ss}">${ss}</option>`).join(''); 
     });
   }
@@ -66,12 +80,15 @@ window.addEventListener('DOMContentLoaded', ()=>{
   console.log("Vendeur prêt - Stock:", STATE.STOCK.length);
 });
 
-window.db.ref('shops/'+STATE.SHOP+'/config_entreprise').on('value',s=>{
-  if(s.val()){
-    STATE.TICKET_CONFIG = s.val();
-    STATE.CONFIG_ENTREPRISE = s.val();
-    window.CURRENT_CONFIG = s.val();
-    localStorage.setItem('bateke_printer_cfg_'+STATE.SHOP, JSON.stringify(s.val()));
-    console.log("🎫 Config patron 58mm reçue pour vendeur");
-  }
-});
+// Config imprimante patron -> vendeur
+if(window.db){
+  window.db.ref('shops/'+STATE.SHOP+'/config_entreprise').on('value',s=>{
+    if(s.val()){
+      STATE.TICKET_CONFIG = s.val();
+      STATE.CONFIG_ENTREPRISE = s.val();
+      window.CURRENT_CONFIG = s.val();
+      localStorage.setItem('bateke_printer_cfg_'+STATE.SHOP, JSON.stringify(s.val()));
+      console.log("🎫 Config patron 58mm reçue pour vendeur");
+    }
+  });
+}
