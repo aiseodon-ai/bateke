@@ -33,7 +33,7 @@ function lockShopUI(lockedShop){
 }
 
 function unlockShopForPatron(currentShop){
-  STATE._lockedShop = false; // PAS DE VERROU
+  STATE._lockedShop = false;
   localStorage.setItem('vendeur_shop', currentShop);
   
   let sel = document.getElementById('shopSel');
@@ -41,18 +41,26 @@ function unlockShopForPatron(currentShop){
     sel.disabled = false;
     sel.style.display = 'block';
   }
-  console.log("🔓 SHOP DEVERROUILLE - PATRON MODE - Boutique courante:", currentShop);
   
-  // Charge toutes les boutiques pour le select
+  // LISTE FALLBACK si shops/.read bloqué
+  let fallbackList = ["Menkao1","Menkao2","Menkao3","Kenge","Kisantu"]; // Mets tes vraies boutiques ici
+  
   if(window.db){
     window.db.ref('shops').once('value').then(snap=>{
       let data = snap.val()||{};
       let list = Object.keys(data);
+      if(list.length === 0) list = fallbackList;
       if(sel){
         sel.innerHTML = list.map(s=>`<option ${s===currentShop?'selected':''} value="${s}">${s}</option>`).join('');
       }
+    }).catch(()=>{
+      // Si permission denied, utilise fallback
+      if(sel){
+        sel.innerHTML = fallbackList.map(s=>`<option ${s===currentShop?'selected':''} value="${s}">${s}</option>`).join('');
+      }
     });
   }
+  console.log("🔓 PATRON MODE - Sélecteur débloqué");
 }
 
 export function doLogin(){
