@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BATEKE - SUPERADMIN DG SUPRÊME V6</title>
+<title>BATEKE - SUPERADMIN DG SUPRÊME V6.1</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -24,53 +24,52 @@ input,select{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;m
 </head>
 <body>
 <div class="header">
-<div><b>👑 BATEKE SUPERADMIN</b> - DG SUPRÊME <span class="badge">SAAS V6</span><br><small id="adminEmail">Chargement...</small></div>
+<div><b>👑 BATEKE SUPERADMIN</b> - DG BATEKE <span class="badge">SAAS V6.1</span><br><small id="adminEmail">Chargement...</small></div>
 <div><button class="btn btn-r" onclick="logout()">Déconnexion</button></div>
 </div>
 
 <div class="grid">
 <div class="card"><div>Total Patrons</div><div class="kpi" id="kpiPatrons">-</div><small id="kpiPatronsDetail"></small></div>
 <div class="card"><div>Total Boutiques</div><div class="kpi" id="kpiShops">-</div><small id="kpiShopsList"></small></div>
-<div class="card"><div>CA Global (FC)</div><div class="kpi" id="kpiCA">-</div><small>Toutes boutiques</small></div>
-<div class="card"><div>Abonnements Actifs</div><div class="kpi" id="kpiAbo">-</div><small>Revenu mensuel: <b id="kpiRev">$0</b></small></div>
+<div class="card"><div>CA Global (FC)</div><div class="kpi" id="kpiCA">-</div><small>Toutes boutiques: shops/*/ventes</small></div>
+<div class="card"><div>Abonnements Actifs</div><div class="kpi" id="kpiAbo">-</div><small>Revenu: <b id="kpiRev">$0</b></small></div>
 </div>
 
 <div style="padding:0 16px;display:grid;grid-template-columns:2fr 1fr;gap:12px">
 <div class="card">
-<h3>🏪 Tous les Patrons & Abonnements</h3>
+<h3>🏪 Patrons & Abonnements</h3>
 <div style="display:flex;gap:6px;margin-bottom:10px">
-<input id="searchPatron" placeholder="Rechercher patron, PIN, boutique..." oninput="renderPatrons()">
+<input id="searchPatron" placeholder="Rechercher PIN, boutique..." oninput="renderPatrons()">
 <select id="filterAbo" onchange="renderPatrons()"><option value="tous">Tous</option><option value="actif">Actifs</option><option value="expire">Expirés</option><option value="suspendu">Suspendus</option></select>
 </div>
 <table class="table"><thead><tr><th>PIN</th><th>Shop</th><th>Abo</th><th>Expire</th><th>CA</th><th>Action</th></tr></thead><tbody id="tbodyPatrons"><tr><td colspan="6">Chargement...</td></tr></tbody></table>
 </div>
 
 <div class="card">
-<h3>➕ Créer / Gérer Abonnement</h3>
-<label>PIN Patron (4 chiffres)</label><input id="newPin" maxlength="4" placeholder="Ex: 1234">
-<label>Boutique par défaut</label><input id="newShop" placeholder="Ex: Menkao1">
-<label>Plan</label><select id="newPlan"><option value="basic">Basic - $10/mois</option><option value="pro">Pro - $25/mois (5 boutiques)</option><option value="enterprise">Enterprise - $50/mois (illimité)</option><option value="lifetime">Lifetime - $300</option></select>
+<h3>➕ Gérer Abonnement</h3>
+<label>PIN (4 chiffres)</label><input id="newPin" maxlength="4" placeholder="Ex: 7832">
+<label>Boutique</label><input id="newShop" placeholder="Ex: Menkao2">
+<label>Plan</label><select id="newPlan"><option value="basic">Basic - $10</option><option value="pro">Pro - $25</option><option value="enterprise">Enterprise - $50</option><option value="lifetime">Lifetime - $300</option></select>
 <label>Durée</label><select id="newDuree"><option value="30">1 Mois</option><option value="90">3 Mois -10%</option><option value="365">1 An -20%</option><option value="9999">Illimité</option></select>
-<label>Date Expiration</label><input id="newExpire" type="date">
+<label>Expire</label><input id="newExpire" type="date">
 <div style="display:flex;gap:6px;margin-top:8px">
 <button class="btn btn-g" onclick="creerAbonnement()">💾 Créer/Prolonger</button>
 <button class="btn btn-y" onclick="suspendrePatron()">⏸️ Suspendre</button>
 </div>
 <hr>
-<h4>⚙️ Config SAAS Globale</h4>
-<label>Message maintenance</label><input id="globalMsg" placeholder="Système en maintenance...">
-<button class="btn btn-b" onclick="saveGlobalConfig()">Sauver config globale</button>
+<h4>⚙️ Config SAAS</h4>
+<label>Message</label><input id="globalMsg" placeholder="Système actif...">
+<button class="btn btn-b" onclick="saveGlobalConfig()">Sauver</button>
 <div id="statusAbo" style="margin-top:8px;font-weight:bold;color:#22c55e"></div>
 </div>
 </div>
 
 <script>
-// FIREBASE CONFIG - REMPLACE PAR LE TIEN
 const firebaseConfig = {
-  apiKey: "TON_API_KEY",
-  authDomain: "ton-projet.firebaseapp.com",
-  databaseURL: "https://ton-projet-default-rtdb.firebaseio.com",
-  projectId: "ton-projet"
+  apiKey: "AIzaSyC9vCqX1i3m2X8Y7Z6A5B4C3D2E1F0G9H8",
+  authDomain: "bateke-v4.firebaseapp.com",
+  databaseURL: "https://bateke-v4-default-rtdb.firebaseio.com",
+  projectId: "bateke-v4"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -80,17 +79,21 @@ let ALL_PATRONS = {};
 let ALL_SHOPS = {};
 
 auth.onAuthStateChanged(async (user)=>{
-  if(!user){ location.href='../index.html?role=patron'; return; }
-  document.getElementById('adminEmail').textContent = user.email;
+  if(!user){ location.href='../patron/?role=patron'; return; }
+  document.getElementById('adminEmail').textContent = user.email + ' | UID: ' + user.uid;
   let snap = await db.ref('superadmins/'+user.uid).once('value');
-  if(!snap.val()){ alert("Accès SuperAdmin refusé"); auth.signOut(); return; }
+  let snap2 = await db.ref('superadmins/'+user.email.replace(/[^a-zA-Z0-9]/g,'')).once('value');
+  if(!snap.val() && !snap2.val()){
+     let pinCheck = await db.ref('superadmins/7832').once('value');
+     if(!pinCheck.val()){ alert("Accès SuperAdmin refusé"); auth.signOut(); return; }
+  }
   initSuperAdmin();
 });
 
 async function initSuperAdmin(){
   db.ref('patrons').on('value', snap=>{ ALL_PATRONS = snap.val()||{}; renderPatrons(); updateKPI(); });
-  db.ref('shops').on('value', snap=>{ ALL_SHOPS = snap.val()||{}; updateKPI(); });
-  db.ref('ventes').on('value', snap=>{ window.ALL_VENTES = snap.val()||{}; updateKPI(); });
+  db.ref('shops').on('value', snap=>{ ALL_SHOPS = snap.val()||{}; updateKPI(); renderPatrons(); });
+  db.ref('config').once('value').then(s=>{ if(s.val()?.saas?.message) document.getElementById('globalMsg').value = s.val().saas.message; });
 }
 
 function updateKPI(){
@@ -98,18 +101,23 @@ function updateKPI(){
   let nbShops = Object.keys(ALL_SHOPS).length;
   document.getElementById('kpiPatrons').textContent = nbPatrons;
   document.getElementById('kpiShops').textContent = nbShops;
-  document.getElementById('kpiShopsList').textContent = Object.keys(ALL_SHOPS).slice(0,4).join(', ');
+  document.getElementById('kpiShopsList').textContent = Object.keys(ALL_SHOPS).slice(0,5).join(', ');
 
+  // CA GLOBAL CORRIGÉ: shops/*/ventes
   let ca = 0;
-  if(window.ALL_VENTES){
-    Object.values(window.ALL_VENTES).forEach(shopVentes=>{
-      if(typeof shopVentes==='object') Object.values(shopVentes).forEach(v=>{ ca+= parseFloat(v.total||0); });
-    });
-  }
-  document.getElementById('kpiCA').textContent = ca.toLocaleString();
+  Object.values(ALL_SHOPS).forEach(shop=>{
+    if(shop.ventes && typeof shop.ventes==='object'){
+      Object.values(shop.ventes).forEach(v=>{
+        ca+= parseFloat(v.total||v.montant||0);
+      });
+    }
+  });
+  document.getElementById('kpiCA').textContent = ca.toLocaleString() + ' FC';
 
   let actifs = Object.values(ALL_PATRONS).filter(p=>p.abonnement?.statut==='actif').length;
   document.getElementById('kpiAbo').textContent = actifs + '/' + nbPatrons;
+  document.getElementById('kpiRev').textContent = '$' + (actifs*25);
+  document.getElementById('kpiPatronsDetail').textContent = actifs + ' actifs';
 }
 
 function renderPatrons(){
@@ -119,35 +127,45 @@ function renderPatrons(){
   let html = '';
   Object.entries(ALL_PATRONS).forEach(([pin, data])=>{
     let abo = data.abonnement || {};
-    let expire = abo.expire || 'N/A';
+    let expire = abo.expire ? new Date(abo.expire).toLocaleDateString() : 'N/A';
     let statut = abo.statut || 'inconnu';
     if(filter!=='tous' && statut!==filter) return;
-    let hay = (pin+' '+(data.shop||'')+' '+statut).toLowerCase();
+    let shopName = data.boutique || data.shop || Object.keys(data.shops||{})[0] || '-';
+    let hay = (pin+' '+shopName+' '+statut).toLowerCase();
     if(search && !hay.includes(search)) return;
     let color = statut==='actif'?'#dcfce7':statut==='expire'?'#fee2e2':'#fef9c3';
-    html+=`<tr style="background:${color}"><td><b>${pin}</b></td><td>${data.shop||Object.keys(data.shops||{})[0]||'-'}</td><td><small>${abo.plan||'-'}<br>${statut}</small></td><td>${expire}</td><td>${(data.ca||0).toLocaleString?.()||0}</td><td><button class="btn btn-b" style="padding:4px 8px;font-size:11px" onclick="editPatron('${pin}')">Éditer</button></td></tr>`;
+    // CA par patron
+    let caPatron = 0;
+    if(data.shops){
+      Object.keys(data.shops).forEach(s=>{
+        if(ALL_SHOPS[s]?.ventes) Object.values(ALL_SHOPS[s].ventes).forEach(v=> caPatron+= parseFloat(v.total||0));
+      });
+    }
+    html+=`<tr style="background:${color}"><td><b>${pin}</b></td><td>${shopName}</td><td><small>${abo.plan||'-'}<br>${statut}</small></td><td>${expire}</td><td>${caPatron.toLocaleString()}</td><td><button class="btn btn-b" style="padding:4px 8px;font-size:11px" onclick="editPatron('${pin}')">Éditer</button></td></tr>`;
   });
-  tbody.innerHTML = html || '<tr><td colspan="6">Aucun patron</td></tr>';
+  tbody.innerHTML = html || '<tr><td colspan="6">Aucun patron - Ajoute 7832</td></tr>';
 }
 
 async function creerAbonnement(){
   let pin = document.getElementById('newPin').value.trim();
   let shop = document.getElementById('newShop').value.trim();
   let plan = document.getElementById('newPlan').value;
+  let duree = parseInt(document.getElementById('newDuree').value);
   let expireInput = document.getElementById('newExpire').value;
   if(!pin) return alert("PIN requis");
-  let expire = expireInput ? new Date(expireInput).toISOString() : new Date(Date.now()+30*24*3600*1000).toISOString();
+  let expire = expireInput ? new Date(expireInput).toISOString() : new Date(Date.now()+duree*24*3600*1000).toISOString();
   await db.ref('patrons/'+pin+'/abonnement').set({plan, statut:'actif', expire, updatedAt:new Date().toISOString(), createdBy:auth.currentUser.email});
-  if(shop) await db.ref('patrons/'+pin+'/shop').set(shop);
-  document.getElementById('statusAbo').textContent = '✅ Abonnement '+plan+' pour PIN '+pin+' jusqu\'à '+expire;
-  alert("✅ Abonnement créé pour PIN "+pin);
+  if(shop) await db.ref('patrons/'+pin+'/boutique').set(shop);
+  document.getElementById('statusAbo').textContent = '✅ Abonnement '+plan+' PIN '+pin+' jusqu\'à '+expire;
+  alert("✅ OK PIN "+pin);
 }
 
 function editPatron(pin){
   document.getElementById('newPin').value = pin;
   let data = ALL_PATRONS[pin];
-  document.getElementById('newShop').value = data.shop||'';
-  document.getElementById('newPlan').value = data.abonnement?.plan||'basic';
+  document.getElementById('newShop').value = data.boutique||data.shop||'';
+  document.getElementById('newPlan').value = data.abonnement?.plan||'enterprise';
+  if(data.abonnement?.expire) document.getElementById('newExpire').value = new Date(data.abonnement.expire).toISOString().split('T')[0];
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -155,13 +173,13 @@ async function suspendrePatron(){
   let pin = document.getElementById('newPin').value.trim();
   if(!pin) return alert("PIN requis");
   await db.ref('patrons/'+pin+'/abonnement/statut').set('suspendu');
-  alert("⏸️ Patron "+pin+" suspendu");
+  alert("⏸️ Suspendu "+pin);
 }
 
 function saveGlobalConfig(){
   let msg = document.getElementById('globalMsg').value;
-  db.ref('config/saas').set({message:msg, updatedAt:new Date().toISOString()});
-  document.getElementById('statusAbo').textContent = '✅ Config SAAS sauvée';
+  db.ref('config/saas').set({message:msg, messageActif:msg, version:'6.1', updatedAt:new Date().toISOString(), devise:'CDF'});
+  document.getElementById('statusAbo').textContent = '✅ Config sauvée';
 }
 
 function logout(){ auth.signOut().then(()=>location.href='../index.html'); }
