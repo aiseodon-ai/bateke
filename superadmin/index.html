@@ -105,4 +105,20 @@ function scanGlobal(){
   console.log("✅ GLOBAL OK", {shops:shopNames.length, ca:caGlobal, patrons:Object.keys(patronsObj).length});
  }).catch(e=>{ console.error(e); document.getElementById('debugPaths').innerText='Erreur Firebase: '+e.message});
 }
+</script><div class="card" style="border:1px solid #22c55e"><h3>💰 Paiements 15.000 FC en attente</h3><div id="paiements"></div></div>
+<script>
+firebase.database().ref('paiements_abonnements').on('value',snap=>{
+ const data=snap.val()||{}; let h='';
+ Object.keys(data).forEach(k=>{
+  const p=data[k]; if(p.statut!=='en_attente') return;
+  h+=`<div style="padding:10px;border-bottom:1px solid #222;display:flex;justify-content:space-between"><div><b>${p.boutique}</b> - ${p.reseau} ${p.transactionId}<br><small>${p.phonePayer} → ${p.numeroDG} - ${p.montant}FC</small></div><button onclick="activer('${p.boutique}','${k}')">ACTIVER 30J</button></div>`;
+ }); document.getElementById('paiements').innerHTML=h||'<span class="muted">Aucun paiement en attente</span>';
+});
+function activer(boutique,key){
+ const fin=new Date(); fin.setDate(fin.getDate()+30);
+ firebase.database().ref('patrons/'+boutique+'/abonnement_fin').set(fin.toISOString().slice(0,10));
+ firebase.database().ref('patrons/'+boutique+'/statut').set('actif');
+ firebase.database().ref('paiements_abonnements/'+key+'/statut').set('valide');
+ alert('✅ '+boutique+' activé jusqu\'au '+fin.toLocaleDateString());
+}
 </script></body></html>
