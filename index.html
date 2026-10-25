@@ -1,142 +1,88 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V6.0 SAAS - SUPERADMIN + PIN</title><link rel="manifest" href="./manifest-patron.json">
-<link rel="stylesheet" href="css/patron.css">
-<link rel="stylesheet" href="css/main.css">
-<link rel="icon" href="data:,">
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V6.1 SAAS - 15K Auto Block</title>
+<link rel="manifest" href="./manifest-patron.json"><link rel="stylesheet" href="css/patron.css"><link rel="stylesheet" href="css/main.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head><body>
 
-<!-- LOGIN V6.0 SAAS SUPERADMIN + PIN -->
 <div id="loginPat" style="position:fixed;inset:0;background:#0b0f14f2;z-index:9999;display:flex;align-items:center;justify-content:center">
   <div style="background:#fff;padding:25px;border-radius:16px;max-width:430px;width:90%;text-align:center;box-shadow:0 20px 60px #0005">
-    <h3>👑 PATRON V6.0 <span class="badge" style="background:#7c3aed;color:#fff;padding:3px 8px;border-radius:20px;font-size:11px">SAAS SUPERADMIN</span></h3>
-    <p style="font-size:11px;color:#0b5e2f;font-weight:bold">V6.0 - PIN Legacy + Email SuperAdmin</p>
-    
+    <h3>👑 PATRON V6.1 <span style="background:#7c3aed;color:#fff;padding:3px 8px;border-radius:20px;font-size:11px">SAAS 15K</span></h3>
+    <p style="font-size:11px;color:#0b5e2f;font-weight:bold">V6.1 - Blocage Auto 15.000 FC</p>
     <div style="display:flex;background:#f1f5f9;border-radius:10px;padding:4px;margin:15px 0">
       <button id="btnModePin" onclick="switchLoginMode('pin')" style="flex:1;padding:10px;border-radius:8px;border:0;background:#0b5e2f;color:#fff;font-weight:bold;cursor:pointer">🔑 PIN</button>
       <button id="btnModeEmail" onclick="switchLoginMode('email')" style="flex:1;padding:10px;border-radius:8px;border:0;background:transparent;color:#64748b;font-weight:bold;cursor:pointer">👑 SAAS</button>
     </div>
-
     <div id="modePin">
       <input id="pinPat" type="password" placeholder="••••" style="text-align:center;font-size:22px;letter-spacing:4px;font-weight:bold;border:2px solid #0b5e2f;width:100%;padding:12px;border-radius:10px;box-sizing:border-box">
       <button class="btn btn-g" style="width:100%;margin-top:12px;font-size:18px;padding:14px;background:#0b5e2f;color:#fff;border-radius:10px;border:0;font-weight:bold;cursor:pointer" onclick="loginPat()">✅ ENTRER</button>
     </div>
-
     <div id="modeEmail" style="display:none">
       <input id="emailPat" type="email" placeholder="admin@bateke.com" value="admin@bateke.com" style="width:100%;padding:12px;border:2px solid #7c3aed;border-radius:10px;margin-bottom:10px;box-sizing:border-box">
       <input id="passPat" type="password" placeholder="Mot de passe SAAS" value="Bateke2026@" style="width:100%;padding:12px;border:2px solid #7c3aed;border-radius:10px;box-sizing:border-box">
       <button class="btn" style="width:100%;margin-top:12px;font-size:18px;padding:14px;background:#7c3aed;color:#fff;border-radius:10px;border:0;font-weight:bold;cursor:pointer" onclick="loginPat()">👑 CONNEXION SUPERADMIN</button>
-      <p style="font-size:9px;color:#7c3aed;margin-top:8px">UID hb4KU2R... activé dans /superadmins</p>
     </div>
-
     <p id="msgPat" style="color:red;font-weight:bold;margin-top:12px;min-height:18px"></p>
-    <p id="authStatus" style="color:#22c55e;font-size:11px">V6.0 SAAS - SuperAdmin + PIN Legacy - AppCheck OK</p>
+    <div id="badgeAbo" style="background:#262626;padding:6px 12px;border-radius:20px;font-size:12px;display:inline-block;margin:8px 0;border:1px solid #333;color:#fff">Vérif abonnement...</div>
+    <p id="authStatus" style="color:#22c55e;font-size:11px">Airtel 0998111387 / M-Pesa 0816640963 - 15.000 FC</p>
   </div>
 </div>
 
+<script>function switchLoginMode(m){document.getElementById('modePin').style.display=m==='pin'?'block':'none';document.getElementById('modeEmail').style.display=m==='email'?'block':'none';}if(location.search.includes('saas'))switchLoginMode('email');</script>
+
+<header><h3 style="margin:0" id="headerEntreprise">👑 PATRON V6.1 - <span id="connBadge">🟢 SYNC</span></h3><div style="margin-top:6px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap"><select id="shopSel" onchange="switchShop()" style="width:130px"></select><input type="file" id="excelIn" accept=".xlsx,.xls" style="width:110px"><button class="btn btn-b" onclick="openNewArt()">+ Article</button></div><div id="queuePatronInfo" style="font-size:10px">V6.1 SAAS - Abonnement Auto 15K</div></header>
+
+<div class="grid"><div class="card">💰 CA Jour<br><span class="kpi" id="caJour">0</span></div><div class="card">📈 Bénéf Net<br><span class="kpi" id="benefJour">0</span></div><div class="card">🏦 À Verser<br><span class="kpi red" id="aVerser">0</span></div><div class="card">💳 Dettes Jour<br><span class="kpi orange" id="detteJour">0</span></div></div>
+<div class="tabs"><button class="active" onclick="switchTab('ventes')">🔴 Ventes</button><button onclick="switchTab('stock')">📦 Stock</button><button onclick="switchTab('achat')">🛒 Achat</button><button onclick="switchTab('compta')">💼 Compta</button><button onclick="switchTab('rapport')">📊 Rapport</button><button onclick="switchTab('crm')">👥 CRM</button><button onclick="switchTab('dettes')">💳 Dettes</button><button onclick="switchTab('caisse')">💰 Caisse</button><button onclick="switchTab('vendeurs')">🔐 Vendeurs</button><button onclick="switchTab('boutiques')">🏪 Boutiques</button><button onclick="switchTab('parametres')">⚙️ Parametre</button></div>
+
+<div id="ventes" class="sec active"><div class="card"><h4>🔴 Ventes</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Vendeur</th><th>CODE</th><th>Désignation</th><th>Qté</th><th>Total</th><th>Payé</th><th>Reste</th><th>Client</th><th>Mode</th><th>Action</th></tr></thead><tbody id="ventesList"></tbody></table></div></div></div>
+<div id="stock" class="sec"><div class="card"><h4>📦 Stock</h4><input id="searchS" placeholder="CODE ou Nom" oninput="renderStock()"><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation</th><th>Qté</th><th>PV</th><th>PA</th><th>Action</th></tr></thead><tbody id="stockT"></tbody></table></div></div></div>
+
+<script type="module" src="js/patron/app.js?v=6.1-saas-15k"></script>
+
 <script>
-function switchLoginMode(m){
-  document.getElementById('modePin').style.display = m==='pin'?'block':'none';
-  document.getElementById('modeEmail').style.display = m==='email'?'block':'none';
-  document.getElementById('btnModePin').style.background = m==='pin'?'#0b5e2f':'transparent';
-  document.getElementById('btnModePin').style.color = m==='pin'?'#fff':'#64748b';
-  document.getElementById('btnModeEmail').style.background = m==='email'?'#7c3aed':'transparent';
-  document.getElementById('btnModeEmail').style.color = m==='email'?'#fff':'#64748b';
-  document.getElementById('msgPat').innerText='';
+// === BATEKE SAAS - BLOCAGE ABONNEMENT 15.000 FC AUTO - FINAL ===
+function checkAbonnement(boutiqueNom){
+  if(!firebase.apps.length) return;
+  const db = firebase.database();
+  db.ref('patrons/'+boutiqueNom).once('value').then(snap=>{
+    const patron = snap.val();
+    if(!patron){ console.log("Nouveau patron"); return; }
+    const finStr = patron.abonnement_fin;
+    if(!finStr){
+      const b=document.getElementById('badgeAbo'); if(b) b.innerHTML=`⚪ Non configuré - Appelle DG`;
+      return;
+    }
+    const fin = new Date(finStr);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const grace = new Date(fin); grace.setDate(grace.getDate()+3);
+    const joursRestants = Math.ceil((fin - today)/86400000);
+    const badge = document.getElementById('badgeAbo');
+    if(badge){
+      if(joursRestants > 0) badge.innerHTML = `✅ Actif jusqu'au ${finStr} (${joursRestants}j)`;
+      else if(today <= grace) badge.innerHTML = `⚠️ Grâce: ${Math.ceil((grace-today)/86400000)}j restants - Paye 15k`;
+      else badge.innerHTML = `🔴 Expiré depuis ${finStr}`;
+    }
+    if(today > grace){
+      document.body.innerHTML = `
+      <div style="background:#0a0a0a;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter">
+        <div style="background:#171717;border:1px solid #ff0000;border-radius:20px;padding:30px;max-width:400px;text-align:center">
+          <h1 style="color:#ff0000">🔒 ABONNEMENT EXPIRÉ</h1>
+          <p>Boutique: <b>${boutiqueNom}</b></p>
+          <p>Expiré depuis: ${finStr}</p>
+          <p style="font-size:32px;font-weight:900;color:#22c55e;margin:15px 0">15.000 FC / mois</p>
+          <p>Paye sur:</p>
+          <p><b>AIRTEL: 0998111387</b><br><b>M-PESA: 0816640963</b></p>
+          <button onclick="location.href='abonnement/index.html?shop=${boutiqueNom}'" style="width:100%;padding:16px;background:#7c3aed;color:#fff;border:0;border-radius:12px;font-weight:900;font-size:16px;margin-top:15px">PAYER MAINTENANT</button>
+          <p style="margin-top:15px;font-size:12px;color:#888">Après paiement, ton ID sera activé dans 2 min par DG</p>
+        </div>
+      </div>`;
+    }
+  });
 }
-// Auto switch si ?saas dans l'url
-if(location.search.includes('saas') || location.hash.includes('saas')) switchLoginMode('email');
+const urlParams = new URLSearchParams(location.search);
+const boutiqueActuelle = urlParams.get('shop') || localStorage.getItem('BATEKE_SHOP') || 'Menkao1';
+setTimeout(()=>{ checkAbonnement(boutiqueActuelle); }, 2000);
+function switchShop(){ const s=document.getElementById('shopSel')?.value; if(s){localStorage.setItem('BATEKE_SHOP',s); checkAbonnement(s);} }
+function switchTab(id){ document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active')); const el=document.getElementById(id); if(el) el.classList.add('active'); }
+function openNewArt(){}
 </script>
-
-<header><h3 style="margin:0" id="headerEntreprise">👑 PATRON V6.0 - <span id="connBadge">🟢 SYNC</span></h3><div style="margin-top:6px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap"><select id="shopSel" onchange="switchShop()" style="width:130px"></select><input type="file" id="excelIn" accept=".xlsx,.xls" style="width:110px"><button class="btn btn-b" onclick="openNewArt()">+ Article</button></div><div id="queuePatronInfo" style="font-size:10px">V6.0 SAAS - V4.9.14 stable + SuperAdmin</div></header>
-<div class="grid"><div class="card">💰 CA Jour<br><span class="kpi" id="caJour">0</span><br><small id="caJourDetail"></small></div><div class="card">📈 Bénéf Net<br><span class="kpi" id="benefJour">0</span></div><div class="card">🏦 À Verser<br><span class="kpi red" id="aVerser">0</span></div><div class="card">💳 Dettes Jour<br><span class="kpi orange" id="detteJour">0</span></div><div class="card" style="grid-column:1/-1;border:2px solid #0b5e2f"><h4 style="margin:0">🟢 Présence - <span id="presenceShopLab"></span></h4><div id="presenceKPIList" style="display:flex;gap:8px;flex-wrap:wrap"></div></div></div>
-<div class="tabs"><button id="btn-ventes" class="active" onclick="switchTab('ventes')">🔴 Ventes</button><button id="btn-stock" onclick="switchTab('stock')">📦 Stock</button><button id="btn-achat" onclick="switchTab('achat')">🛒 Achat</button><button id="btn-compta" onclick="switchTab('compta')">💼 Compta</button><button id="btn-rapport" onclick="switchTab('rapport')">📊 Rapport</button><button id="btn-crm" onclick="switchTab('crm')">👥 CRM</button><button id="btn-dettes" onclick="switchTab('dettes')">💳 Dettes</button><button id="btn-caisse" onclick="switchTab('caisse')">💰 Caisse</button><button id="btn-vendeurs" onclick="switchTab('vendeurs')">🔐 Vendeurs</button><button id="btn-boutiques" onclick="switchTab('boutiques')">🏪 Boutiques</button><button id="btn-parametres" onclick="switchTab('parametres')">⚙️ Parametre</button></div>
-
-<div id="ventes" class="sec active"><div class="card"><h4>🔴 Ventes - <span id="labVenteShop"></span></h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Vendeur</th><th>CODE</th><th>Désignation</th><th>Qté</th><th>Total</th><th>Payé</th><th>Reste</th><th>Client</th><th>Mode</th><th>Action</th></tr></thead><tbody id="ventesList"></tbody></table></div></div></div>
-
-<div id="stock" class="sec"><div class="card"><div style="display:flex;justify-content:space-between;flex-wrap:wrap"><h4>📦 Stock Éditable - Valorisation avec légendes RESTAURÉ V4.8.6</h4><div><button class="btn btn-y" onclick="pdfStockTotal()">PDF Stock</button><button class="btn btn-r" onclick="pdfRequisition()">Réquisition</button></div></div>
-<div class="valCard">
-<div style="background:#0b5e2f;color:#fff;padding:12px;border-radius:12px;text-align:center;border:2px solid #fff"><div style="font-size:10px;opacity:0.9">💰 VALEUR VENTE (PV x Qté)</div><b id="valStockFC" style="font-size:16px">0 FC</b><span class="legende" style="color:#bbf7d0">Prix de Vente total si tout vendu</span><small id="valStockFCDetail" style="display:block;margin-top:4px;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:10px">0 pcs - 0 réf</small></div>
-<div style="background:#0ea5e9;color:#fff;padding:12px;border-radius:12px;text-align:center;border:2px solid #fff"><div style="font-size:10px;opacity:0.9">💵 VALEUR VENTE EN $ (USD)</div><b id="valStockUSD" style="font-size:16px">0 $</b><span class="legende" style="color:#e0f2fe">Conversion FC -> $ selon taux</span><small id="valStockUSDDetail" style="display:block;margin-top:4px;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:10px">Taux</small></div>
-<div style="background:linear-gradient(135deg,#facc15,#eab308);color:#000;padding:12px;border-radius:12px;text-align:center;border:2px solid #000"><div style="font-size:10px;font-weight:bold">🏦 VALEUR ACHAT + BÉNÉFICE LATENT</div><div style="margin-top:4px"><span style="font-size:10px">Achat (PA x Qté):</span><br><b id="valStockPA" style="font-size:14px">0 FC</b></div><div style="margin-top:6px;background:#111;color:#22c55e;padding:4px 8px;border-radius:8px"><span style="font-size:10px">Bénéfice si tout vendu (Vente - Achat):</span><br><b id="valStockBenef" style="font-size:14px">0 FC</b></div><span class="legende" style="color:#000">PA = Prix Achat - Bénéf latent = ce que tu gagneras</span></div>
-</div>
-<input id="searchS" placeholder="CODE ou Nom" oninput="renderStock()"><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation ✏️</th><th>Qté ✏️</th><th>Seuil ✏️</th><th>PV ✏️</th><th>PA ✏️</th><th>Bénéf unit</th><th>Statut</th><th>Action</th></tr></thead><tbody id="stockT"></tbody></table></div></div></div>
-
-<div id="achat" class="sec"><div class="card achatCard"><h3 style="margin:0">🛒 ACHAT STOCK / REQUISITION MANUELLE</h3><p style="font-size:11px">Prix = Prix d'Achat - Montre stock actuel + seuil - Ne décrémente pas</p><div style="display:grid;grid-template-columns:1fr 100px 120px;gap:6px;margin-top:8px"><input id="searchAchat" placeholder="CODE ou Désignation pagne..." oninput="renderAchatStock()"><select id="filtreAchat"><option value="tous">Tous</option><option value="manque">Manque &lt; Seuil</option><option value="rupture">Rupture 0</option></select><button class="btn btn-r" onclick="viderPanierAchat()">🗑️ Vider</button></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-y" onclick="ajouterManquesAuto()">➕ Auto manques</button><button class="btn btn-b" onclick="pdfRequisitionAchat()">📄 PDF Achat</button><button class="btn btn-g" onclick="validerAchatDB()">✅ Valider Achat</button><button class="btn btn-g" onclick="exportExcelAchat()">📊 Excel</button><span style="background:#111;color:#22c55e;padding:6px 12px;border-radius:20px;font-weight:bold">Total Achat: <span id="totalAchat">0 FC</span></span></div></div>
-<div class="card"><h4>Articles - PA affiché + Stock actuel</h4><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation</th><th>Stock actuel</th><th>Seuil</th><th>Manque</th><th>PA</th><th>Qté achat</th><th>Total Achat</th><th>Action</th></tr></thead><tbody id="achatStockT"></tbody></table></div></div>
-<div class="card" style="border:2px solid #f59e0b"><h4>🧾 Panier Requisition</h4><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation</th><th>Stock</th><th>Qté achat</th><th>PA</th><th>Total PA</th><th>Suppr</th></tr></thead><tbody id="panierAchatT"></tbody></table></div><div style="margin-top:10px;background:#111;color:#fff;padding:12px;border-radius:12px;display:flex;justify-content:space-between"><div><b>NB: <span id="nbAchat">0</span></b></div><div style="text-align:right"><b style="font-size:18px;color:#facc15">Total: <span id="totalAchat2">0 FC</span></b><br><small id="totalAchatUSD">0 $</small></div></div></div></div>
-
-<div id="compta" class="sec"><div class="card" style="background:#111;color:#22c55e;border:3px solid #22c55e"><h3 style="margin:0">💼 COMPTA V4.9.10 EXACT - SEULE PARTIE AMELIOREE</h3></div><div class="card"><div class="comptaGrid"><div><label>Base</label><input id="cBase" type="number" value="50000"></div><div><label>Com %</label><input id="cCom" type="number" value="10"></div><div><label>Loyer</label><input id="cLoyer" type="number" value="100000"></div><div><label>Fixes</label><input id="cAutresFixe" type="number" value="0"></div><div><label>Emprunt</label><input id="cEmprunt" type="number" value="0"></div><div><label>Prime %</label><input id="cPrime" type="number" value="25"></div><div><label>Patron %</label><input id="cPatron" type="number" value="45"></div><div><label>Dev %</label><input id="cDev" type="number" value="30"></div></div><button class="btn btn-g" onclick="saveComptaParams()">💾 Sauver</button><small id="comptaParamStatus"></small></div><div class="card"><div style="display:grid;grid-template-columns:1fr 1fr 120px;gap:6px"><input type="date" id="cDu"><input type="date" id="cAu"><button class="btn btn-b" onclick="calcCompta()">🔍 CALCULER</button></div></div><div id="comptaResult"></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div class="card" style="border-left:5px solid #22c55e;background:#111;color:#fff"><h4 style="margin:0">📅 Point Journalier</h4><div id="pointJournalier"></div></div><div class="card" style="border-left:5px solid #0ea5e9"><h4 style="margin:0">💧 Trésorerie</h4><div id="tresorerieBox"></div></div><div class="card" style="border-left:5px solid #f59e0b"><h4 style="margin:0">⚠️ Seuil Rentabilité</h4><div id="seuilBox"></div></div></div><div class="card"><h4>📊 Compte de Résultat</h4><div id="compteResultat"></div></div></div>
-
-<div id="rapport" class="sec"><div class="card"><h4>📊 Rapport V4.9.14</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><label>Du</label><input type="date" id="du"><label>Au</label><input type="date" id="au"><label>Type</label><select id="typeRapport" onchange="onTypeChange()" style="grid-column:span 2"><option value="synthese_avec_benef">⭐ SYNTHESE VENTES AVEC BENEFICE</option><option value="synthese_sans_benef">⭐ SYNTHESE VENTES SANS BENEFICE</option><option value="synthese_achats">🛒 SYNTHESE DES ACHATS</option><option value="synthese">⭐ SYNTHESE GENERALE</option></select><div id="filtreExtra" style="grid-column:span 2"></div></div><div class="subtabs" style="margin-top:10px"><button id="sub-table" class="active" onclick="switchSub('table')">📋 Tableau</button><button id="sub-graph" onclick="switchSub('graph')">📈 Graphique</button></div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-g" onclick="genRapport()">🔍 Générer</button><button class="btn btn-y" onclick="pdfRapportOnly()">📄 PDF</button><button class="btn btn-b" onclick="exportExcelRapport()">📊 Excel</button></div><div id="vue-table"><div id="rapportC" style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:8px;overflow:auto;min-height:120px;margin-top:8px">Clique Générer</div></div><div id="vue-graph" style="display:none"><canvas id="chartRapport" style="max-height:400px"></canvas></div></div></div>
-<div id="crm" class="sec"><div class="card"><h4>👥 CRM</h4><input id="searchCli" placeholder="Nom ou Tel" oninput="renderCRM()"><div style="overflow:auto"><table><thead><tr><th>Nom</th><th>Tél</th><th>Nb</th><th>Total</th><th>Dette</th><th>Dernière</th></tr></thead><tbody id="crmList"></tbody></table></div></div></div>
-<div id="dettes" class="sec"><div class="card"><h4>💳 Dettes</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Tél</th><th>Boutique</th><th>Vendeur</th><th>Total</th><th>Payé</th><th>Reste</th></tr></thead><tbody id="dettesList"></tbody></table></div></div></div>
-<div id="caisse" class="sec"><div class="card"><h4>💰 Caisse</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Type</th><th>Motif</th><th>Montant</th><th>Action</th></tr></thead><tbody id="caisseList"></tbody></table></div></div></div>
-<div id="vendeurs" class="sec"><div class="card" style="border:3px solid #7c3aed;background:#f5f3ff"><h4>🔐 Vendeurs - <span id="labVendShop"></span></h4><div style="display:grid;grid-template-columns:1fr 80px 110px;gap:5px"><input id="vNom" placeholder="Nom"><input id="vPin" type="number" placeholder="PIN"><button class="btn btn-super" onclick="createVendeur()">+ Créer</button></div><div style="overflow:auto;margin-top:8px"><table><thead><tr><th>PIN</th><th>Nom</th><th>Statut</th><th>Action</th></tr></thead><tbody id="vendeursT"></tbody></table></div></div></div>
-<div id="boutiques" class="sec"><div class="card"><h4>🏪 Boutiques</h4><div style="display:grid;grid-template-columns:1fr 130px;gap:6px"><input id="newShop" placeholder="Ex: Limete"><button class="btn btn-g" onclick="createShop()">+ CRÉER</button></div><div id="listShops"></div></div></div>
-<div id="parametres" class="sec"><div class="card"><h4>⚙️ Paramètres - <span id="paramShopName"></span> - V6.0 SUPERADMIN</h4>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-<div>
-<label>Nom boutique</label><input id="confNom" placeholder="BATEKE">
-<label>Slogan</label><input id="confSlogan" placeholder="Ex: Qualité & Confiance">
-<label>Adresse</label><input id="confAdresse">
-<label>Tél</label><input id="confTel">
-<label>Email</label><input id="confEmail">
-<label>RCCM</label><input id="confRccm">
-<label>Devise base</label><select id="confDeviseBase"><option value="FC">FC</option><option value="XAF">XAF</option><option value="XOF">XOF</option><option value="USD">USD</option></select>
-</div>
-<div>
-<label>Devise affichage</label><select id="confDevise"><option value="FC">FC</option><option value="$">$</option><option value="€">€</option><option value="FCFA">FCFA</option></select>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
-<div><label>Taux USD->FC</label><input id="confTauxUSD" type="number" value="2850"></div>
-<div><label>EUR->FC</label><input id="confTauxEUR" type="number"></div>
-<div><label>XAF->FC</label><input id="confTauxXAF" type="number" step="0.0001"></div>
-<div><label>XOF->FC</label><input id="confTauxXOF" type="number" step="0.0001"></div>
-</div>
-<label>Logo</label><input type="file" id="confLogoFile" accept="image/*" onchange="if(typeof previewLogo==='function') previewLogo(this)">
-<div><img id="logoPreview" class="logoPreview" src="" style="max-width:120px;max-height:80px;margin-top:6px;border:1px solid #ddd;border-radius:8px"></div>
-</div>
-</div>
-
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
-<div><label>Pied Facture</label><textarea id="confPiedFacture" rows="2" placeholder="Merci pour votre confiance!"></textarea></div>
-<div><label>Pied Devis</label><textarea id="confPiedDevis" rows="2"></textarea></div>
-</div>
-
-<hr style="margin:12px 0">
-<h4>🖨️ Impression - PC + Android Tecno RawBT</h4>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-<div>
-<label>Type</label><select id="confImpType"><option value="pdf">PDF</option><option value="bluetooth">PC - Bluetooth Direct</option><option value="rawbt">Android - RawBT</option></select>
-<label>Nom imprimante</label><input id="confImpNom" value="T58_AFC6">
-<label>Largeur</label><select id="confImpLargeur"><option value="58mm">58mm</option><option value="80mm">80mm</option><option value="A4">A4</option></select>
-</div>
-<div>
-<label>Logo ticket?</label><select id="confImpLogo"><option value="oui">Oui</option><option value="non">Non</option></select>
-<label>Copies</label><input id="confImpCopies" type="number" value="1">
-<div style="margin-top:8px;display:flex;gap:6px"><button class="btn btn-y" style="padding:8px 12px" onclick="if(typeof testImpression==='function') testImpression()">Test PDF</button><button class="btn btn-b" style="padding:8px 12px" onclick="if(typeof rechercherBT==='function') rechercherBT()">BT</button></div>
-<small id="btStatus"></small>
-</div>
-</div>
-
-<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn btn-g" style="padding:10px 16px" onclick="saveConfig()">💾 Sauver Config</button>
-<button class="btn btn-y" style="padding:10px 16px" onclick="loadConfig()">🔄 Recharger</button>
-<button class="btn btn-b" style="padding:10px 16px" onclick="dupliquerConfig()">📋 Dupliquer vers autre shop</button>
-</div>
-
-<div id="configStatus" style="margin-top:8px;font-weight:bold;color:#22c55e"></div>
-
-<hr style="margin:16px 0">
-<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:12px;border-radius:12px">
-<h4 style="margin:0 0 8px 0">🧾 Aperçu Ticket & Imprimante</h4>
-<div id="apercuFacture" style="background:#fff;padding:10px;border:1px dashed #cbd5e1;border-radius:8px;min-height:80px">Chargement aperçu...</div>
-<div id="printerStatus" style="margin-top:10px"></div>
-</div>
-
-<div id="apercuFacture2" style="display:none"></div>
-</div></div>
-<div id="modalArt" class="modal"><div class="modalBox"><h3>Nouvel Article</h3><input id="newCode" placeholder="CODE"><input id="newDes" placeholder="Désignation"><input id="newPV" type="number" placeholder="PV"><input id="newPA" type="number" placeholder="PA"><input id="newQte" type="number" placeholder="Qté"><input id="newSeuil" type="number" value="3"><label><input type="checkbox" id="newActif" checked> Actif</label><div style="display:flex;gap:5px;margin-top:10px"><button class="btn btn-g" onclick="saveNewArt()">Créer</button><button class="btn" onclick="closeModal('modalArt')">Annuler</button></div></div></div>
-
-<script type="module" src="js/patron/app.js?v=6.0-saas-superadmin-20261025"></script>
-<div style="text-align:center;font-size:10px;color:#888;padding:12px">V6.0 SAAS SUPERADMIN - hb4KU2RBUoahvYmO9LpouEndpG63 Activé ✅</div>
 </body></html>
