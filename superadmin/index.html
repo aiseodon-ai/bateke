@@ -1,40 +1,34 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN DG SUPRÊME V6.2</title>
-<base href="/bateke/">
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BATEKE - SUPERADMIN DG SUPRÊME V6.3 GLOBAL</title><base href="/bateke/">
 <style>
- body{background:#0a0a0a;color:#fff;font-family:Inter,sans-serif;padding:20px}
- .card{background:#171717;border:1px solid #262626;border-radius:16px;padding:20px;margin:10px 0}
- .kpi{font-size:28px;font-weight:900;color:#a855f7}
+ body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:20px}
+ .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+ .card{background:#171717;border:1px solid #262626;border-radius:16px;padding:18px}
+ .kpi{font-size:30px;font-weight:900;color:#a855f7;margin-top:6px}
+ .ok{color:#22c55e} .muted{color:#888;font-size:12px}
+ table{width:100%;border-collapse:collapse;margin-top:10px} th,td{padding:10px;border-bottom:1px solid #262626;text-align:left;font-size:13px}
  button{background:#7c3aed;color:#fff;border:0;padding:10px 16px;border-radius:10px;font-weight:bold;cursor:pointer}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-</head>
-<body>
-<h1>👑 BATEKE SUPERADMIN DG SUPRÊME V6.2 - GLOBAL</h1>
-<div id="loginBox" class="card">
-  <h3>Entre PIN DG Suprême</h3>
-  <input id="pinInput" type="password" placeholder="PIN" style="padding:10px;border-radius:8px">
-  <button onclick="loginDG()">ENTRER</button>
+</head><body>
+<h1>👑 BATEKE SUPERADMIN DG SUPRÊME V6.3 - GLOBAL</h1>
+<div class="grid">
+ <div class="card"><div>Total Boutiques (6)</div><div id="totalBoutiques" class="kpi">...</div><div id="detailBoutiques" class="muted"></div></div>
+ <div class="card"><div>CA Global Toutes boutiques (Jour)</div><div id="caGlobal" class="kpi">...</div></div>
+ <div class="card"><div>Total Patrons</div><div id="totalPatrons" class="kpi">...</div></div>
+ <div class="card"><div>Abonnements Actifs</div><div id="abos" class="kpi">...</div></div>
 </div>
 
-<div id="dash" style="display:none">
-  <div style="display:flex;gap:10px;flex-wrap:wrap">
-    <div class="card"><div>Total Boutiques</div><div id="totalBoutiques" class="kpi">--</div></div>
-    <div class="card"><div>CA Global Jour</div><div id="caGlobal" class="kpi">-- FC</div></div>
-    <div class="card"><div>Patrons</div><div id="totalPatrons" class="kpi">--</div></div>
-  </div>
-  <div class="card"><h3>Boutiques</h3><div id="listeBoutiques"></div></div>
-  <button onclick="location.href='index.html?role=patron'">← Retour Boutique Menkao1</button>
+<div class="card" style="margin-top:14px"><h3>Tableau de tous les PIN</h3>
+<table><thead><tr><th>Patron / Boutique</th><th>PIN</th><th>Statut</th><th>Shop</th></tr></thead><tbody id="tablePin"></tbody></table>
 </div>
+<div class="card"><h3>Boutiques Détectées</h3><div id="listeBoutiques"></div><div class="muted" id="debugPaths" style="margin-top:10px"></div></div>
+<button onclick="location.href='index.html?role=patron'">← Retour Menkao1</button>
 
 <script>
-// --- FIREBASE CONFIG - PAS DE APPCHECK ICI ---
 const firebaseConfig = {
   apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",
   authDomain: "bateke-v4.firebaseapp.com",
@@ -44,47 +38,71 @@ const firebaseConfig = {
   messagingSenderId: "321333206282",
   appId: "1:321333206282:web:6d1603446be3d195de6ef3"
 };
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-firebase.auth().signInAnonymously();
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+firebase.auth().signInAnonymously().then(()=>{ scanGlobal(); });
 
-const PIN_DG = "7832"; // Ton PIN SuperAdmin
+function scanGlobal(){
+ const db = firebase.database();
+ db.ref('/').once('value').then(snap=>{
+  const root = snap.val()||{};
+  console.log("ROOT KEYS:", Object.keys(root));
+  document.getElementById('debugPaths').innerText = "Chemins trouvés dans Firebase: " + Object.keys(root).join(", ");
 
-function loginDG(){
-  if(document.getElementById('pinInput').value === PIN_DG){
-    localStorage.setItem('BATEKE_DG','true');
-    document.getElementById('loginBox').style.display='none';
-    document.getElementById('dash').style.display='block';
-    loadGlobal();
-  } else alert('PIN incorrect');
-}
-if(localStorage.getItem('BATEKE_DG')==='true'){
-  document.getElementById('loginBox').style.display='none';
-  document.getElementById('dash').style.display='block';
-  loadGlobal();
-}
+  // 1. TROUVER BOUTIQUES - essaie tous les chemins possibles
+  let shopsObj = root.boutiques || root.shops || root.magasins || root.stores || root.bateke_boutiques || null;
+  // Si pas trouvé, cherche les noeuds qui ressemblent à une boutique (qui ont ventes/stock)
+  if(!shopsObj){
+    shopsObj = {};
+    for(const k in root){
+      if(root[k] && typeof root[k]==='object' && (root[k].ventes || root[k].stock || root[k].produits)){
+        shopsObj[k]=root[k];
+      }
+    }
+  }
+  const shopNames = Object.keys(shopsObj||{});
+  document.getElementById('totalBoutiques').innerHTML = shopNames.length + (shopNames.length===6? ' <span class="ok">✅</span>':'');
+  document.getElementById('detailBoutiques').innerText = shopNames.join(", ");
 
-function loadGlobal(){
-  db.ref('boutiques').on('value', snap=>{
-    const data = snap.val()||{};
-    const shops = Object.keys(data);
-    document.getElementById('totalBoutiques').innerText = shops.length;
-    let ca=0; let html='';
-    shops.forEach(shop=>{
-      const ventes = data[shop]?.ventes || {};
-      let caShop=0;
-      Object.values(ventes).forEach(v=>{ if(v.date===new Date().toISOString().slice(0,10)) caShop+=(v.total||0) });
-      ca+=caShop;
-      html+=`<div style="padding:8px;border-bottom:1px solid #222">${shop} - ${caShop.toLocaleString()} FC</div>`;
+  let caGlobal=0; let htmlList='';
+  shopNames.forEach(name=>{
+    const shop = shopsObj[name]||{};
+    const ventes = shop.ventes || {};
+    let caShop=0;
+    const today = new Date().toISOString().slice(0,10);
+    Object.values(ventes).forEach(v=>{
+      if(!v) return;
+      const d = (v.date||'').slice(0,10);
+      if(d===today || !v.date) caShop += (Number(v.total)||Number(v.montant)||0);
     });
-    document.getElementById('caGlobal').innerText = ca.toLocaleString() + ' FC';
-    document.getElementById('listeBoutiques').innerHTML = html;
+    caGlobal+=caShop;
+    htmlList+=`<div style="padding:8px;border-bottom:1px solid #222;display:flex;justify-content:space-between"><span>${name}</span><b>${caShop.toLocaleString()} FC</b></div>`;
   });
-  db.ref('patrons').on('value', snap=>{
-    document.getElementById('totalPatrons').innerText = Object.keys(snap.val()||{}).length;
+  document.getElementById('caGlobal').innerText = caGlobal.toLocaleString() + ' FC';
+  document.getElementById('listeBoutiques').innerHTML = htmlList || '<span class="muted">Aucune vente aujourd\'hui</span>';
+
+  // 2. PATRONS
+  const patronsObj = root.patrons || root.users || root.comptes || {};
+  document.getElementById('totalPatrons').innerText = Object.keys(patronsObj).length;
+
+  // 3. ABONNEMENTS
+  const abosObj = root.abonnements || root.abos || root.subscriptions || root.licences || {};
+  const abosActifs = Object.values(abosObj).filter(a=>a && (a.actif!==false && a.statut!=='expiré')).length;
+  document.getElementById('abos').innerText = abosActifs || Object.keys(abosObj).length;
+
+  // 4. TABLEAU PIN
+  let rows='';
+  for(const id in patronsObj){
+    const p = patronsObj[id];
+    rows+=`<tr><td>${p.nom||p.name||id}</td><td><b style="letter-spacing:2px">${p.pin||p.PIN||p.code||'--'}</b></td><td>${p.statut||p.status||'actif'}</td><td>${p.boutique||p.shop||''}</td></tr>`;
+  }
+  // aussi cherche PIN dans shops
+  shopNames.forEach(name=>{
+    const s = shopsObj[name];
+    if(s && s.pin) rows+=`<tr><td>${name} (shop)</td><td><b>${s.pin}</b></td><td>shop-pin</td><td>${name}</td></tr>`;
   });
+  document.getElementById('tablePin').innerHTML = rows || '<tr><td colspan=4 class="muted">Aucun PIN trouvé - vérifie /patrons</td></tr>';
+
+  console.log("✅ GLOBAL OK", {shops:shopNames.length, ca:caGlobal, patrons:Object.keys(patronsObj).length});
+ }).catch(e=>{ console.error(e); document.getElementById('debugPaths').innerText='Erreur Firebase: '+e.message});
 }
-console.log("✅ SUPERADMIN V6.2 STABLE - PAS DE REDIRECTION 404");
-</script>
-</body>
-</html>
+</script></body></html>
