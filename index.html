@@ -73,7 +73,68 @@ if(location.search.includes('saas') || location.hash.includes('saas')) switchLog
 <div id="caisse" class="sec"><div class="card"><h4>💰 Caisse</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Type</th><th>Motif</th><th>Montant</th><th>Action</th></tr></thead><tbody id="caisseList"></tbody></table></div></div></div>
 <div id="vendeurs" class="sec"><div class="card" style="border:3px solid #7c3aed;background:#f5f3ff"><h4>🔐 Vendeurs - <span id="labVendShop"></span></h4><div style="display:grid;grid-template-columns:1fr 80px 110px;gap:5px"><input id="vNom" placeholder="Nom"><input id="vPin" type="number" placeholder="PIN"><button class="btn btn-super" onclick="createVendeur()">+ Créer</button></div><div style="overflow:auto;margin-top:8px"><table><thead><tr><th>PIN</th><th>Nom</th><th>Statut</th><th>Action</th></tr></thead><tbody id="vendeursT"></tbody></table></div></div></div>
 <div id="boutiques" class="sec"><div class="card"><h4>🏪 Boutiques</h4><div style="display:grid;grid-template-columns:1fr 130px;gap:6px"><input id="newShop" placeholder="Ex: Limete"><button class="btn btn-g" onclick="createShop()">+ CRÉER</button></div><div id="listShops"></div></div></div>
-<div id="parametres" class="sec"><div class="card"><h4>⚙️ Paramètres - <span id="paramShopName"></span></h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label>Nom</label><input id="confNom"><label>Adresse</label><input id="confAdresse"><label>Tél</label><input id="confTel"></div><div><label>Devise</label><select id="confDevise"><option value="FC">FC</option><option value="$">$</option></select><label>Taux USD->FC</label><input id="confTauxUSD" type="number"><label>Logo</label><input type="file" id="confLogoFile" accept="image/*" onchange="previewLogo(this)"><div><img id="logoPreview" class="logoPreview" src=""></div></div></div><div style="margin-top:12px"><button class="btn btn-g" onclick="saveConfig()">💾 Sauver</button></div><div id="configStatus"></div></div></div>
+<div id="parametres" class="sec"><div class="card"><h4>⚙️ Paramètres - <span id="paramShopName"></span> - V6.0 SUPERADMIN</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div>
+<label>Nom boutique</label><input id="confNom" placeholder="BATEKE">
+<label>Slogan</label><input id="confSlogan" placeholder="Ex: Qualité & Confiance">
+<label>Adresse</label><input id="confAdresse">
+<label>Tél</label><input id="confTel">
+<label>Email</label><input id="confEmail">
+<label>RCCM</label><input id="confRccm">
+<label>Devise base</label><select id="confDeviseBase"><option value="FC">FC</option><option value="XAF">XAF</option><option value="XOF">XOF</option><option value="USD">USD</option></select>
+</div>
+<div>
+<label>Devise affichage</label><select id="confDevise"><option value="FC">FC</option><option value="$">$</option><option value="€">€</option><option value="FCFA">FCFA</option></select>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+<div><label>Taux USD->FC</label><input id="confTauxUSD" type="number" value="2850"></div>
+<div><label>EUR->FC</label><input id="confTauxEUR" type="number"></div>
+<div><label>XAF->FC</label><input id="confTauxXAF" type="number" step="0.0001"></div>
+<div><label>XOF->FC</label><input id="confTauxXOF" type="number" step="0.0001"></div>
+</div>
+<label>Logo</label><input type="file" id="confLogoFile" accept="image/*" onchange="if(typeof previewLogo==='function') previewLogo(this)">
+<div><img id="logoPreview" class="logoPreview" src="" style="max-width:120px;max-height:80px;margin-top:6px;border:1px solid #ddd;border-radius:8px"></div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+<div><label>Pied Facture</label><textarea id="confPiedFacture" rows="2" placeholder="Merci pour votre confiance!"></textarea></div>
+<div><label>Pied Devis</label><textarea id="confPiedDevis" rows="2"></textarea></div>
+</div>
+
+<hr style="margin:12px 0">
+<h4>🖨️ Impression - PC + Android Tecno RawBT</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+<label>Type</label><select id="confImpType"><option value="pdf">PDF</option><option value="bluetooth">PC - Bluetooth Direct</option><option value="rawbt">Android - RawBT</option></select>
+<label>Nom imprimante</label><input id="confImpNom" value="T58_AFC6">
+<label>Largeur</label><select id="confImpLargeur"><option value="58mm">58mm</option><option value="80mm">80mm</option><option value="A4">A4</option></select>
+</div>
+<div>
+<label>Logo ticket?</label><select id="confImpLogo"><option value="oui">Oui</option><option value="non">Non</option></select>
+<label>Copies</label><input id="confImpCopies" type="number" value="1">
+<div style="margin-top:8px;display:flex;gap:6px"><button class="btn btn-y" style="padding:8px 12px" onclick="if(typeof testImpression==='function') testImpression()">Test PDF</button><button class="btn btn-b" style="padding:8px 12px" onclick="if(typeof rechercherBT==='function') rechercherBT()">BT</button></div>
+<small id="btStatus"></small>
+</div>
+</div>
+
+<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-g" style="padding:10px 16px" onclick="saveConfig()">💾 Sauver Config</button>
+<button class="btn btn-y" style="padding:10px 16px" onclick="loadConfig()">🔄 Recharger</button>
+<button class="btn btn-b" style="padding:10px 16px" onclick="dupliquerConfig()">📋 Dupliquer vers autre shop</button>
+</div>
+
+<div id="configStatus" style="margin-top:8px;font-weight:bold;color:#22c55e"></div>
+
+<hr style="margin:16px 0">
+<div style="background:#f8fafc;border:1px solid #e2e8f0;padding:12px;border-radius:12px">
+<h4 style="margin:0 0 8px 0">🧾 Aperçu Ticket & Imprimante</h4>
+<div id="apercuFacture" style="background:#fff;padding:10px;border:1px dashed #cbd5e1;border-radius:8px;min-height:80px">Chargement aperçu...</div>
+<div id="printerStatus" style="margin-top:10px"></div>
+</div>
+
+<div id="apercuFacture2" style="display:none"></div>
+</div></div>
 <div id="modalArt" class="modal"><div class="modalBox"><h3>Nouvel Article</h3><input id="newCode" placeholder="CODE"><input id="newDes" placeholder="Désignation"><input id="newPV" type="number" placeholder="PV"><input id="newPA" type="number" placeholder="PA"><input id="newQte" type="number" placeholder="Qté"><input id="newSeuil" type="number" value="3"><label><input type="checkbox" id="newActif" checked> Actif</label><div style="display:flex;gap:5px;margin-top:10px"><button class="btn btn-g" onclick="saveNewArt()">Créer</button><button class="btn" onclick="closeModal('modalArt')">Annuler</button></div></div></div>
 
 <script type="module" src="js/patron/app.js?v=6.0-saas-superadmin-20261025"></script>
