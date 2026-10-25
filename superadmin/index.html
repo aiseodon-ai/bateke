@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BATEKE - SUPERADMIN DG SUPRÊME V6</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box}body{font-family:Inter,system-ui;margin:0;background:#f1f5f9;color:#0f172a}
+.header{background:#0f172a;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+.badge{background:#7c3aed;color:#fff;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:bold}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;padding:16px}
+.card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid #e2e8f0}
+.kpi{font-size:28px;font-weight:900}
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th{background:#f8fafc;text-align:left;padding:8px;border-bottom:2px solid #e2e8f0}
+.table td{padding:8px;border-bottom:1px solid #f1f5f9}
+.btn{border:0;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:bold}
+.btn-g{background:#22c55e;color:#fff} .btn-r{background:#ef4444;color:#fff} .btn-y{background:#f59e0b;color:#fff} .btn-b{background:#3b82f6;color:#fff}
+input,select{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0}
+</style>
+</head>
+<body>
+<div class="header">
+<div><b>👑 BATEKE SUPERADMIN</b> - DG SUPRÊME <span class="badge">SAAS V6</span><br><small id="adminEmail">Chargement...</small></div>
+<div><button class="btn btn-r" onclick="logout()">Déconnexion</button></div>
+</div>
+
+<div class="grid">
+<div class="card"><div>Total Patrons</div><div class="kpi" id="kpiPatrons">-</div><small id="kpiPatronsDetail"></small></div>
+<div class="card"><div>Total Boutiques</div><div class="kpi" id="kpiShops">-</div><small id="kpiShopsList"></small></div>
+<div class="card"><div>CA Global (FC)</div><div class="kpi" id="kpiCA">-</div><small>Toutes boutiques</small></div>
+<div class="card"><div>Abonnements Actifs</div><div class="kpi" id="kpiAbo">-</div><small>Revenu mensuel: <b id="kpiRev">$0</b></small></div>
+</div>
+
+<div style="padding:0 16px;display:grid;grid-template-columns:2fr 1fr;gap:12px">
+<div class="card">
+<h3>🏪 Tous les Patrons & Abonnements</h3>
+<div style="display:flex;gap:6px;margin-bottom:10px">
+<input id="searchPatron" placeholder="Rechercher patron, PIN, boutique..." oninput="renderPatrons()">
+<select id="filterAbo" onchange="renderPatrons()"><option value="tous">Tous</option><option value="actif">Actifs</option><option value="expire">Expirés</option><option value="suspendu">Suspendus</option></select>
+</div>
+<table class="table"><thead><tr><th>PIN</th><th>Shop</th><th>Abo</th><th>Expire</th><th>CA</th><th>Action</th></tr></thead><tbody id="tbodyPatrons"><tr><td colspan="6">Chargement...</td></tr></tbody></table>
+</div>
+
+<div class="card">
+<h3>➕ Créer / Gérer Abonnement</h3>
+<label>PIN Patron (4 chiffres)</label><input id="newPin" maxlength="4" placeholder="Ex: 1234">
+<label>Boutique par défaut</label><input id="newShop" placeholder="Ex: Menkao1">
+<label>Plan</label><select id="newPlan"><option value="basic">Basic - $10/mois</option><option value="pro">Pro - $25/mois (5 boutiques)</option><option value="enterprise">Enterprise - $50/mois (illimité)</option><option value="lifetime">Lifetime - $300</option></select>
+<label>Durée</label><select id="newDuree"><option value="30">1 Mois</option><option value="90">3 Mois -10%</option><option value="365">1 An -20%</option><option value="9999">Illimité</option></select>
+<label>Date Expiration</label><input id="newExpire" type="date">
+<div style="display:flex;gap:6px;margin-top:8px">
+<button class="btn btn-g" onclick="creerAbonnement()">💾 Créer/Prolonger</button>
+<button class="btn btn-y" onclick="suspendrePatron()">⏸️ Suspendre</button>
+</div>
+<hr>
+<h4>⚙️ Config SAAS Globale</h4>
+<label>Message maintenance</label><input id="globalMsg" placeholder="Système en maintenance...">
+<button class="btn btn-b" onclick="saveGlobalConfig()">Sauver config globale</button>
+<div id="statusAbo" style="margin-top:8px;font-weight:bold;color:#22c55e"></div>
+</div>
+</div>
+
+<script>
+// FIREBASE CONFIG - REMPLACE PAR LE TIEN
+const firebaseConfig = {
+  apiKey: "TON_API_KEY",
+  authDomain: "ton-projet.firebaseapp.com",
+  databaseURL: "https://ton-projet-default-rtdb.firebaseio.com",
+  projectId: "ton-projet"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+let ALL_PATRONS = {};
+let ALL_SHOPS = {};
+
+auth.onAuthStateChanged(async (user)=>{
+  if(!user){ location.href='../index.html?role=patron'; return; }
+  document.getElementById('adminEmail').textContent = user.email;
+  let snap = await db.ref('superadmins/'+user.uid).once('value');
+  if(!snap.val()){ alert("Accès SuperAdmin refusé"); auth.signOut(); return; }
+  initSuperAdmin();
+});
+
+async function initSuperAdmin(){
+  db.ref('patrons').on('value', snap=>{ ALL_PATRONS = snap.val()||{}; renderPatrons(); updateKPI(); });
+  db.ref('shops').on('value', snap=>{ ALL_SHOPS = snap.val()||{}; updateKPI(); });
+  db.ref('ventes').on('value', snap=>{ window.ALL_VENTES = snap.val()||{}; updateKPI(); });
+}
+
+function updateKPI(){
+  let nbPatrons = Object.keys(ALL_PATRONS).length;
+  let nbShops = Object.keys(ALL_SHOPS).length;
+  document.getElementById('kpiPatrons').textContent = nbPatrons;
+  document.getElementById('kpiShops').textContent = nbShops;
+  document.getElementById('kpiShopsList').textContent = Object.keys(ALL_SHOPS).slice(0,4).join(', ');
+
+  let ca = 0;
+  if(window.ALL_VENTES){
+    Object.values(window.ALL_VENTES).forEach(shopVentes=>{
+      if(typeof shopVentes==='object') Object.values(shopVentes).forEach(v=>{ ca+= parseFloat(v.total||0); });
+    });
+  }
+  document.getElementById('kpiCA').textContent = ca.toLocaleString();
+
+  let actifs = Object.values(ALL_PATRONS).filter(p=>p.abonnement?.statut==='actif').length;
+  document.getElementById('kpiAbo').textContent = actifs + '/' + nbPatrons;
+}
+
+function renderPatrons(){
+  let tbody = document.getElementById('tbodyPatrons');
+  let search = (document.getElementById('searchPatron').value||'').toLowerCase();
+  let filter = document.getElementById('filterAbo').value;
+  let html = '';
+  Object.entries(ALL_PATRONS).forEach(([pin, data])=>{
+    let abo = data.abonnement || {};
+    let expire = abo.expire || 'N/A';
+    let statut = abo.statut || 'inconnu';
+    if(filter!=='tous' && statut!==filter) return;
+    let hay = (pin+' '+(data.shop||'')+' '+statut).toLowerCase();
+    if(search && !hay.includes(search)) return;
+    let color = statut==='actif'?'#dcfce7':statut==='expire'?'#fee2e2':'#fef9c3';
+    html+=`<tr style="background:${color}"><td><b>${pin}</b></td><td>${data.shop||Object.keys(data.shops||{})[0]||'-'}</td><td><small>${abo.plan||'-'}<br>${statut}</small></td><td>${expire}</td><td>${(data.ca||0).toLocaleString?.()||0}</td><td><button class="btn btn-b" style="padding:4px 8px;font-size:11px" onclick="editPatron('${pin}')">Éditer</button></td></tr>`;
+  });
+  tbody.innerHTML = html || '<tr><td colspan="6">Aucun patron</td></tr>';
+}
+
+async function creerAbonnement(){
+  let pin = document.getElementById('newPin').value.trim();
+  let shop = document.getElementById('newShop').value.trim();
+  let plan = document.getElementById('newPlan').value;
+  let expireInput = document.getElementById('newExpire').value;
+  if(!pin) return alert("PIN requis");
+  let expire = expireInput ? new Date(expireInput).toISOString() : new Date(Date.now()+30*24*3600*1000).toISOString();
+  await db.ref('patrons/'+pin+'/abonnement').set({plan, statut:'actif', expire, updatedAt:new Date().toISOString(), createdBy:auth.currentUser.email});
+  if(shop) await db.ref('patrons/'+pin+'/shop').set(shop);
+  document.getElementById('statusAbo').textContent = '✅ Abonnement '+plan+' pour PIN '+pin+' jusqu\'à '+expire;
+  alert("✅ Abonnement créé pour PIN "+pin);
+}
+
+function editPatron(pin){
+  document.getElementById('newPin').value = pin;
+  let data = ALL_PATRONS[pin];
+  document.getElementById('newShop').value = data.shop||'';
+  document.getElementById('newPlan').value = data.abonnement?.plan||'basic';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function suspendrePatron(){
+  let pin = document.getElementById('newPin').value.trim();
+  if(!pin) return alert("PIN requis");
+  await db.ref('patrons/'+pin+'/abonnement/statut').set('suspendu');
+  alert("⏸️ Patron "+pin+" suspendu");
+}
+
+function saveGlobalConfig(){
+  let msg = document.getElementById('globalMsg').value;
+  db.ref('config/saas').set({message:msg, updatedAt:new Date().toISOString()});
+  document.getElementById('statusAbo').textContent = '✅ Config SAAS sauvée';
+}
+
+function logout(){ auth.signOut().then(()=>location.href='../index.html'); }
+</script>
+</body>
+</html>
