@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BATEKE - Abonnement 15.000 FC</title><base href="/bateke/">
+<style>
+body{background:#0a0a0a;color:#fff;font-family:Inter;padding:16px}
+.card{background:#171717;border:1px solid #262626;border-radius:18px;padding:20px;margin:12px 0}
+.price{font-size:42px;font-weight:900;color:#22c55e}
+.btn{width:100%;padding:16px;border-radius:14px;border:0;font-weight:900;font-size:16px;cursor:pointer;margin:6px 0}
+.btn-airtel{background:#ff0000;color:#fff} .btn-mpesa{background:#1ab759;color:#fff}
+input{width:100%;padding:14px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;margin:8px 0}
+.badge{display:inline-block;padding:4px 10px;border-radius:20px;background:#262626;font-size:12px}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</head><body>
+<h1>🔒 Abonnement BATEKE</h1>
+<div class="card"><span class="badge">PRIX FIXE KINSHASA</span><div class="price">15.000 FC <span style="font-size:14px;color:#888">/ mois / boutique</span></div><div style="color:#888;margin-top:8px">Accès complet: ventes, stock, CA, 6 boutiques, support DG</div></div>
+
+<div class="card"><h3>1. Choisis ton réseau</h3>
+<button class="btn btn-airtel" onclick="selectPay('AIRTEL','0998111387')">AIRTEL MONEY - 0998111387</button>
+<button class="btn btn-mpesa" onclick="selectPay('MPESA','0816640963')">M-PESA - 0816640963</button>
+<div id="payInstr" style="display:none;background:#111;padding:12px;border-radius:12px;margin-top:10px"></div>
+</div>
+
+<div class="card"><h3>2. Confirme ton paiement (Auto)</h3>
+<input id="shopName" placeholder="Nom de ta boutique (ex: Menkao1)">
+<input id="txId" placeholder="ID Transaction Airtel/Mpesa (ex: 1234567890)">
+<input id="phonePayer" placeholder="Ton numéro qui a payé">
+<button class="btn" style="background:#7c3aed;color:#fff" onclick="submitPay()">J'AI PAYÉ - ACTIVER MON ABONNEMENT</button>
+<div id="status" style="margin-top:10px"></div>
+</div>
+
+<div class="card" style="border-color:#22c55e"><h3>Besoin d'aide?</h3><a href="https://wa.me/243998111387?text=DG%20j'ai%20pay%C3%A9%20mon%20abonnement%20BATEKE%2015000FC" style="color:#22c55e">WhatsApp DG Suprême → 0998111387</a></div>
+
+<script>
+const firebaseConfig={apiKey:"AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+firebase.auth().signInAnonymously();
+const db=firebase.database();
+let selected={reseau:'',numero:''};
+function selectPay(reseau,numero){
+ selected={reseau,numero};
+ document.getElementById('payInstr').style.display='block';
+ document.getElementById('payInstr').innerHTML=`✅ Tu as choisi <b>${reseau}</b><br>1. Compose *...# ou va sur My Airtel<br>2. Envoie <b>15.000 FC</b> au <b>${numero}</b><br>3. Copie l'ID de transaction reçu par SMS`;
+}
+function submitPay(){
+ const shop=document.getElementById('shopName').value.trim();
+ const tx=document.getElementById('txId').value.trim();
+ const phone=document.getElementById('phonePayer').value.trim();
+ if(!shop||!tx||!phone||!selected.reseau) return alert('Remplis tout: boutique, ID transaction, ton numéro et choisis Airtel/Mpesa');
+ const data={boutique:shop,transactionId:tx,phonePayer:phone,reseau:selected.reseau,numeroDG:selected.numero,montant:15000,statut:'en_attente',date:Date.now()};
+ db.ref('paiements_abonnements').push(data).then(()=>{
+   db.ref('abonnements_demandes/'+shop).set(data);
+   document.getElementById('status').innerHTML=`<b style="color:#22c55e">✅ Demande envoyée !</b><br>On vérifie ton ID ${tx} (${selected.reseau}).<br>Ton abonnement s'activera dans ton SuperAdmin dans 2 min.`;
+   // Simule activation auto après vérif DG
+ }).catch(e=>alert(e.message));
+}
+</script></body></html>
