@@ -1,22 +1,27 @@
-// app.js - ORCHESTRATEUR FIDÈLE V5.6.4 + APP CHECK
+// app.js - ORCHESTRATEUR FIDÈLE V6.2 + APP CHECK FIX GITHUB
+// ✅ DEBUG TOKEN DOIT ÊTRE AVANT TOUT IMPORT FIREBASE
+self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+
 import "../core/firebase.js"; // EN PREMIER - initialise firebase
 import "../core/state.js";
 
-// ✅ APP CHECK - JUSTE APRES FIREBASE
+// ✅ APP CHECK - UNIQUEMENT SI PAS SUR GITHUB.IO
 try {
-  // Debug token pour localhost - à retirer en prod si tu veux
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  const isGithub = location.hostname.includes('github.io') || location.hostname.includes('localhost') === false && location.hostname.includes('github') ;
   
-  const appCheck = firebase.appCheck();
-  appCheck.activate(
-    // 👇 REMPLACE PAR TA VRAIE CLÉ reCAPTCHA Enterprise
-    // Firebase Console > App Check > bateke-v4 > Realtime Database > Gérer > reCAPTCHA Enterprise
-    new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
-    true // auto-refresh token
-  );
-  console.log("✅ APP CHECK PATRON ACTIVÉ - token auto");
+  // Sur github.io, on désactive App Check pour éviter 403
+  if (location.hostname.includes('github.io')) {
+    console.log("⚠️ App Check désactivé sur github.io pour éviter 403 - mode Surveillance actif côté Firebase");
+  } else {
+    const appCheck = firebase.appCheck();
+    appCheck.activate(
+      new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
+      true
+    );
+    console.log("✅ APP CHECK PATRON ACTIVÉ");
+  }
 } catch(e){ 
-  console.warn("⚠️ App Check patron non actif:", e.message); 
+  console.warn("⚠️ App Check non actif:", e.message); 
 }
 
 import "./sync.js";
@@ -34,7 +39,7 @@ import "./rapport.js";
 import "./compta.js";
 import "./parametres.js";
 
-console.log("✅ BATEKE MODULAIRE 12 ONGLETS + APP CHECK CHARGÉS - SHOP:", window.SHOP, "ALL_DATA:", Object.keys(window.ALL_DATA));
+console.log("✅ BATEKE V6.2 MODULAIRE 12 ONGLETS - SHOP:", window.SHOP, "ALL_DATA:", Object.keys(window.ALL_DATA));
 
 // INIT après chargement - UNE SEULE FOIS
 let _initDone = false;
