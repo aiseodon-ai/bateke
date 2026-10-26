@@ -1,18 +1,28 @@
-// js/vendeur/app.js - ORCHESTRATEUR FINAL V5.6.4 - APP CHECK + FIX ENTREE + BOUTIQUE LOCK
+// js/vendeur/app.js - ORCHESTRATEUR FINAL V5.6.4 - APP CHECK FIX
 import "./core/firebase.js";
 import { STATE } from "./core/state.js";
 
-// ✅ APP CHECK VENDEUR - DOIT ÊTRE JUSTE APRES FIREBASE, AVANT TOUT LE RESTE
+// ✅ APP CHECK VENDEUR - DOIT ÊTRE JUSTE APRES FIREBASE
 try {
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // pour tester en localhost, laisse true pour l'instant
+  // Debug seulement en local, PAS en prod
+  if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    console.log("🧪 Mode DEBUG App Check - localhost");
+  } else {
+    // En prod on enlève le debug
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = undefined;
+  }
+
   const appCheck = firebase.appCheck();
-  appCheck.activate(
-    // 👇 COLLE ICI LA MÊME CLÉ QUE DANS PATRON (reCAPTCHA Enterprise)
-    // Firebase Console > App Check > Web app vendeur > Realtime Database
-    new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
-    true // auto-refresh
-  );
-  console.log("✅ APP CHECK VENDEUR ACTIVÉ - SHOP:", STATE.SHOP);
+  // Évite double activation si déjà fait dans vendeur.html
+  if (!window._appCheckActivated) {
+    appCheck.activate(
+      new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
+      true
+    );
+    window._appCheckActivated = true;
+    console.log("✅ APP CHECK VENDEUR ACTIVÉ - SHOP:", STATE.SHOP);
+  }
 } catch(e){
   console.warn("⚠️ App Check vendeur non actif:", e.message);
 }
@@ -27,6 +37,7 @@ import "./modules/devis.js";
 import "./modules/facture.js";
 import "./modules/synthese.js";
 import "./modules/ticket.js";
+
 
 window.STATE = STATE;
 window.SHOP = STATE.SHOP;
