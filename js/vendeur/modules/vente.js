@@ -1,15 +1,34 @@
-// js/vendeur/modules/vente.js - V5.6.4 FIX APP CHECK + ASCII 58MM + SEARCH VIDE
+// js/vendeur/modules/vente.js - V5.6.5 SAAS BLOQUANT 15K + FIX ASCII 58MM
 import { STATE } from '../core/state.js';
 import { saveStockCache, saveQueue, updateOfflineUI } from '../core/offline.js';
 
-const CACHE_VERSION = 'v5.6.4-appcheck-20261020';
+const CACHE_VERSION = 'v5.6.5-saas-15k-20261026';
 
-// ✅ FIX ASCII PUR - Pour ticket 58mm et éviter ГÇ»
 function formatPrix(n){
   return String(Math.round(parseFloat(n)||0));
 }
 
+// 🔒 SAAS CHECK COMMUN - UTILISÉ PARTOUT
+function isAboExpired(){
+  const shop = STATE.SHOP;
+  const finStr = localStorage.getItem('BATEKE_ABO_FIN_'+shop);
+  if(!finStr) return false; // pas encore vérifié online, on laisse passer
+  const fin = new Date(finStr);
+  const grace = new Date(fin); grace.setDate(grace.getDate()+3);
+  return new Date() > grace;
+}
+function getFinDate(){
+  const shop = STATE.SHOP;
+  const finStr = localStorage.getItem('BATEKE_ABO_FIN_'+shop);
+  return finStr ? new Date(finStr).toLocaleDateString() : '';
+}
+
 export function addPanier(){
+  // 🔒 BLOQUE AJOUT PANIER SI ABO EXPIRÉ
+  if(isAboExpired()){
+    alert("🔒 Vente bloquée - Boutique "+STATE.SHOP+" abonnement expiré depuis "+getFinDate()+"\nContacte ton patron: 15.000 FC - Airtel 0998111387");
+    return;
+  }
   let code=document.getElementById('codeArt')?.value?.trim(); 
   if(!code) return alert('Choisis article');
   let art=STATE.STOCK.find(s=>s.CODE===code); 
@@ -33,8 +52,6 @@ export function addPanier(){
   }
   window.PANIER=STATE.PANIER; 
   renderPanier();
-
-  // ✅ FIX: vide TOUS les champs après ajout
   let searchEl=document.getElementById('searchArt');
   if(searchEl) searchEl.value='';
   let suggestEl=document.getElementById('suggest');
@@ -75,7 +92,6 @@ export function renderPanier(){
   } else {
     list.innerHTML=STATE.PANIER.map((p,i)=>{
       let pr=p.prix||p.Prix||0;
-      // ✅ ICI CODE + DESIGNATION comme tu voulais pour onglet vente
       let desig = (p.Designation||'').substring(0,22);
       return `<div style="display:flex;justify-content:space-between;padding:4px;border-bottom:1px solid #eee">
         <span><b>${p.CODE}</b> ${desig} x${p.qty}</span> 
@@ -89,17 +105,17 @@ export function renderPanier(){
   if(document.getElementById('totalPanier')) document.getElementById('totalPanier').innerText=formatPrix(brut)+' FC';
   if(document.getElementById('totalFinal')) document.getElementById('totalFinal').innerText=formatPrix(final)+' FC';
   if(document.getElementById('remiseInfo')) document.getElementById('remiseInfo').innerText= rem>0?`Remise ${rem}% = -${formatPrix(remVal)} FC`:'';
-  window.printLastSale = ()=>{ 
-    let v=STATE.LAST_VENTE || JSON.parse(localStorage.getItem('last_vente_'+STATE.SHOP)||'null'); 
-    if(!v) return alert('Aucune vente'); 
-    window.imprimerVenteUniverselle(v); 
-  };
 }
 
 export function removePanier(i){ STATE.PANIER.splice(i,1); renderPanier(); }
 export function checkRemise(){ let r=parseFloat(document.getElementById('remise')?.value||0); if(r>5){ alert('Max 5%'); document.getElementById('remise').value=5; renderPanier(); } }
 
 export async function validerVente(){
+  // 🔒 BLOQUE VALIDATION SI ABO EXPIRÉ - MÊME OFFLINE
+  if(isAboExpired()){
+    alert("🔒 VENTE BLOQUÉE - Boutique "+STATE.SHOP+" abonnement expiré depuis "+getFinDate()+"\nImpossible de vendre - Contacte patron 15.000 FC");
+    return;
+  }
   if(!STATE.PANIER.length) return alert('Panier vide'); 
   if(!STATE.CURRENT_VENDEUR) return alert('Login requis');
   let brut=STATE.PANIER.reduce((s,p)=>s+((p.prix||p.Prix||0)*p.qty),0); 
@@ -139,9 +155,8 @@ export async function validerVente(){
   let autoPrint = cfg.imprimante?.autoPrint || cfg.autoPrint || false;
   if(autoPrint){
     window.imprimerVenteUniverselle?.(vente);
-    alert(`Vente: ${formatPrix(final)} FC - Ticket envoye`);
   } else {
-    if(confirm(`Vente: ${formatPrix(final)} FC\n\nImprimer ticket 58mm ?`)){
+    if(confirm(`Vente: ${formatPrix(final)} FC\nImprimer ticket 58mm ?`)){
       window.imprimerVenteUniverselle?.(vente);
     }
   }
@@ -158,4 +173,4 @@ export function renderVentesJour(){
 
 window.addPanier=addPanier; window.searchArticle=searchArticle; window.selectArtVente=selectArtVente; window.selectArt=selectArtVente;
 window.renderPanier=renderPanier; window.removePanier=removePanier; window.checkRemise=checkRemise; window.validerVente=validerVente; window.vendre=validerVente; window.renderVentesJour=renderVentesJour;
-console.log("vente.js V5.6.4 APP CHECK ASCII OK -", CACHE_VERSION);
+console.log("vente.js V5.6.5 SAAS BLOQUANT OK -", CACHE_VERSION);
