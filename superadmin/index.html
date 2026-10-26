@@ -29,6 +29,13 @@
 <button onclick="location.href='index.html?role=patron'">← Retour Menkao1</button>
 
 <script>
+ // 🔐 GUARD DG SUPRÊME - METS TON CODE SECRET ICI
+const CODE_DG = "BATEKE2026"; // <--- CHANGE CE CODE
+if(prompt("🔑 Code DG Suprême:") !== CODE_DG){
+  alert("Accès refusé");
+  location.href = '/bateke/';
+  throw new Error("Accès refusé");
+}
 const firebaseConfig = {
   apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",
   authDomain: "bateke-v4.firebaseapp.com",
