@@ -115,10 +115,39 @@ firebase.database().ref('paiements_abonnements').on('value',snap=>{
  }); document.getElementById('paiements').innerHTML=h||'<span class="muted">Aucun paiement en attente</span>';
 });
 function activer(boutique,key){
- const fin=new Date(); fin.setDate(fin.getDate()+30);
- firebase.database().ref('patrons/'+boutique+'/abonnement_fin').set(fin.toISOString().slice(0,10));
- firebase.database().ref('patrons/'+boutique+'/statut').set('actif');
- firebase.database().ref('paiements_abonnements/'+key+'/statut').set('valide');
- alert('✅ '+boutique+' activé jusqu\'au '+fin.toLocaleDateString());
+ const debut = new Date();
+ const fin = new Date(); 
+ fin.setDate(fin.getDate()+30);
+ fin.setHours(23,59,59,999);
+
+ const debutISO = debut.toISOString();
+ const finISO = fin.toISOString();
+ const finSimple = fin.toISOString().slice(0,10); // 2026-11-25
+
+ // FORMAT IMAGE (celui que tu as dans ton screenshot)
+ firebase.database().ref('patrons/'+boutique+'/abonnement').update({
+   debut: debutISO,
+   expire: finISO,
+   statut: "actif",
+   plan: "enterprise"
+ });
+
+ // FORMAT COMPATIBILITE pour l'ancien code qui cherche abonnement_fin
+ firebase.database().ref('patrons/'+boutique).update({
+   abonnement_fin: finSimple,
+   abonnement_debut: debutISO.slice(0,10),
+   statut: "actif",
+   actif: true,
+   isAdmin: true
+ });
+
+ // Valider paiement
+ firebase.database().ref('paiements_abonnements/'+key).update({
+   statut: "valide",
+   valide_le: debutISO
+ });
+
+ alert('✅ '+boutique+' activé du '+debut.toLocaleDateString()+' au '+fin.toLocaleDateString());
+ location.reload();
 }
 </script></body></html>
