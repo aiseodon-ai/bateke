@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="fr"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vendeur V5.6.3 SECURE OFFLINE</title>
+<title>Vendeur V5.6.4 SECURE OFFLINE</title>
 <link id="manifest-link" rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0b5e2f">
 <link rel="apple-touch-icon" href="./icon-192.png">
@@ -35,6 +35,27 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
+<script>
+// --- CONFIG BATEKE V4 - CORRIGÉ ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",
+  authDomain: "bateke-v4.firebaseapp.com",
+  databaseURL: "https://bateke-v4-default-rtdb.firebaseio.com",
+  projectId: "bateke-v4",
+  storageBucket: "bateke-v4.firebasestorage.app",
+  messagingSenderId: "321333206282",
+  appId: "1:321333206282:web:6d1603446be3d195de6ef3"
+};
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+// --- APP CHECK - TA CLÉ DE LA CAPTURE ---
+const appCheck = firebase.appCheck();
+appCheck.activate(
+  new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
+  true
+);
+</script>
 </head><body>
 <div id="offlineBadge" class="offline-badge" style="background:#22c55e;color:#000">🟢 SYNC OK</div>
 <div id="loginOverlay"><div style="background:#fff;border-radius:16px;padding:20px;max-width:340px;width:100%;text-align:center">
@@ -55,7 +76,7 @@
 <button class="btn btn-g" onclick="doChangePinForce()">✅ VALIDER</button>
 <p id="changePinMsg" style="color:red;font-size:12px"></p>
 </div></div>
-<header><h3 style="margin:0">🛒 V5.6.3 SECURE - <span id="shopName"></span> - <small id="vendeurName" style="background:#fff;color:#0b5e2f;padding:2px 6px;border-radius:6px"></small></h3>
+<header><h3 style="margin:0">🛒 V5.6.4 SECURE - <span id="shopName"></span> - <small id="vendeurName" style="background:#fff;color:#0b5e2f;padding:2px 6px;border-radius:6px"></small></h3>
 <div style="display:flex;gap:5px;justify-content:center;margin-top:6px;flex-wrap:wrap">
 <select id="shopSel" onchange="switchShop()" style="width:110px"></select>
 <small id="caJour" style="background:#fff;color:#0b5e2f;padding:4px 8px;border-radius:12px;font-weight:bold">CA Jour: 0</small>
@@ -75,7 +96,6 @@
 <div id="vente" class="sec active">
 <div class="card">
 <h4>Nouvelle Vente</h4>
-<!-- ✅ BOUTONS TICKET 58MM PRO -->
 <div style="display:flex;gap:6px;margin-bottom:8px">
   <button onclick="printLastSale()" style="background:#111;color:#fff;padding:8px 12px;border-radius:6px">🖨️ Ticket</button>
   <button onclick="testTicketUniversel()" style="background:#22c55e;color:#fff;padding:8px 12px;border-radius:6px">🧾 TEST</button>
@@ -104,7 +124,6 @@
 </div>
 <div class="card"><h4>Dernières ventes aujourd'hui</h4><div style="overflow:auto"><table><thead><tr><th>Heure</th><th>Vendeur</th><th>Client</th><th>Articles</th><th>Total</th><th>Sync</th></tr></thead><tbody id="ventesJour"></tbody></table></div></div>
 </div>
-<!-- ... reste de tes div devis/facture/stock/caisse/synthese identique ... -->
 <div id="devis" class="sec"><div class="card"><h4>📑 Devis</h4><div id="devisConfigInfo" style="font-size:11px;background:#f0fdf4;padding:6px;border-radius:6px"></div>
 <div class="deviseBox"><div>Devise <select id="deviseDevis" onchange="onDeviseDevisChange()"><option value="FC" selected>FC</option><option value="USD">USD</option><option value="XAF">XAF</option><option value="XOF">XOF</option><option value="EUR">EUR</option></select></div><div>Taux <input id="tauxDevis" type="number" oninput="renderPanierDevis()"></div></div>
 <div class="searchBox" style="margin-top:8px"><input id="searchArtDevis" placeholder="CODE ou Nom devis..." oninput="searchArticleDevis()"><div id="suggestDevis" class="suggest"></div></div><div style="display:grid;grid-template-columns:1fr 90px 70px 50px;gap:5px;margin-top:8px"><input id="codeArtDevis" placeholder="CODE" readonly><input id="pvArtDevis" placeholder="PV FC" readonly><input id="qteArtDevis" type="number" value="1"><button class="btn btn-b" onclick="addPanierDevis()">+</button></div><div id="panierDevis" style="margin-top:10px;background:#fffde7;padding:8px;border-radius:8px;border:1px dashed #facc15;min-height:50px">Panier devis vide</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px"><div>TVA <select id="tvaDevis" onchange="renderPanierDevis()"><option value="oui" selected>Avec TVA 16%</option><option value="non">Sans TVA</option></select></div><div>Remise %<input id="remiseDevis" type="number" value="0" oninput="renderPanierDevis()"></div></div><div style="text-align:right;margin-top:8px;background:#fff;padding:8px;border-radius:8px">Total FC: <span id="totalDevisFC">0</span><br><small id="convertInfoDevis" style="color:#0b5e2f;font-weight:bold"></small><br><b id="totalDevis" style="font-size:20px;color:#0b5e2f">0 FC</b><br><small id="detailDevis"></small></div><hr><input id="clientNomDevis" placeholder="Nom client *"><input id="clientTelDevis" placeholder="Tél"><button class="btn btn-g" onclick="validerDevis()">💾 Créer Devis</button></div><div class="card"><h4>Liste Devis</h4><div style="overflow:auto"><table><thead><tr><th>Num</th><th>Client</th><th>TTC</th><th>Devise</th><th>Taux</th><th>Action</th></tr></thead><tbody id="devisList"></tbody></table></div></div></div>
@@ -122,8 +141,7 @@
 <div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Heure</th><th>Type</th><th>Montant</th><th>Motif</th></tr></thead><tbody id="caisseList"></tbody></table></div></div></div>
 <div id="synthese" class="sec"><div class="card"><h4>📊 Ma Synthèse</h4>Du: <input type="date" id="du"> Au: <input type="date" id="au"><button class="btn btn-g" onclick="genSyntheseVendeur()">Générer</button><div id="syntheseC" style="margin-top:10px;overflow:auto"></div><button class="btn btn-y" onclick="pdfSynthese()">📄 PDF</button></div></div>
 
-
-<script type="module" src="js/vendeur/app.js?v=5.6.4-appcheck-20261020"></script>
+<script type="module" src="js/vendeur/app.js?v=5.6.5-appcheck-fixed"></script>
 
 <script>
 let deferredPrompt;
@@ -143,9 +161,8 @@ async function installerApp(){
 }
 const _pinFromUrl = new URLSearchParams(window.location.search).get('pin');
 if(_pinFromUrl){ const pi=document.getElementById('pinInput'); if(pi) pi.value=_pinFromUrl; }
-//if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js?v=5.6.4-appcheck-20261022', {scope:'./'})}
+  navigator.serviceWorker.register('./sw.js?v=5.6.5-appcheck-fixed', {scope:'./'})}
 </script>
 <script>
   const params = new URLSearchParams(window.location.search);
