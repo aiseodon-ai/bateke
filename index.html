@@ -142,35 +142,44 @@ if(location.search.includes('saas') || location.hash.includes('saas')) switchLog
 <script>
 function checkAbonnement(boutiqueNom){
   const db = firebase.database();
+  // On essaie de lire par ID (7832) et par nom (Menkao2)
   db.ref('patrons/'+boutiqueNom).once('value').then(snap=>{
-    const patron = snap.val();
-    if(!patron){ console.log("Nouveau patron, pas d'abonnement"); return; }
-    const finStr = patron.abonnement_fin;
+    let patron = snap.val();
+    if(!patron) return;
+
+    // Supporte les 2 formats: 
+    // 1. Ton format image: patron.abonnement.expire
+    // 2. Mon format: patron.abonnement_fin
+    let finStr = null;
+    if(patron.abonnement && patron.abonnement.expire) finStr = patron.abonnement.expire;
+    else if(patron.abonnement_fin) finStr = patron.abonnement_fin;
+    
     if(!finStr) return;
+
     const fin = new Date(finStr);
     const today = new Date(); today.setHours(0,0,0,0);
-    const grace = new Date(fin); grace.setDate(grace.getDate() + 3);
-    const joursRestants = Math.ceil((fin - today) / (1000*60*60*24));
+    const grace = new Date(fin); grace.setDate(grace.getDate()+3);
+    const joursRestants = Math.ceil((fin - today)/86400000);
+    
     const badge = document.getElementById('badgeAbo');
     if(badge){
-      if(joursRestants > 0) badge.innerHTML = `✅ Actif jusqu'au ${finStr} (${joursRestants}j)`;
-      else if(today <= grace) badge.innerHTML = `⚠️ Grâce: ${Math.ceil((grace-today)/86400000)}j restants`;
+      if(joursRestants > 0) badge.innerHTML = `✅ Actif jusqu'au ${fin.toLocaleDateString()} (${joursRestants}j) - ${patron.boutique||boutiqueNom}`;
+      else if(today <= grace) badge.innerHTML = `⚠️ Grâce: ${Math.ceil((grace-today)/86400000)}j`;
+      else badge.innerHTML = `🔴 Expiré`;
     }
+
     if(today > grace){
       document.body.innerHTML = `
       <div style="background:#0a0a0a;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter">
         <div style="background:#171717;border:1px solid #ff0000;border-radius:20px;padding:30px;max-width:400px;text-align:center">
           <h1 style="color:#ff0000">🔒 ABONNEMENT EXPIRÉ</h1>
-          <p>Boutique: <b>${boutiqueNom}</b></p>
-          <p>Expiré depuis: ${finStr}</p>
+          <p>Boutique: <b>${patron.boutique||boutiqueNom}</b></p>
+          <p>Expiré: ${fin.toLocaleDateString()}</p>
           <p style="font-size:32px;font-weight:900;color:#22c55e;margin:15px 0">15.000 FC / mois</p>
-          <p>Paye sur:</p>
           <p><b>AIRTEL: 0998111387</b><br><b>M-PESA: 0816640963</b></p>
-          <button onclick="location.href='abonnement/index.html?shop=${boutiqueNom}'" style="width:100%;padding:16px;background:#7c3aed;color:#fff;border:0;border-radius:12px;font-weight:900;font-size:16px;margin-top:15px">PAYER MAINTENANT</button>
-          <p style="margin-top:15px;font-size:12px;color:#888">Après paiement, ton ID sera activé dans 2 min par DG</p>
+          <button onclick="location.href='abonnement/index.html?shop=${boutiqueNom}'" style="width:100%;padding:16px;background:#7c3aed;color:#fff;border:0;border-radius:12px;font-weight:900;margin-top:15px">PAYER MAINTENANT</button>
         </div>
       </div>`;
-      throw new Error("ABO EXPIRE");
     }
   });
 }
