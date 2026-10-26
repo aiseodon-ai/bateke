@@ -3,29 +3,7 @@ import "./core/firebase.js";
 import { STATE } from "./core/state.js";
 
 // ✅ APP CHECK VENDEUR - DOIT ÊTRE JUSTE APRES FIREBASE
-try {
-  // Debug seulement en local, PAS en prod
-  if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-    console.log("🧪 Mode DEBUG App Check - localhost");
-  } else {
-    // En prod on enlève le debug
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = undefined;
-  }
 
-  const appCheck = firebase.appCheck();
-  // Évite double activation si déjà fait dans vendeur.html
-  if (!window._appCheckActivated) {
-    appCheck.activate(
-      new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
-      true
-    );
-    window._appCheckActivated = true;
-    console.log("✅ APP CHECK VENDEUR ACTIVÉ - SHOP:", STATE.SHOP);
-  }
-} catch(e){
-  console.warn("⚠️ App Check vendeur non actif:", e.message);
-}
 
 import "./core/offline.js";
 import "./core/presence.js";
