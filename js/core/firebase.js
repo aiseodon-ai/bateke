@@ -1,4 +1,4 @@
-// js/core/firebase.js - BATEKE V4 - FINAL V6.3 FIX APP CHECK 403 GITHUB
+// js/core/firebase.js - BATEKE V4 - FINAL V6.4 APP CHECK ON GITHUB
 window.esc = (t) => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 export const esc = window.esc;
 
@@ -16,32 +16,26 @@ if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
-// 🔐 APP CHECK PROD - FIX GITHUB.IO 403
-// Sur github.io, on désactive pour éviter 403 - Firebase est déjà en Surveillance
-const isGithub = location.hostname.includes('github.io');
+// 🔐 APP CHECK PROD - ACTIVÉ PARTOUT y compris github.io
 const isLocalhost = location.hostname.includes('localhost') || location.hostname.includes('127.0.0.1');
 
-if (isGithub) {
-  // GITHUB.IO = PAS DE APP CHECK
-  console.log("🛡️ App Check OFF sur github.io - Mode Surveillance Firebase OK");
-} else {
-  // LOCALHOST + WEB.APP = APP CHECK ON
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // Affiche le token dans console pour localhost
-  try {
-    const appCheck = firebase.appCheck();
-    appCheck.activate(
-      new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
-      true
-    );
-    console.log("🛡️ App Check PROD V6.3 OK sur", location.hostname);
-  } catch(e) {
-    console.warn("App Check:", e.message);
-  }
+if (isLocalhost) {
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+
+try {
+  const appCheck = firebase.appCheck();
+  appCheck.activate(
+    new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
+    true
+  );
+  console.log("🛡️ App Check PROD V6.4 ON sur", location.hostname);
+} catch(e) {
+  console.warn("App Check:", e.message);
 }
 
 const db = firebase.database();
 const auth = firebase.auth();
-
 window.db = db;
 window.auth = auth;
 
@@ -50,4 +44,4 @@ setTimeout(()=>{
 }, 500);
 
 export { db, auth };
-console.log("🔥 BATEKE V4 FINAL V6.3 - PROD - AppCheck:", isGithub ? "OFF github" : "ON");
+console.log("🔥 BATEKE V4 FINAL V6.4 - AppCheck ON");
