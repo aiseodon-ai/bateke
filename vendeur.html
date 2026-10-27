@@ -122,20 +122,20 @@
 <div id="synthese" class="sec"><div class="card"><h4>📊 Ma Synthèse</h4>Du: <input type="date" id="du"> Au: <input type="date" id="au"><button class="btn btn-g" onclick="genSyntheseVendeur()">Générer</button><div id="syntheseC" style="margin-top:10px;overflow:auto"></div><button class="btn btn-y" onclick="pdfSynthese()">📄 PDF</button></div></div>
 
 <script>
+function toTimeBateke(v){
+  if(!v) return 0;
+  if(typeof v==='number') return v;
+  if(typeof v==='string'){ if(/^\d{12,}$/.test(v)) return parseInt(v,10); let t=new Date(v).getTime(); return isNaN(t)?0:t; }
+  return 0;
+}
 function checkAboVendeur(){
-  const shop = new URLSearchParams(location.search).get('shop') || 'Menkao1';
-  firebase.database().ref('patrons/'+shop+'/abonnement').once('value').then(snap=>{
-    const abo = snap.val() || {};
-    const fin = abo.expire ? new Date(abo.expire) : null;
-    if(!fin) return; // pas encore configuré
-    const grace = new Date(fin); grace.setDate(grace.getDate()+3);
-    if(new Date() > grace){
-      document.body.innerHTML = `<div style="background:#000;color:#fff;padding:40px;text-align:center;min-height:100vh">
-        <h1 style="color:red">🔒 Boutique Bloquée</h1>
-        <p>${shop} - Abonnement expiré le ${fin.toLocaleDateString()}</p>
-        <p>Contacte ton patron pour renouveler 15.000 FC</p>
-        <p>Airtel 0998111387 / Mpesa 0816640963</p>
-      </div>`;
+  const shop = new URLSearchParams(location.search).get('shop') || localStorage.getItem('BATEKE_SHOP') || 'Menkao1';
+  firebase.database().ref('shops/'+shop+'/abonnements/expire').once('value').then(snap=>{
+    let t=toTimeBateke(snap.val());
+    if(!t) return; // nouvelle boutique pas encore payée -> laisse passer
+    let jours=Math.ceil((t-Date.now())/86400000);
+    if(jours < -3){
+      document.body.innerHTML = `<div style="background:#000;color:#fff;padding:40px;text-align:center;min-height:100vh"><h1 style="color:red">🔒 Boutique Bloquée</h1><p>${shop} - Abonnement expiré le ${new Date(t).toLocaleDateString()}</p><p>Contacte ton patron pour renouveler 15.000 FC</p><p>Airtel 0998111387 / Mpesa 0816640963</p></div>`;
     }
   });
 }
