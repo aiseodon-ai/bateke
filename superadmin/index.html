@@ -1,36 +1,42 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN DG SUPRÊME V6.3 GLOBAL</title><base href="/bateke/">
+<title>BATEKE - SUPERADMIN DG SUPRÊME V6.6 SAAS FIX</title><base href="/bateke/">
 <style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:20px}
  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
  .card{background:#171717;border:1px solid #262626;border-radius:16px;padding:18px}
  .kpi{font-size:30px;font-weight:900;color:#a855f7;margin-top:6px}
- .ok{color:#22c55e} .muted{color:#888;font-size:12px}
+ .ok{color:#22c55e} .bad{color:#ef4444} .muted{color:#888;font-size:12px}
  table{width:100%;border-collapse:collapse;margin-top:10px} th,td{padding:10px;border-bottom:1px solid #262626;text-align:left;font-size:13px}
  button{background:#7c3aed;color:#fff;border:0;padding:10px 16px;border-radius:10px;font-weight:bold;cursor:pointer}
+ .btn-activate{background:#22c55e}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head><body>
-<h1>👑 BATEKE SUPERADMIN DG SUPRÊME V6.3 - GLOBAL</h1>
+<h1>👑 BATEKE SUPERADMIN DG SUPRÊME V6.6 - SAAS FIX</h1>
 <div class="grid">
  <div class="card"><div>Total Boutiques (6)</div><div id="totalBoutiques" class="kpi">...</div><div id="detailBoutiques" class="muted"></div></div>
- <div class="card"><div>CA Global Toutes boutiques (Jour)</div><div id="caGlobal" class="kpi">...</div></div>
+ <div class="card"><div>CA Global Jour</div><div id="caGlobal" class="kpi">...</div></div>
  <div class="card"><div>Total Patrons</div><div id="totalPatrons" class="kpi">...</div></div>
  <div class="card"><div>Abonnements Actifs</div><div id="abos" class="kpi">...</div></div>
 </div>
 
-<div class="card" style="margin-top:14px"><h3>Tableau de tous les PIN</h3>
+<div class="card" style="margin-top:14px"><h3>Tableau Abonnements SAAS 15K</h3>
+<table><thead><tr><th>Boutique</th><th>Expire</th><th>Jours restants</th><th>Statut</th><th>Action</th></tr></thead><tbody id="tableAbo"></tbody></table>
+</div>
+
+<div class="card" style="margin-top:14px"><h3>Tableau PIN</h3>
 <table><thead><tr><th>Patron / Boutique</th><th>PIN</th><th>Statut</th><th>Shop</th></tr></thead><tbody id="tablePin"></tbody></table>
 </div>
 <div class="card"><h3>Boutiques Détectées</h3><div id="listeBoutiques"></div><div class="muted" id="debugPaths" style="margin-top:10px"></div></div>
 <button onclick="location.href='index.html?role=patron'">← Retour Menkao1</button>
 
+<div class="card" style="border:1px solid #22c55e;margin-top:14px"><h3>💰 Paiements 15.000 FC en attente</h3><div id="paiements"></div></div>
+
 <script>
- // 🔐 GUARD DG SUPRÊME - METS TON CODE SECRET ICI
-const CODE_DG = "BATEKE2026"; // <--- CHANGE CE CODE
+const CODE_DG = "BATEKE2026";
 if(prompt("🔑 Code DG Suprême:") !== CODE_DG){
   alert("Accès refusé");
   location.href = '/bateke/';
@@ -46,28 +52,16 @@ const firebaseConfig = {
   appId: "1:321333206282:web:6d1603446be3d195de6ef3"
 };
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-firebase.auth().signInAnonymously().then(()=>{ scanGlobal(); });
+firebase.auth().signInAnonymously().then(()=>{ scanGlobal(); listenPaiements(); });
 
 function scanGlobal(){
  const db = firebase.database();
  db.ref('/').once('value').then(snap=>{
   const root = snap.val()||{};
-  console.log("ROOT KEYS:", Object.keys(root));
-  document.getElementById('debugPaths').innerText = "Chemins trouvés dans Firebase: " + Object.keys(root).join(", ");
-
-  // 1. TROUVER BOUTIQUES - essaie tous les chemins possibles
-  let shopsObj = root.boutiques || root.shops || root.magasins || root.stores || root.bateke_boutiques || null;
-  // Si pas trouvé, cherche les noeuds qui ressemblent à une boutique (qui ont ventes/stock)
-  if(!shopsObj){
-    shopsObj = {};
-    for(const k in root){
-      if(root[k] && typeof root[k]==='object' && (root[k].ventes || root[k].stock || root[k].produits)){
-        shopsObj[k]=root[k];
-      }
-    }
-  }
+  document.getElementById('debugPaths').innerText = "Chemins: " + Object.keys(root).join(", ");
+  let shopsObj = root.shops || root.boutiques || {};
   const shopNames = Object.keys(shopsObj||{});
-  document.getElementById('totalBoutiques').innerHTML = shopNames.length + (shopNames.length===6? ' <span class="ok">✅</span>':'');
+  document.getElementById('totalBoutiques').innerHTML = shopNames.length + (shopNames.length>=6? ' <span class="ok">✅</span>':'');
   document.getElementById('detailBoutiques').innerText = shopNames.join(", ");
 
   let caGlobal=0; let htmlList='';
@@ -79,48 +73,59 @@ function scanGlobal(){
     Object.values(ventes).forEach(v=>{
       if(!v) return;
       const d = (v.date||'').slice(0,10);
-      if(d===today || !v.date) caShop += (Number(v.total)||Number(v.montant)||0);
+      if(d===today) caShop += (Number(v.total)||0);
     });
     caGlobal+=caShop;
-    htmlList+=`<div style="padding:8px;border-bottom:1px solid #222;display:flex;justify-content:space-between"><span>${name}</span><b>${caShop.toLocaleString()} FC</b></div>`;
+    htmlList+=`<div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #222"><span>${name}</span><b>${caShop.toLocaleString()} FC</b></div>`;
   });
   document.getElementById('caGlobal').innerText = caGlobal.toLocaleString() + ' FC';
-  document.getElementById('listeBoutiques').innerHTML = htmlList || '<span class="muted">Aucune vente aujourd\'hui</span>';
+  document.getElementById('listeBoutiques').innerHTML = htmlList;
 
-  // 2. PATRONS
-  const patronsObj = root.patrons || root.users || root.comptes || {};
+  const patronsObj = root.patrons || {};
   document.getElementById('totalPatrons').innerText = Object.keys(patronsObj).length;
 
-  // 3. ABONNEMENTS
-  const abosObj = root.abonnements || root.abos || root.subscriptions || root.licences || {};
-  const abosActifs = Object.values(abosObj).filter(a=>a && (a.actif!==false && a.statut!=='expiré')).length;
-  document.getElementById('abos').innerText = abosActifs || Object.keys(abosObj).length;
+  // TABLEAU ABO SAAS - AVEC CONVERSION STRING->NUMBER
+  let rowsAbo=''; let actifs=0;
+  for(const shop in patronsObj){
+    const p = patronsObj[shop];
+    const abo = p.abonnement || {};
+    let expire = abo.expire;
+    let expireTime = 0;
+    if(typeof expire === 'string'){ expireTime = new Date(expire).getTime(); }
+    else if(typeof expire === 'number'){ expireTime = expire; }
+    
+    let jours = expireTime ? Math.ceil((expireTime - Date.now())/(1000*60*60*24)) : -999;
+    let statut = '';
+    if(!expireTime){ statut='<span class="bad">JAMAIS PAYÉ</span>'; }
+    else if(jours < -3){ statut='<span class="bad">EXPIRÉ +3j BLOQUÉ</span>'; }
+    else if(jours < 0){ statut='<span style="color:orange">GRACE '+ (jours+3) +'j</span>'; }
+    else { statut='<span class="ok">ACTIF</span>'; actifs++; }
 
-  // 4. TABLEAU PIN
-  let rows='';
+    let expireAff = expireTime ? new Date(expireTime).toLocaleDateString() : '—';
+    rowsAbo+=`<tr><td><b>${shop}</b></td><td>${expireAff}<br><small class="muted">${expireTime||'null'}</small></td><td>${expireTime?jours+' j':''}</td><td>${statut}</td><td><button onclick="activer('${shop}','manual_'+Date.now())">+30J 15K</button> <button onclick="bloquer('${shop}')" style="background:#ef4444">BLOQUER</button></td></tr>`;
+  }
+  document.getElementById('tableAbo').innerHTML = rowsAbo;
+  document.getElementById('abos').innerText = actifs + ' / ' + Object.keys(patronsObj).length;
+
+  let rowsPin='';
   for(const id in patronsObj){
     const p = patronsObj[id];
-    rows+=`<tr><td>${p.nom||p.name||id}</td><td><b style="letter-spacing:2px">${p.pin||p.PIN||p.code||'--'}</b></td><td>${p.statut||p.status||'actif'}</td><td>${p.boutique||p.shop||''}</td></tr>`;
+    rowsPin+=`<tr><td>${p.nom||id}</td><td><b>${p.pin||'--'}</b></td><td>${p.statut||'actif'}</td><td>${p.boutique||id}</td></tr>`;
   }
-  // aussi cherche PIN dans shops
-  shopNames.forEach(name=>{
-    const s = shopsObj[name];
-    if(s && s.pin) rows+=`<tr><td>${name} (shop)</td><td><b>${s.pin}</b></td><td>shop-pin</td><td>${name}</td></tr>`;
-  });
-  document.getElementById('tablePin').innerHTML = rows || '<tr><td colspan=4 class="muted">Aucun PIN trouvé - vérifie /patrons</td></tr>';
-
-  console.log("✅ GLOBAL OK", {shops:shopNames.length, ca:caGlobal, patrons:Object.keys(patronsObj).length});
- }).catch(e=>{ console.error(e); document.getElementById('debugPaths').innerText='Erreur Firebase: '+e.message});
+  document.getElementById('tablePin').innerHTML = rowsPin;
+ });
 }
-</script><div class="card" style="border:1px solid #22c55e"><h3>💰 Paiements 15.000 FC en attente</h3><div id="paiements"></div></div>
-<script>
-firebase.database().ref('paiements_abonnements').on('value',snap=>{
- const data=snap.val()||{}; let h='';
- Object.keys(data).forEach(k=>{
-  const p=data[k]; if(p.statut!=='en_attente') return;
-  h+=`<div style="padding:10px;border-bottom:1px solid #222;display:flex;justify-content:space-between"><div><b>${p.boutique}</b> - ${p.reseau} ${p.transactionId}<br><small>${p.phonePayer} → ${p.numeroDG} - ${p.montant}FC</small></div><button onclick="activer('${p.boutique}','${k}')">ACTIVER 30J</button></div>`;
- }); document.getElementById('paiements').innerHTML=h||'<span class="muted">Aucun paiement en attente</span>';
-});
+
+function listenPaiements(){
+ firebase.database().ref('paiements_abonnements').on('value',snap=>{
+  const data=snap.val()||{}; let h='';
+  Object.keys(data).forEach(k=>{
+   const p=data[k]; if(p.statut!=='en_attente') return;
+   h+=`<div style="padding:10px;border-bottom:1px solid #222;display:flex;justify-content:space-between"><div><b>${p.boutique||p.shop}</b> - ${p.reseau||''} ${p.transactionId||p.txid||''}<br><small>${p.phonePayer||''} → ${p.numeroDG||''} - ${p.montant||15000}FC</small></div><button class="btn-activate" onclick="activer('${p.boutique||p.shop}','${k}')">ACTIVER 30J</button></div>`;
+  }); document.getElementById('paiements').innerHTML=h||'<span class="muted">Aucun paiement en attente</span>';
+ });
+}
+
 function activer(boutique,key){
  const debut = new Date();
  const fin = new Date(); 
@@ -129,32 +134,51 @@ function activer(boutique,key){
 
  const debutISO = debut.toISOString();
  const finISO = fin.toISOString();
- const finSimple = fin.toISOString().slice(0,10); // 2026-11-25
+ const debutTime = debut.getTime();
+ const finTime = fin.getTime(); // 🔑 NUMBER POUR RULES
 
- // FORMAT IMAGE (celui que tu as dans ton screenshot)
+ // FORMAT SAAS SECURE V6.6 - NUMBER OBLIGATOIRE POUR RULES
  firebase.database().ref('patrons/'+boutique+'/abonnement').update({
-   debut: debutISO,
-   expire: finISO,
+   debut: debutTime,
+   debutISO: debutISO,
+   expire: finTime, // ✅ NUMBER - INVIOLABLE POUR RULES
+   expireISO: finISO,
+   expireString: fin.toLocaleDateString(),
    statut: "actif",
-   plan: "enterprise"
+   plan: "enterprise",
+   montant: 15000,
+   lastUpdate: Date.now()
  });
 
- // FORMAT COMPATIBILITE pour l'ancien code qui cherche abonnement_fin
  firebase.database().ref('patrons/'+boutique).update({
-   abonnement_fin: finSimple,
-   abonnement_debut: debutISO.slice(0,10),
+   abonnement_fin: finTime,
+   abonnement_finISO: finISO,
+   abonnement_debut: debutTime,
    statut: "actif",
    actif: true,
    isAdmin: true
  });
 
- // Valider paiement
- firebase.database().ref('paiements_abonnements/'+key).update({
-   statut: "valide",
-   valide_le: debutISO
- });
-
- alert('✅ '+boutique+' activé du '+debut.toLocaleDateString()+' au '+fin.toLocaleDateString());
+ if(key && !key.startsWith('manual_')){
+   firebase.database().ref('paiements_abonnements/'+key).update({
+     statut: "valide",
+     valide_le: debutTime,
+     valide_leISO: debutISO
+   });
+ }
+ alert('✅ '+boutique+' activé 30J\nExpire: '+fin.toLocaleDateString()+'\nTimestamp: '+finTime+'\nMaintenant RULES vont bloquer après expire+3j');
  location.reload();
 }
-</script></body></html>
+
+function bloquer(shop){
+ if(!confirm('Bloquer '+shop+' maintenant?')) return;
+ firebase.database().ref('patrons/'+shop+'/abonnement').update({
+   expire: Date.now() - (10*24*60*60*1000), // il y a 10 jours
+   statut: "expire",
+   lastUpdate: Date.now()
+ });
+ alert('🔴 '+shop+' bloqué');
+ location.reload();
+}
+</script>
+</body></html>
