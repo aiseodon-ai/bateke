@@ -200,4 +200,75 @@ setTimeout(()=>{
 
 <script type="module" src="js/patron/app.js?v=6.1-saas-15k-bloquant-20261025"></script>
 <div style="text-align:center;font-size:10px;color:#888;padding:12px">V6.1 SAAS - Blocage Auto 15K - Airtel 0998111387 / Mpesa 0816640963</div>
+<!-- FIX GENERAL - CHAQUE PATRON VOIT SEULEMENT SES BOUTIQUES -->
+<script>
+function fixBoutiquesGeneral(){
+  let pin = localStorage.getItem('BATEKE_PIN') || localStorage.getItem('pin') || "7832";
+  if(!pin) return;
+  
+  firebase.database().ref('patrons/'+pin).once('value').then(snap=>{
+    const patron = snap.val();
+    if(!patron) return;
+    
+    let mesBoutiques = [];
+    if(patron.boutiques) mesBoutiques = Object.keys(patron.boutiques);
+    else if(patron.boutique) mesBoutiques = [patron.boutique];
+    
+    if(mesBoutiques.length===0) return; // pas concerné, laisse app.js faire
+    
+    mesBoutiques = [...new Set(mesBoutiques.map(b=> b==="Itendance" ? "Intendance" : b.trim()))];
+    
+    console.log(`[FIX] Patron ${pin} →`, mesBoutiques);
+    
+    const sel = document.getElementById('shopSel');
+    if(sel && sel.options.length !== mesBoutiques.length){
+      const currentVal = sel.value || localStorage.getItem('BATEKE_SHOP');
+      sel.innerHTML = '';
+      mesBoutiques.forEach(nom=>{
+        const opt = document.createElement('option');
+        opt.value = nom;
+        opt.textContent = nom;
+        if(nom===currentVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      if(currentVal && !mesBoutiques.includes(currentVal)){
+        sel.value = mesBoutiques[0];
+        localStorage.setItem('BATEKE_SHOP', mesBoutiques[0]);
+      }
+    }
+    
+    const listDiv = document.getElementById('listShops');
+    if(listDiv){
+      firebase.database().ref('shops').once('value').then(shopsSnap=>{
+        const shops = shopsSnap.val()||{};
+        let html = '';
+        mesBoutiques.forEach(nom=>{
+          if(!shops[nom]) return;
+          const count = Object.keys(shops[nom].stock||{}).length;
+          html += `<div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #eee"><div><b>${nom}</b><br><small>${count} articles</small></div><button class="btn btn-b" onclick="localStorage.setItem('BATEKE_SHOP','${nom}'); location.reload();">Ouvrir</button></div>`;
+        });
+        if(html) listDiv.innerHTML = html;
+      });
+    }
+  });
+}
+
+setTimeout(fixBoutiquesGeneral, 2000);
+setInterval(fixBoutiquesGeneral, 5000);
+
+const origSwitch = window.switchShop;
+window.switchShop = function(){
+  let pin = localStorage.getItem('BATEKE_PIN') || "7832";
+  firebase.database().ref('patrons/'+pin+'/boutiques').once('value').then(s=>{
+    const allowed = s.exists() ? Object.keys(s.val()) : [];
+    const sel = document.getElementById('shopSel');
+    if(allowed.length>0 && sel && !allowed.includes(sel.value)){
+      alert(`⛔ ${sel.value} n'appartient pas au PIN ${pin}`);
+      sel.value = allowed[0];
+      localStorage.setItem('BATEKE_SHOP', allowed[0]);
+    }
+    if(origSwitch) origSwitch.apply(this, arguments);
+  });
+}
+</script>
 </body></html>
