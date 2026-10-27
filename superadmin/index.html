@@ -1,47 +1,50 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN DG SUPRÊME V6.6 SAAS FIX</title><base href="/bateke/">
+<title>BATEKE - SUPERADMIN DG V7.0 FULL</title><base href="/bateke/">
 <style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:20px}
  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
- .card{background:#171717;border:1px solid #262626;border-radius:16px;padding:18px}
- .kpi{font-size:30px;font-weight:900;color:#a855f7;margin-top:6px}
- .ok{color:#22c55e} .bad{color:#ef4444} .muted{color:#888;font-size:12px}
- table{width:100%;border-collapse:collapse;margin-top:10px} th,td{padding:10px;border-bottom:1px solid #262626;text-align:left;font-size:13px}
- button{background:#7c3aed;color:#fff;border:0;padding:10px 16px;border-radius:10px;font-weight:bold;cursor:pointer}
- .btn-activate{background:#22c55e}
+ .card{background:#171717;border:1px solid #262626;border-radius:16px;padding:18px;margin-top:14px}
+ .kpi{font-size:28px;font-weight:900;color:#a855f7;margin-top:6px}
+ .ok{color:#22c55e} .bad{color:#ef4444} .warn{color:orange} .muted{color:#888;font-size:11px}
+ table{width:100%;border-collapse:collapse;margin-top:10px} th,td{padding:10px;border-bottom:1px solid #262626;text-align:left;font-size:12px}
+ button{background:#7c3aed;color:#fff;border:0;padding:8px 12px;border-radius:8px;font-weight:bold;cursor:pointer;margin:2px;font-size:12px}
+ .btn-g{background:#22c55e} .btn-r{background:#ef4444} .btn-o{background:#f59e0b} .btn-b{background:#3b82f6}
+ input{background:#0a0a0a;border:1px solid #333;color:#fff;padding:8px;border-radius:8px}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head><body>
-<h1>👑 BATEKE SUPERADMIN DG SUPRÊME V6.6 - SAAS FIX</h1>
+<h1>👑 BATEKE SUPERADMIN DG V7.0 - FULL SYNC</h1>
 <div class="grid">
- <div class="card"><div>Total Boutiques (6)</div><div id="totalBoutiques" class="kpi">...</div><div id="detailBoutiques" class="muted"></div></div>
- <div class="card"><div>CA Global Jour</div><div id="caGlobal" class="kpi">...</div></div>
- <div class="card"><div>Total Patrons</div><div id="totalPatrons" class="kpi">...</div></div>
- <div class="card"><div>Abonnements Actifs</div><div id="abos" class="kpi">...</div></div>
+ <div class="card"><div>Boutiques</div><div id="totalBoutiques" class="kpi">...</div><div id="detailBoutiques" class="muted"></div></div>
+ <div class="card"><div>CA Jour Global</div><div id="caGlobal" class="kpi">...</div></div>
+ <div class="card"><div>Patrons</div><div id="totalPatrons" class="kpi">...</div></div>
+ <div class="card"><div>Actifs / Total</div><div id="abos" class="kpi">...</div><div class="muted" id="abosDetail"></div></div>
 </div>
 
-<div class="card" style="margin-top:14px"><h3>Tableau Abonnements SAAS 15K</h3>
-<table><thead><tr><th>Boutique</th><th>Expire</th><th>Jours restants</th><th>Statut</th><th>Action</th></tr></thead><tbody id="tableAbo"></tbody></table>
+<div class="card" style="border:1px solid #a855f7"><h3>🔧 Outils DG</h3>
+<button class="btn-b" onclick="migrerAllStringToNumber()">MIGRER tous les STRING → NUMBER</button>
+<button class="btn-o" onclick="scanGlobal()">🔄 Re-scanner</button>
+<span class="muted">Utilise ce bouton une fois pour corriger tous tes anciens abonnement_fin en STRING</span>
+<div id="logMigrate" class="muted" style="margin-top:8px"></div>
 </div>
 
-<div class="card" style="margin-top:14px"><h3>Tableau PIN</h3>
-<table><thead><tr><th>Patron / Boutique</th><th>PIN</th><th>Statut</th><th>Shop</th></tr></thead><tbody id="tablePin"></tbody></table>
+<div class="card"><h3>📅 Abonnements SAAS 15K - SYNCHRO patrons + shops</h3>
+<table><thead><tr><th>Boutique / Patron ID</th><th>Expire shops/ + patrons/</th><th>Jours</th><th>Statut</th><th>Actions</th><th>Liens</th></tr></thead><tbody id="tableAbo"></tbody></table>
 </div>
-<div class="card"><h3>Boutiques Détectées</h3><div id="listeBoutiques"></div><div class="muted" id="debugPaths" style="margin-top:10px"></div></div>
-<button onclick="location.href='index.html?role=patron'">← Retour Menkao1</button>
 
-<div class="card" style="border:1px solid #22c55e;margin-top:14px"><h3>💰 Paiements 15.000 FC en attente</h3><div id="paiements"></div></div>
+<div class="card" style="border:1px solid #22c55e"><h3>💰 Paiements en attente</h3><div id="paiements"></div></div>
+<div class="card"><h3>💵 Historique Paiements Validés (30 derniers)</h3><div id="paiementsValides" class="muted"></div></div>
+
+<div class="card"><h3>🔑 Tableau PIN + Vendeurs</h3><table><thead><tr><th>Patron ID</th><th>Nom</th><th>PIN Patron</th><th>Boutique liée</th><th>Vendeurs PIN</th></tr></thead><tbody id="tablePin"></tbody></table></div>
+
+<div class="card"><h3>Boutiques Détectées - Stock/Ventes</h3><div id="listeBoutiques"></div><div class="muted" id="debugPaths" style="margin-top:10px"></div></div>
 
 <script>
 const CODE_DG = "BATEKE2026";
-if(prompt("🔑 Code DG Suprême:") !== CODE_DG){
-  alert("Accès refusé");
-  location.href = '/bateke/';
-  throw new Error("Accès refusé");
-}
+if(prompt("🔑 Code DG Suprême:") !== CODE_DG){ alert("Accès refusé"); location.href='/bateke/'; throw new Error("x"); }
 const firebaseConfig = {
   apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",
   authDomain: "bateke-v4.firebaseapp.com",
@@ -54,131 +57,177 @@ const firebaseConfig = {
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 firebase.auth().signInAnonymously().then(()=>{ scanGlobal(); listenPaiements(); });
 
+function toTime(v){
+  if(!v) return 0;
+  if(typeof v === 'number') return v;
+  if(typeof v === 'string'){ let t = new Date(v).getTime(); return isNaN(t)?0:t; }
+  return 0;
+}
+
 function scanGlobal(){
  const db = firebase.database();
  db.ref('/').once('value').then(snap=>{
   const root = snap.val()||{};
-  document.getElementById('debugPaths').innerText = "Chemins: " + Object.keys(root).join(", ");
-  let shopsObj = root.shops || root.boutiques || {};
+  document.getElementById('debugPaths').innerText = "Root: " + Object.keys(root).join(", ");
+  const shopsObj = root.shops || root.boutiques || {};
   const shopNames = Object.keys(shopsObj||{});
-  document.getElementById('totalBoutiques').innerHTML = shopNames.length + (shopNames.length>=6? ' <span class="ok">✅</span>':'');
-  document.getElementById('detailBoutiques').innerText = shopNames.join(", ");
-
-  let caGlobal=0; let htmlList='';
-  shopNames.forEach(name=>{
-    const shop = shopsObj[name]||{};
-    const ventes = shop.ventes || {};
-    let caShop=0;
-    const today = new Date().toISOString().slice(0,10);
-    Object.values(ventes).forEach(v=>{
-      if(!v) return;
-      const d = (v.date||'').slice(0,10);
-      if(d===today) caShop += (Number(v.total)||0);
-    });
-    caGlobal+=caShop;
-    htmlList+=`<div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #222"><span>${name}</span><b>${caShop.toLocaleString()} FC</b></div>`;
-  });
-  document.getElementById('caGlobal').innerText = caGlobal.toLocaleString() + ' FC';
-  document.getElementById('listeBoutiques').innerHTML = htmlList;
-
   const patronsObj = root.patrons || {};
+  
+  document.getElementById('totalBoutiques').innerText = shopNames.length;
+  document.getElementById('detailBoutiques').innerText = shopNames.join(", ");
   document.getElementById('totalPatrons').innerText = Object.keys(patronsObj).length;
 
-  // TABLEAU ABO SAAS - AVEC CONVERSION STRING->NUMBER
-  let rowsAbo=''; let actifs=0;
-  for(const shop in patronsObj){
-    const p = patronsObj[shop];
-    const abo = p.abonnement || {};
-    let expire = abo.expire;
-    let expireTime = 0;
-    if(typeof expire === 'string'){ expireTime = new Date(expire).getTime(); }
-    else if(typeof expire === 'number'){ expireTime = expire; }
+  let caGlobal=0, htmlList='', rowsAbo='', actifs=0, grace=0, bloques=0;
+  // Index shops pour retrouver patron
+  const patronByShop = {};
+  for(const pid in patronsObj){ let b = patronsObj[pid].boutique || patronsObj[pid].shop || ''; if(b) patronByShop[b]=pid; }
+
+  shopNames.forEach(name=>{
+    const shop = shopsObj[name]||{};
+    // CA jour
+    const ventes = shop.ventes || {}; let caShop=0;
+    const today = new Date().toISOString().slice(0,10);
+    Object.values(ventes).forEach(v=>{ if(!v) return; let d=(v.date||'').slice(0,10); if(d===today) caShop+=Number(v.total||0); });
+    caGlobal+=caShop;
+    let stockCount = Object.keys(shop.stock||{}).length;
+    let vendeursCount = Object.keys(shop.vendeurs||{}).length;
+    htmlList+=`<div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #222"><span><b>${name}</b> - ${stockCount} prod, ${vendeursCount} vend, ${Object.keys(ventes).length} ventes</span><b>${caShop.toLocaleString()} FC</b></div>`;
+
+    // Abonnement - check les 2 endroits
+    const shopAboExpire = shop.abonnements?.expire;
+    const pid = patronByShop[name] || Object.keys(patronsObj).find(k=>k.toLowerCase()===name.toLowerCase()) || name;
+    const patron = patronsObj[pid] || patronsObj[name] || {};
+    const patronAboExpire = patron.abonnement?.expire || patron.abonnement_fin;
+
+    const tShop = toTime(shopAboExpire);
+    const tPatron = toTime(patronAboExpire);
+    const tBest = Math.max(tShop, tPatron); // on prend le plus récent
+
+    let jours = tBest ? Math.ceil((tBest - Date.now())/86400000) : -9999;
+    let statut='', cls='';
+    if(!tBest){ statut='<span class="bad">JAMAIS PAYÉ</span>'; bloques++; }
+    else if(jours < -3){ statut='<span class="bad">BLOQUÉ +'+Math.abs(jours)+'j</span>'; bloques++; }
+    else if(jours < 0){ statut='<span class="warn">GRACE '+ (jours+3) +'j</span>'; grace++; }
+    else { statut='<span class="ok">ACTIF '+jours+'j</span>'; actifs++; }
+
+    let affShop = tShop ? new Date(tShop).toLocaleDateString() : '—';
+    let affPatron = tPatron ? new Date(tPatron).toLocaleDateString() : '—';
     
-    let jours = expireTime ? Math.ceil((expireTime - Date.now())/(1000*60*60*24)) : -999;
-    let statut = '';
-    if(!expireTime){ statut='<span class="bad">JAMAIS PAYÉ</span>'; }
-    else if(jours < -3){ statut='<span class="bad">EXPIRÉ +3j BLOQUÉ</span>'; }
-    else if(jours < 0){ statut='<span style="color:orange">GRACE '+ (jours+3) +'j</span>'; }
-    else { statut='<span class="ok">ACTIF</span>'; actifs++; }
+    rowsAbo+=`<tr><td><b>${name}</b><br><small class="muted">PID:${pid}</small></td><td>shops: ${affShop}<br>patrons: ${affPatron}<br><small class="muted">${tBest||0}</small></td><td>${tBest?jours+'j':''}</td><td>${statut}</td><td><button class="btn-g" onclick="activer('${name}','manual')">+30J</button><button class="btn-r" onclick="bloquer('${name}')">BLOQUER</button></td><td><a href="vendeur.html?shop=${name}" target="_blank" style="color:#a855f7">Vendeur</a><br><a href="index.html?shop=${name}" target="_blank" style="color:#888">Patron</a></td></tr>`;
+  });
 
-    let expireAff = expireTime ? new Date(expireTime).toLocaleDateString() : '—';
-    rowsAbo+=`<tr><td><b>${shop}</b></td><td>${expireAff}<br><small class="muted">${expireTime||'null'}</small></td><td>${expireTime?jours+' j':''}</td><td>${statut}</td><td><button onclick="activer('${shop}','manual_'+Date.now())">+30J 15K</button> <button onclick="bloquer('${shop}')" style="background:#ef4444">BLOQUER</button></td></tr>`;
+  // Aussi patrons sans shop dans shops/
+  for(const pid in patronsObj){
+    const p = patronsObj[pid];
+    const bName = p.boutique || p.shop;
+    if(bName && !shopsObj[bName]){
+      let t = toTime(p.abonnement?.expire || p.abonnement_fin);
+      let jours = t? Math.ceil((t-Date.now())/86400000):-9999;
+      let statut = !t?'<span class="bad">JAMAIS</span>': jours<-3?'<span class="bad">BLOQUÉ</span>': jours<0?'<span class="warn">GRACE</span>':'<span class="ok">ACTIF</span>';
+      if(jours>=0) actifs++; else if(jours<-3) bloques++; else grace++;
+      rowsAbo+=`<tr><td><b>${bName||pid}</b><br><small class="muted">Orphelin PID:${pid}</small></td><td>patrons: ${t?new Date(t).toLocaleDateString():'—'}</td><td>${t?jours+'j':''}</td><td>${statut}</td><td><button class="btn-g" onclick="activer('${bName||pid}','manual')">+30J</button><button class="btn-r" onclick="bloquer('${bName||pid}')">BLOQUER</button></td><td><small class="muted">Pas de shops/${bName}</small></td></tr>`;
+    }
   }
-  document.getElementById('tableAbo').innerHTML = rowsAbo;
-  document.getElementById('abos').innerText = actifs + ' / ' + Object.keys(patronsObj).length;
 
+  document.getElementById('caGlobal').innerText = caGlobal.toLocaleString()+' FC';
+  document.getElementById('listeBoutiques').innerHTML = htmlList;
+  document.getElementById('tableAbo').innerHTML = rowsAbo;
+  document.getElementById('abos').innerText = actifs;
+  document.getElementById('abosDetail').innerText = `Actifs:${actifs} Grace:${grace} Bloqués:${bloques}`;
+
+  // PIN TABLE
   let rowsPin='';
-  for(const id in patronsObj){
-    const p = patronsObj[id];
-    rowsPin+=`<tr><td>${p.nom||id}</td><td><b>${p.pin||'--'}</b></td><td>${p.statut||'actif'}</td><td>${p.boutique||id}</td></tr>`;
+  for(const pid in patronsObj){
+    const p = patronsObj[pid];
+    const bName = p.boutique || p.shop || pid;
+    const shop = shopsObj[bName]||{};
+    let vendeurs = '';
+    if(shop.vendeurs){ Object.keys(shop.vendeurs).forEach(vk=>{ let v=shop.vendeurs[vk]; vendeurs+=`${vk}:${v.pin||v.PIN||''} `; }); }
+    rowsPin+=`<tr><td>${pid}</td><td>${p.nom||p.name||''}</td><td><b>${p.pin||p.PIN||'--'}</b></td><td>${bName}</td><td><small>${vendeurs||'—'}</small> <button class="btn-b" onclick="prompt('PINs vendeurs', '${vendeurs}')">Voir</button></td></tr>`;
   }
   document.getElementById('tablePin').innerHTML = rowsPin;
  });
 }
 
 function listenPaiements(){
- firebase.database().ref('paiements_abonnements').on('value',snap=>{
-  const data=snap.val()||{}; let h='';
+ const db = firebase.database();
+ db.ref('paiements_abonnements').on('value',snap=>{
+  const data=snap.val()||{}; let h='', hV='';
+  let countValides=0;
   Object.keys(data).forEach(k=>{
-   const p=data[k]; if(p.statut!=='en_attente') return;
-   h+=`<div style="padding:10px;border-bottom:1px solid #222;display:flex;justify-content:space-between"><div><b>${p.boutique||p.shop}</b> - ${p.reseau||''} ${p.transactionId||p.txid||''}<br><small>${p.phonePayer||''} → ${p.numeroDG||''} - ${p.montant||15000}FC</small></div><button class="btn-activate" onclick="activer('${p.boutique||p.shop}','${k}')">ACTIVER 30J</button></div>`;
-  }); document.getElementById('paiements').innerHTML=h||'<span class="muted">Aucun paiement en attente</span>';
+   const p=data[k];
+   if(p.statut==='en_attente'){
+     h+=`<div style="padding:10px;border-bottom:1px solid #222;display:flex;justify-content:space-between"><div><b>${p.boutique||p.shop}</b> - ${p.reseau||''} ${p.transactionId||''}<br><small>${p.phonePayer||''} → ${p.numeroDG||''} - ${p.montant||15000}FC - ${p.date||''}</small></div><button class="btn-g" onclick="activer('${p.boutique||p.shop}','${k}')">ACTIVER 30J</button></div>`;
+   } else if(p.statut==='valide' && countValides<30){
+     hV+=`<div>${p.boutique} - ${p.valide_leISO||''} - ${p.montant}FC - ${p.transactionId||''}</div>`;
+     countValides++;
+   }
+  });
+  document.getElementById('paiements').innerHTML=h||'<span class="muted">Aucun en attente</span>';
+  document.getElementById('paiementsValides').innerHTML=hV||'Aucun';
  });
 }
 
 function activer(boutique,key){
- const debut = new Date();
- const fin = new Date(); 
- fin.setDate(fin.getDate()+30);
- fin.setHours(23,59,59,999);
-
- const debutISO = debut.toISOString();
- const finISO = fin.toISOString();
- const debutTime = debut.getTime();
- const finTime = fin.getTime(); // 🔑 NUMBER POUR RULES
-
- // FORMAT SAAS SECURE V6.6 - NUMBER OBLIGATOIRE POUR RULES
- firebase.database().ref('patrons/'+boutique+'/abonnement').update({
-   debut: debutTime,
-   debutISO: debutISO,
-   expire: finTime, // ✅ NUMBER - INVIOLABLE POUR RULES
-   expireISO: finISO,
-   expireString: fin.toLocaleDateString(),
-   statut: "actif",
-   plan: "enterprise",
-   montant: 15000,
-   lastUpdate: Date.now()
- });
-
- firebase.database().ref('patrons/'+boutique).update({
-   abonnement_fin: finTime,
-   abonnement_finISO: finISO,
-   abonnement_debut: debutTime,
-   statut: "actif",
-   actif: true,
-   isAdmin: true
- });
-
- if(key && !key.startsWith('manual_')){
-   firebase.database().ref('paiements_abonnements/'+key).update({
-     statut: "valide",
-     valide_le: debutTime,
-     valide_leISO: debutISO
+ const debut = new Date(); const fin = new Date(); fin.setDate(fin.getDate()+30); fin.setHours(23,59,59,999);
+ const finTime = fin.getTime(); const finISO = fin.toISOString(); const debutTime = debut.getTime();
+ // DOUBLE ECRITURE - FIX TON BUG
+ const updates = {};
+ updates['shops/'+boutique+'/abonnements/expire'] = finTime;
+ updates['shops/'+boutique+'/abonnements/expireISO'] = finISO;
+ updates['shops/'+boutique+'/abonnements/statut'] = 'actif';
+ updates['shops/'+boutique+'/abonnements/plan'] = 'enterprise';
+ updates['shops/'+boutique+'/abonnements/lastUpdate'] = Date.now();
+ // Trouver patron ID lié
+ firebase.database().ref('patrons').once('value').then(s=>{
+   let pid = boutique;
+   s.forEach(c=>{ let v=c.val(); if((v.boutique||v.shop||'').toLowerCase()===boutique.toLowerCase()) pid=c.key; });
+   updates['patrons/'+pid+'/abonnement/expire'] = finTime;
+   updates['patrons/'+pid+'/abonnement/expireISO'] = finISO;
+   updates['patrons/'+pid+'/abonnement/statut'] = 'actif';
+   updates['patrons/'+pid+'/abonnement/debut'] = debutTime;
+   updates['patrons/'+pid+'/abonnement_fin'] = finTime;
+   updates['patrons/'+pid+'/abonnement_finISO'] = finISO;
+   updates['patrons/'+pid+'/statut'] = 'actif';
+   updates['patrons/'+pid+'/actif'] = true;
+   if(key && !key.startsWith('manual')) updates['paiements_abonnements/'+key+'/statut'] = 'valide';
+   if(key && !key.startsWith('manual')) updates['paiements_abonnements/'+key+'/valide_le'] = debutTime;
+   firebase.database().ref().update(updates).then(()=>{
+     alert('✅ '+boutique+' + '+pid+' activés 30J jusqu\'au '+fin.toLocaleDateString()+'\nDouble écriture OK pour Rules');
+     location.reload();
    });
- }
- alert('✅ '+boutique+' activé 30J\nExpire: '+fin.toLocaleDateString()+'\nTimestamp: '+finTime+'\nMaintenant RULES vont bloquer après expire+3j');
- location.reload();
+ });
 }
 
 function bloquer(shop){
- if(!confirm('Bloquer '+shop+' maintenant?')) return;
- firebase.database().ref('patrons/'+shop+'/abonnement').update({
-   expire: Date.now() - (10*24*60*60*1000), // il y a 10 jours
-   statut: "expire",
-   lastUpdate: Date.now()
+ if(!confirm('Bloquer '+shop+' ?')) return;
+ const past = Date.now() - (10*86400000);
+ firebase.database().ref().update({
+   ['shops/'+shop+'/abonnements/expire']: past,
+   ['patrons/'+shop+'/abonnement/expire']: past,
+   ['patrons/'+shop+'/abonnement_fin']: past
+ }).then(()=>{ alert('🔴 Bloqué'); location.reload(); });
+}
+
+function migrerAllStringToNumber(){
+ if(!confirm('Migrer TOUS les expire STRING en NUMBER?')) return;
+ const db = firebase.database();
+ db.ref('/').once('value').then(snap=>{
+  const root=snap.val()||{}; const updates={}; let c=0;
+  const shops=root.shops||{}; const patrons=root.patrons||{};
+  for(const sname in shops){
+    let e = shops[sname].abonnements?.expire;
+    if(typeof e==='string'){ let t=new Date(e).getTime(); if(t){ updates['shops/'+sname+'/abonnements/expire']=t; c++; } }
+  }
+  for(const pid in patrons){
+    let e1 = patrons[pid].abonnement?.expire;
+    let e2 = patrons[pid].abonnement_fin;
+    if(typeof e1==='string'){ let t=new Date(e1).getTime(); if(t){ updates['patrons/'+pid+'/abonnement/expire']=t; c++; } }
+    if(typeof e2==='string'){ let t=new Date(e2).getTime(); if(t){ updates['patrons/'+pid+'/abonnement_fin']=t; c++; } }
+  }
+  if(c===0){ document.getElementById('logMigrate').innerText='Aucun STRING à migrer'; return; }
+  db.ref().update(updates).then(()=>{ document.getElementById('logMigrate').innerText='✅ Migrés '+c+' champs STRING → NUMBER'; setTimeout(scanGlobal,1000); });
  });
- alert('🔴 '+shop+' bloqué');
- location.reload();
 }
 </script>
 </body></html>
