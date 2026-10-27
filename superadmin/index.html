@@ -1,34 +1,51 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN DG V7.3 PIN VENDEURS</title><base href="/bateke/">
+<title>BATEKE - SUPERADMIN DG V7.4 FULL + VENDEURS</title><base href="/bateke/">
 <style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:20px}
+ .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
  .card{background:#171717;border:1px solid #262626;border-radius:16px;padding:18px;margin-top:14px}
- .kpi{font-size:28px;font-weight:900;color:#a855f7}
+ .kpi{font-size:28px;font-weight:900;color:#a855f7;margin-top:6px}
  .ok{color:#22c55e} .bad{color:#ef4444} .warn{color:orange} .muted{color:#888;font-size:11px}
  table{width:100%;border-collapse:collapse;margin-top:10px} th,td{padding:10px;border-bottom:1px solid #262626;text-align:left;font-size:12px}
- button{background:#7c3aed;color:#fff;border:0;padding:8px 12px;border-radius:8px;font-weight:bold;cursor:pointer;margin:2px}
+ button{background:#7c3aed;color:#fff;border:0;padding:8px 12px;border-radius:8px;font-weight:bold;cursor:pointer;margin:2px;font-size:12px}
  .btn-g{background:#22c55e} .btn-r{background:#ef4444} .btn-o{background:#f59e0b} .btn-b{background:#3b82f6}
- .pin-badge{background:#222;border:1px solid #444;padding:2px 6px;border-radius:6px;margin:2px;display:inline-block;font-size:11px}
+ .pin-badge{background:#222;border:1px solid #444;padding:3px 8px;border-radius:20px;margin:2px;display:inline-block;font-size:11px}
+ .pin-patron{background:#7c3aed;color:#fff} .pin-vendeur{background:#1f2937;color:#a5b4fc;border-color:#7c3aed}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head><body>
-<h1>👑 SUPERADMIN V7.3 - PIN PATRONS + VENDEURS PAR BOUTIQUE</h1>
-<div class="card"><button class="btn-b" onclick="scanGlobal()">🔄 Re-scanner</button> <span id="statusScan" class="muted"></span></div>
+<h1>👑 BATEKE SUPERADMIN DG V7.4 - FULL + PIN VENDEURS</h1>
+<div class="grid">
+ <div class="card"><div>Boutiques</div><div id="totalBoutiques" class="kpi">...</div><div id="detailBoutiques" class="muted"></div></div>
+ <div class="card"><div>CA Jour Global</div><div id="caGlobal" class="kpi">...</div></div>
+ <div class="card"><div>Patrons</div><div id="totalPatrons" class="kpi">...</div></div>
+ <div class="card"><div>Actifs / Total</div><div id="abos" class="kpi">...</div><div class="muted" id="abosDetail"></div></div>
+</div>
 
-<div class="card"><h3>📅 Abonnements 15K - PAR BOUTIQUE</h3>
+<div class="card" style="border:1px solid #a855f7"><h3>🔧 Outils DG - 7832 Multi-boutiques</h3>
+<button class="btn-b" onclick="scanGlobal()">🔄 Re-scanner</button>
+<button class="btn-o" onclick="nettoyerDoublons()">🧹 Nettoyer Doublons Mbata/Mbakana/Itendance</button>
+<span id="statusScan" class="muted"></span>
+</div>
+
+<div class="card"><h3>📅 Abonnements SAAS 15K - PAR BOUTIQUE (prudent)</h3>
+<div class="muted">7832 peut payer 2 boutiques maintenant, 2 plus tard. Chaque boutique bloquée séparément.</div>
 <table><thead><tr><th>Boutique</th><th>Patron</th><th>Expire</th><th>Jours</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tableAbo"></tbody></table>
 </div>
 
-<div class="card" style="border:2px solid #a855f7"><h3>🔑 Tableau PIN + VENDEURS - CHAQUE BOUTIQUE</h3>
-<table><thead><tr><th>Patron ID</th><th>Boutique</th><th>PIN Patron</th><th>Vendeurs (PIN + Nom)</th><th>Statut Abo</th></tr></thead><tbody id="tablePin"></tbody></table>
+<div class="card" style="border:2px solid #a855f7"><h3>🔑 Tableau PIN + VENDEURS - Par Boutique (FIX V7.4)</h3>
+<div class="muted">Affiche maintenant: PIN Patron + TOUS les PIN vendeurs de chaque boutique (depuis shops/*/vendeurs)</div>
+<table><thead><tr><th>Patron ID</th><th>Boutique</th><th>PIN Patron</th><th>Vendeurs (PIN + Nom + Statut)</th><th>Abo</th></tr></thead><tbody id="tablePin"></tbody></table>
 </div>
+
+<div class="card"><h3>Boutiques Détectées - Stock/Ventes</h3><div id="listeBoutiques"></div><div class="muted" id="debugPaths" style="margin-top:10px"></div></div>
 
 <script>
 const CODE_DG = "BATEKE2026";
-if(prompt("🔑 Code DG:") !== CODE_DG){ location.href='/bateke/'; throw new Error("x"); }
+if(prompt("🔑 Code DG Suprême:") !== CODE_DG){ alert("Accès refusé"); location.href='/bateke/'; throw new Error("x"); }
 
 const firebaseConfig = {
   apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",
@@ -42,32 +59,88 @@ const firebaseConfig = {
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
 const DG_MAP = { "7832": ["Intendance","Menkao1","Menkao2","Mbakana"] };
-firebase.auth().signInAnonymously().then(()=> scanGlobal());
 
-function toTime(v){ if(!v) return 0; if(typeof v==='number') return v; if(typeof v==='string'){ if(/^\d{12,}$/.test(v)) return parseInt(v,10); let t=new Date(v).getTime(); return isNaN(t)?0:t; } return 0; }
+firebase.auth().signInAnonymously().then(()=>{ scanGlobal(); }).catch(e=>{
+  document.getElementById('statusScan').innerText='❌ Auth failed: '+e.message;
+});
+
+function toTime(v){
+  if(!v) return 0;
+  if(typeof v === 'number') return v;
+  if(typeof v === 'string'){ if(/^\d{12,}$/.test(v)) return parseInt(v,10); let t=new Date(v).getTime(); return isNaN(t)?0:t; }
+  return 0;
+}
+
+function trouverPatronDeShop(shopName, patronsObj){
+  for(const pid in patronsObj){
+    const p = patronsObj[pid];
+    if(p.boutiques && p.boutiques[shopName]) return pid;
+    if(DG_MAP[pid] && DG_MAP[pid].includes(shopName)) return pid;
+    if((p.boutique||'').toLowerCase()===shopName.toLowerCase()) return pid;
+  }
+  return null;
+}
 
 function scanGlobal(){
- document.getElementById('statusScan').innerText='⏳ Scan shops + patrons + vendeurs...';
+ document.getElementById('statusScan').innerText='⏳ Scan...';
+ const db = firebase.database();
  Promise.all([
-   firebase.database().ref('shops').once('value').then(s=>s.val()||{}),
-   firebase.database().ref('patrons').once('value').then(s=>s.val()||{})
+   db.ref('shops').once('value').then(s=>s.val()||{}),
+   db.ref('patrons').once('value').then(s=>s.val()||{})
  ]).then(([shopsObj, patronsObj])=>{
-  const shopNames = Object.keys(shopsObj||{}).filter(k=>k!=="shops");
-  let rowsAbo='', rowsPin='';
+  const shopNames = Object.keys(shopsObj||{}).filter(k=>k!=="shops" && k!=="Mbata" && k!=="Itendance");
+  
+  document.getElementById('totalBoutiques').innerText = shopNames.length;
+  document.getElementById('detailBoutiques').innerText = shopNames.join(", ");
+  document.getElementById('totalPatrons').innerText = Object.keys(patronsObj).length;
+  document.getElementById('debugPaths').innerText = "Shops: "+shopNames.join(", ") + " | Patrons: "+Object.keys(patronsObj).length;
 
-  // --- Tableau Abonnements ---
+  let caGlobal=0, rowsAbo='', actifs=0, bloques=0, htmlList='';
+
   shopNames.forEach(name=>{
     const shop = shopsObj[name]||{};
-    const tShop = toTime(shop.abonnements?.expire);
-    const jours = tShop ? Math.ceil((tShop-Date.now())/86400000) : -9999;
-    let statut = !tShop ? '<span class="bad">JAMAIS</span>' : jours<0 ? `<span class="bad">BLOQUÉ ${jours}j</span>` : `<span class="ok">ACTIF ${jours}j</span>`;
-    let pid = shop.patronId || "-";
-    for(const p in patronsObj){ if(patronsObj[p].boutiques && patronsObj[p].boutiques[name]) pid=p; if(DG_MAP[p]?.includes(name)) pid=p; }
-    rowsAbo+=`<tr><td><b>${name}</b></td><td>${pid}</td><td>${tShop?new Date(tShop).toLocaleDateString():'—'}</td><td>${tShop?jours+'j':''}</td><td>${statut}</td><td><button class="btn-g" onclick="activer('${name}')">+30J</button><button class="btn-r" onclick="bloquer('${name}')">BLOQUER</button></td></tr>`;
-  });
-  document.getElementById('tableAbo').innerHTML = rowsAbo;
+    const ventes = shop.ventes || {}; let caShop=0;
+    const today = new Date().toISOString().slice(0,10);
+    Object.values(ventes).forEach(v=>{ if(!v) return; let d=(v.date||'').slice(0,10); if(d===today) caShop+=Number(v.total||0); });
+    caGlobal+=caShop;
+    let stockCount = Object.keys(shop.stock||{}).length;
+    let vendeursCount = Object.keys(shop.vendeurs||{}).length;
+    htmlList+=`<div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #222"><span><b>${name}</b> - ${stockCount} prod, ${vendeursCount} vend, ${Object.keys(ventes).length} ventes</span><b>${caShop.toLocaleString()} FC</b></div>`;
 
-  // --- Tableau PIN PATRON + VENDEURS (CORRIGÉ) ---
+    const tShop = toTime(shop.abonnements?.expire);
+    const pid = shop.patronId || trouverPatronDeShop(name, patronsObj) || "-";
+    const jours = tShop ? Math.ceil((tShop - Date.now())/86400000) : -9999;
+    
+    let statut='';
+    if(!tShop){ statut='<span class="bad">JAMAIS PAYÉ</span>'; bloques++; }
+    else if(jours<0){ statut='<span class="bad">BLOQUÉ '+jours+'j</span>'; bloques++; }
+    else { statut='<span class="ok">ACTIF '+jours+'j</span>'; actifs++; }
+
+    let aff = tShop ? new Date(tShop).toLocaleDateString() : '—';
+    let patronLabel = pid==="7832" ? "7832 (DG BATEKE)" : pid;
+    
+    rowsAbo+=`<tr>
+      <td><b>${name}</b></td>
+      <td>${patronLabel}</td>
+      <td>${aff}</td>
+      <td>${tShop?jours+'j':''}</td>
+      <td>${statut}</td>
+      <td>
+        <button class="btn-g" onclick="activer('${name}')">+30J 15K</button>
+        <button class="btn-r" onclick="bloquer('${name}')">BLOQUER</button>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('caGlobal').innerText = caGlobal.toLocaleString()+' FC';
+  document.getElementById('listeBoutiques').innerHTML = htmlList || '<span class="muted">Aucune boutique</span>';
+  document.getElementById('tableAbo').innerHTML = rowsAbo || '<tr><td colspan=6>Aucune boutique</td></tr>';
+  document.getElementById('abos').innerText = `${actifs} / ${shopNames.length}`;
+  document.getElementById('abosDetail').innerText = `Actifs:${actifs} Bloqués:${bloques} - Mode PAR BOUTIQUE`;
+  document.getElementById('statusScan').innerText='✅ Scan OK - 7832 gère 4 boutiques séparément';
+
+  // TABLEAU PIN + VENDEURS - FIX V7.4 FULL
+  let rowsPin='';
   for(const pid in patronsObj){
     const p = patronsObj[pid];
     let boutiques = [];
@@ -76,48 +149,83 @@ function scanGlobal(){
     else if(DG_MAP[pid]) boutiques = DG_MAP[pid];
     
     if(boutiques.length===0){
-      // patron sans boutique déclarée
-      rowsPin+=`<tr><td>${pid}</td><td><span class="muted">—</span></td><td><b>${p.pin||p.PIN||pid}</b></td><td><span class="muted">Aucun vendeur</span></td><td>—</td></tr>`;
+      rowsPin+=`<tr><td>${pid}</td><td><span class="muted">—</span></td><td><span class="pin-badge pin-patron">👑 ${p.pin||p.PIN||pid}</span></td><td><span class="muted">Aucun vendeur</span></td><td>—</td></tr>`;
       continue;
     }
 
     boutiques.forEach(bName=>{
+      // Nettoie Itendance
+      if(bName==="Itendance") bName="Intendance";
       const shop = shopsObj[bName] || {};
       const vendeurs = shop.vendeurs || {};
       let vendeursHtml = '';
       
       if(Object.keys(vendeurs).length===0){
-        vendeursHtml = '<span class="muted">Aucun vendeur créé</span>';
+        vendeursHtml = '<span class="muted">Aucun vendeur créé dans shops/'+bName+'/vendeurs</span>';
       } else {
         Object.keys(vendeurs).forEach(vk=>{
           const v = vendeurs[vk];
           const vPin = v.pin || v.PIN || vk;
-          const vNom = v.nom || v.name || '';
-          const vStatut = v.actif===false ? '🔴' : '🟢';
-          vendeursHtml += `<span class="pin-badge">${vStatut} ${vPin} - ${vNom}</span> `;
+          const vNom = v.nom || v.name || vk;
+          const vActif = v.actif!==false;
+          vendeursHtml += `<span class="pin-badge pin-vendeur">${vActif?'🟢':'🔴'} ${vPin} - ${vNom}</span> `;
         });
       }
       
-      const exp = toTime(p.boutiques?.[bName]?.expire || shop.abonnements?.expire || p.abonnement?.expire);
+      const exp = toTime(p.boutiques?.[bName]?.expire || shop.abonnements?.expire || p.abonnement?.expire || p.abonnement_fin);
       const jours = exp ? Math.ceil((exp-Date.now())/86400000) : -9999;
       const statutAbo = !exp ? '<span class="bad">JAMAIS</span>' : jours>=0 ? `<span class="ok">${jours}j</span>` : `<span class="bad">BLOQUÉ</span>`;
       
       rowsPin+=`<tr>
         <td><b>${pid}</b>${pid==="7832"?' (DG)':''}</td>
         <td><b>${bName}</b></td>
-        <td><span class="pin-badge" style="background:#7c3aed;color:#fff">👑 ${p.pin||p.PIN||pid}</span></td>
+        <td><span class="pin-badge pin-patron">👑 ${p.pin||p.PIN||pid}</span></td>
         <td>${vendeursHtml}</td>
         <td>${statutAbo}</td>
       </tr>`;
     });
   }
-
   document.getElementById('tablePin').innerHTML = rowsPin || '<tr><td colspan=5>Aucun patron</td></tr>';
-  document.getElementById('statusScan').innerText='✅ Scan OK - '+shopNames.length+' boutiques, PIN vendeurs chargés';
  });
 }
 
-function activer(b){ const fin=Date.now()+30*86400000; const u={}; u[`shops/${b}/abonnements/expire`]=fin; u[`shops/${b}/abonnements/statut`]='actif'; u[`shops/${b}/patronId`]='7832'; u[`patrons/7832/boutiques/${b}/expire`]=fin; u[`patrons/7832/boutiques/${b}/statut`]='actif'; firebase.database().ref().update(u).then(()=>scanGlobal()); }
-function bloquer(b){ const past=Date.now()-10*86400000; const u={}; u[`shops/${b}/abonnements/expire`]=past; u[`shops/${b}/abonnements/statut`]='bloqué'; u[`patrons/7832/boutiques/${b}/expire`]=past; firebase.database().ref().update(u).then(()=>scanGlobal()); }
+function activer(boutique){
+ if(!confirm(`Activer SEULEMENT ${boutique} pour 30j - 15.000 FC ?`)) return;
+ const fin = Date.now() + 30*86400000;
+ const updates = {};
+ updates[`shops/${boutique}/abonnements/expire`] = fin;
+ updates[`shops/${boutique}/abonnements/expireISO`] = new Date(fin).toISOString();
+ updates[`shops/${boutique}/abonnements/statut`] = 'actif';
+ updates[`shops/${boutique}/patronId`] = "7832";
+ updates[`patrons/7832/boutiques/${boutique}/expire`] = fin;
+ updates[`patrons/7832/boutiques/${boutique}/expireISO`] = new Date(fin).toISOString();
+ updates[`patrons/7832/boutiques/${boutique}/statut`] = 'actif';
+ firebase.database().ref().update(updates).then(()=>{ alert(`✅ ${boutique} activée`); scanGlobal(); });
+}
+
+function bloquer(boutique){
+ if(!confirm(`BLOQUER ${boutique} seule ?`)) return;
+ const past = Date.now() - 10*86400000;
+ const updates = {};
+ updates[`shops/${boutique}/abonnements/expire`] = past;
+ updates[`shops/${boutique}/abonnements/statut`] = 'bloqué';
+ updates[`patrons/7832/boutiques/${boutique}/expire`] = past;
+ updates[`patrons/7832/boutiques/${boutique}/statut`] = 'bloqué';
+ firebase.database().ref().update(updates).then(()=> scanGlobal());
+}
+
+function nettoyerDoublons(){
+ if(!confirm('Supprimer shops/Mbata, shops/Itendance et les doublons sous patrons/7832/Mbakana etc ?')) return;
+ const updates = {};
+ updates['shops/Mbata'] = null;
+ updates['shops/Itendance'] = null;
+ updates['shops/Itendance'] = null;
+ updates['patrons/7832/Mbakana'] = null;
+ updates['patrons/7832/Menkao1'] = null;
+ updates['patrons/7832/Intendance'] = null;
+ updates['patrons/7832/Menkao2'] = null;
+ updates['patrons/7832/Itendance'] = null;
+ firebase.database().ref().update(updates).then(()=>{ alert('✅ Doublons supprimés'); scanGlobal(); });
+}
 </script>
 </body></html>
