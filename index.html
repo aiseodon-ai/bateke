@@ -140,54 +140,62 @@ if(location.search.includes('saas') || location.hash.includes('saas')) switchLog
 
 <!-- === BATEKE SAAS - VERIF ABONNEMENT 15.000 FC AUTO - V6.1 === -->
 <script>
+function toTimeBateke(v){
+  if(!v) return 0;
+  if(typeof v==='number') return v;
+  if(typeof v==='string'){ 
+    // Si c'est un nombre en string "1729900000000"
+    if(/^\d{12,}$/.test(v)) return parseInt(v,10);
+    let t=new Date(v).getTime(); return isNaN(t)?0:t; 
+  }
+  return 0;
+}
+function updateBadgeAbo(expireTime, boutiqueNom){
+  const badge=document.getElementById('badgeAbo');
+  if(!badge) return;
+  if(!expireTime){ badge.innerHTML='🔴 JAMAIS PAYÉ - '+boutiqueNom; badge.style.background='#ef4444'; return; }
+  let jours=Math.ceil((expireTime-Date.now())/86400000);
+  if(jours>3){ badge.innerHTML=`✅ Actif jusqu'au ${new Date(expireTime).toLocaleDateString()} (${jours}j) - ${boutiqueNom}`; badge.style.background='#22c55e'; }
+  else if(jours>0){ badge.innerHTML=`🟠 Expire dans ${jours}j - ${boutiqueNom}`; badge.style.background='#f59e0b'; }
+  else if(jours>-3){ badge.innerHTML=`⚠️ Grâce: ${jours+3}j restants`; badge.style.background='#f97316'; }
+  else { badge.innerHTML=`🔴 Bloqué depuis ${Math.abs(jours)}j`; badge.style.background='#ef4444';
+    setTimeout(()=>{ document.body.innerHTML=`<div style="background:#0a0a0a;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter"><div style="background:#171717;border:1px solid #ff0000;border-radius:20px;padding:30px;max-width:400px;text-align:center"><h1 style="color:#ff0000">🔒 ABONNEMENT EXPIRÉ</h1><p>Boutique: <b>${boutiqueNom}</b></p><p>Expiré: ${new Date(expireTime).toLocaleDateString()}</p><p style="font-size:32px;font-weight:900;color:#22c55e;margin:15px 0">15.000 FC / mois</p><p><b>AIRTEL: 0998111387</b><br><b>M-PESA: 0816640963</b></p><button onclick="location.href='abonnement/index.html?shop=${boutiqueNom}'" style="width:100%;padding:16px;background:#7c3aed;color:#fff;border:0;border-radius:12px;font-weight:900;margin-top:15px">PAYER MAINTENANT</button></div></div>`; }, 2000);
+  }
+}
 function checkAbonnement(boutiqueNom){
-  const db = firebase.database();
-  // On essaie de lire par ID (7832) et par nom (Menkao2)
-  db.ref('patrons/'+boutiqueNom).once('value').then(snap=>{
-    let patron = snap.val();
-    if(!patron) return;
-
-    // Supporte les 2 formats: 
-    // 1. Ton format image: patron.abonnement.expire
-    // 2. Mon format: patron.abonnement_fin
-    let finStr = null;
-    if(patron.abonnement && patron.abonnement.expire) finStr = patron.abonnement.expire;
-    else if(patron.abonnement_fin) finStr = patron.abonnement_fin;
-    
-    if(!finStr) return;
-
-    const fin = new Date(finStr);
-    const today = new Date(); today.setHours(0,0,0,0);
-    const grace = new Date(fin); grace.setDate(grace.getDate()+3);
-    const joursRestants = Math.ceil((fin - today)/86400000);
-    
-    const badge = document.getElementById('badgeAbo');
-    if(badge){
-      if(joursRestants > 0) badge.innerHTML = `✅ Actif jusqu'au ${fin.toLocaleDateString()} (${joursRestants}j) - ${patron.boutique||boutiqueNom}`;
-      else if(today <= grace) badge.innerHTML = `⚠️ Grâce: ${Math.ceil((grace-today)/86400000)}j`;
-      else badge.innerHTML = `🔴 Expiré`;
-    }
-
-    if(today > grace){
-      document.body.innerHTML = `
-      <div style="background:#0a0a0a;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter">
-        <div style="background:#171717;border:1px solid #ff0000;border-radius:20px;padding:30px;max-width:400px;text-align:center">
-          <h1 style="color:#ff0000">🔒 ABONNEMENT EXPIRÉ</h1>
-          <p>Boutique: <b>${patron.boutique||boutiqueNom}</b></p>
-          <p>Expiré: ${fin.toLocaleDateString()}</p>
-          <p style="font-size:32px;font-weight:900;color:#22c55e;margin:15px 0">15.000 FC / mois</p>
-          <p><b>AIRTEL: 0998111387</b><br><b>M-PESA: 0816640963</b></p>
-          <button onclick="location.href='abonnement/index.html?shop=${boutiqueNom}'" style="width:100%;padding:16px;background:#7c3aed;color:#fff;border:0;border-radius:12px;font-weight:900;margin-top:15px">PAYER MAINTENANT</button>
-        </div>
-      </div>`;
-    }
+  if(!boutiqueNom || boutiqueNom==='Menkao1' && !localStorage.getItem('BATEKE_SHOP')) {
+    // Essaie de deviner depuis shopSel ou localStorage
+    boutiqueNom = document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_SHOP') || new URLSearchParams(location.search).get('shop') || 'Menkao1';
+  }
+  const db=firebase.database();
+  // 1. Source principale: shops/boutique/abonnements/expire
+  db.ref('shops/'+boutiqueNom+'/abonnements/expire').once('value').then(sSnap=>{
+    let expireShop=toTimeBateke(sSnap.val());
+    // 2. Cherche patron par boutique (car patron ID != shop name)
+    return db.ref('patrons').once('value').then(pAll=>{
+      let expirePatron=0;
+      pAll.forEach(child=>{
+        let v=child.val();
+        if((v.boutique||v.shop||'').toLowerCase()===boutiqueNom.toLowerCase() || child.key.toLowerCase()===boutiqueNom.toLowerCase()){
+          expirePatron=Math.max(expirePatron, toTimeBateke(v.abonnement?.expire), toTimeBateke(v.abonnement_fin));
+        }
+      });
+      let best=Math.max(expireShop, expirePatron);
+      console.log(`[BATEKE ABO] ${boutiqueNom} -> shop:${expireShop} patron:${expirePatron} best:${best}`);
+      updateBadgeAbo(best, boutiqueNom);
+    });
+  }).catch(e=>{
+    console.error("Verif abo error", e);
+    document.getElementById('badgeAbo').innerHTML='⚠️ Offline - mode test';
   });
 }
+// Lancement intelligent
 setTimeout(()=>{
-  const urlParams = new URLSearchParams(location.search);
-  const boutiqueActuelle = urlParams.get('shop') || localStorage.getItem('BATEKE_SHOP') || document.getElementById('shopSel')?.value || 'Menkao1';
-  if(boutiqueActuelle) checkAbonnement(boutiqueActuelle);
-}, 2000);
+  let shop = new URLSearchParams(location.search).get('shop') || localStorage.getItem('BATEKE_SHOP') || document.getElementById('shopSel')?.value;
+  if(shop) checkAbonnement(shop);
+  // Re-check quand shopSel change
+  let sel=document.getElementById('shopSel'); if(sel) sel.addEventListener('change',()=> checkAbonnement(sel.value));
+}, 2500);
 </script>
 
 <script type="module" src="js/patron/app.js?v=6.1-saas-15k-bloquant-20261025"></script>
