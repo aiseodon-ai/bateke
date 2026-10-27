@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN DG V7.4 FULL + VENDEURS</title><base href="/bateke/">
+<title>BATEKE - SUPERADMIN DG V7.5 FULL INTÉGRAL + INSCRIPTION</title><base href="/bateke/">
 <style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:20px}
  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
@@ -12,6 +12,7 @@
  .btn-g{background:#22c55e} .btn-r{background:#ef4444} .btn-o{background:#f59e0b} .btn-b{background:#3b82f6}
  .pin-badge{background:#222;border:1px solid #444;padding:3px 8px;border-radius:20px;margin:2px;display:inline-block;font-size:11px}
  .pin-patron{background:#7c3aed;color:#fff} .pin-vendeur{background:#1f2937;color:#a5b4fc;border-color:#7c3aed}
+ input{padding:10px;border-radius:8px;border:1px solid #444;background:#0a0a0a;color:#fff;box-sizing:border-box}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -30,6 +31,24 @@
 <button class="btn-o" onclick="nettoyerDoublons()">🧹 Nettoyer Doublons Mbata/Mbakana/Itendance</button>
 <span id="statusScan" class="muted"></span>
 </div>
+
+<!-- ==== AJOUT V7.5 - INSCRIPTION CLIENT SANS EMAIL ==== -->
+<div class="card" style="border:2px solid #22c55e">
+<h3>➕ INSCRIRE NOUVEAU CLIENT (Patron + 1ère Boutique) - SANS EMAIL - PIN SEULEMENT</h3>
+<div class="muted" style="margin-bottom:10px">Email PAS nécessaire pour patrons. Seulement PIN. Le patron créera lui-même ses autres boutiques et vendeurs après.</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+<input id="newPatronId" placeholder="PIN ID (ex: 1234)" type="number" style="width:100%">
+<input id="newPatronNom" placeholder="Nom client (ex: Maman Lolo)" style="width:100%">
+<input id="newBoutiqueNom" placeholder="1ère Boutique (ex: Limete)" style="width:100%">
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+<input id="newPatronPin" placeholder="PIN connexion (si vide = même que ID)" type="number" style="width:100%">
+<input id="newPatronPhone" placeholder="Tél client (ex: 081...)" style="width:100%">
+</div>
+<button class="btn-g" style="width:100%;margin-top:10px;padding:14px;font-size:14px" onclick="creerPatron()">✅ CRÉER CLIENT + BOUTIQUE (Bloquée jusqu'à paiement 15K)</button>
+<div id="msgCreate" class="muted" style="margin-top:8px"></div>
+</div>
+<!-- ==== FIN AJOUT V7.5 ==== -->
 
 <div class="card"><h3>📅 Abonnements SAAS 15K - PAR BOUTIQUE (prudent)</h3>
 <div class="muted">7832 peut payer 2 boutiques maintenant, 2 plus tard. Chaque boutique bloquée séparément.</div>
@@ -80,6 +99,44 @@ function trouverPatronDeShop(shopName, patronsObj){
   }
   return null;
 }
+
+// ==== AJOUT V7.5 - FONCTION CREATION CLIENT SANS EMAIL ====
+function creerPatron(){
+  const pinId = document.getElementById('newPatronId').value.trim();
+  const nom = document.getElementById('newPatronNom').value.trim();
+  let boutique = document.getElementById('newBoutiqueNom').value.trim();
+  boutique = boutique.replace(/[^a-zA-Z0-9]/g,'');
+  let pinConn = document.getElementById('newPatronPin').value.trim();
+  if(!pinConn) pinConn = pinId;
+  const phone = document.getElementById('newPatronPhone').value.trim();
+  
+  if(!pinId || !nom || !boutique){ alert("Remplis PIN, Nom, Boutique"); return; }
+  if(!confirm(`Créer client SANS EMAIL:\nPIN ID: ${pinId}\nNom: ${nom}\nBoutique: ${boutique}\nPIN connexion: ${pinConn}\nTél: ${phone}\n\nAprès, il pourra créer lui-même ses autres boutiques et vendeurs. Confirmer ?`)) return;
+  
+  const updates = {};
+  updates[`patrons/${pinId}/pin`] = pinConn;
+  updates[`patrons/${pinId}/nom`] = nom;
+  updates[`patrons/${pinId}/phone`] = phone;
+  updates[`patrons/${pinId}/boutique`] = boutique;
+  updates[`patrons/${pinId}/boutiques/${boutique}/statut`] = 'bloqué';
+  updates[`patrons/${pinId}/boutiques/${boutique}/expire`] = 0;
+  updates[`patrons/${pinId}/boutiques/${boutique}/created`] = Date.now();
+  
+  updates[`shops/${boutique}/patronId`] = pinId;
+  updates[`shops/${boutique}/nom`] = boutique;
+  updates[`shops/${boutique}/abonnements/statut`] = 'bloqué';
+  updates[`shops/${boutique}/abonnements/expire`] = 0;
+  updates[`shops/${boutique}/created`] = Date.now();
+  updates[`shops/${boutique}/stock`] = {};
+  updates[`shops/${boutique}/vendeurs`] = {};
+  
+  firebase.database().ref().update(updates).then(()=>{
+    document.getElementById('msgCreate').innerHTML = `<span class="ok">✅ Client ${pinId} (${nom}) + Boutique ${boutique} créés SANS EMAIL! PIN=${pinConn} - Boutique BLOQUÉE → Clique +30J ci-dessous. Le client pourra créer lui-même ses autres boutiques/vendeurs.</span>`;
+    document.getElementById('newPatronId').value=''; document.getElementById('newPatronNom').value=''; document.getElementById('newBoutiqueNom').value=''; document.getElementById('newPatronPin').value=''; document.getElementById('newPatronPhone').value='';
+    setTimeout(scanGlobal, 1500);
+  }).catch(e=> alert("Erreur: "+e.message));
+}
+// ==== FIN AJOUT ====
 
 function scanGlobal(){
  document.getElementById('statusScan').innerText='⏳ Scan...';
@@ -139,7 +196,7 @@ function scanGlobal(){
   document.getElementById('abosDetail').innerText = `Actifs:${actifs} Bloqués:${bloques} - Mode PAR BOUTIQUE`;
   document.getElementById('statusScan').innerText='✅ Scan OK - 7832 gère 4 boutiques séparément';
 
-  // TABLEAU PIN + VENDEURS - FIX V7.4 FULL
+  // TABLEAU PIN + VENDEURS - FIX V7.4 FULL (GARDÉ INTACT)
   let rowsPin='';
   for(const pid in patronsObj){
     const p = patronsObj[pid];
@@ -154,7 +211,6 @@ function scanGlobal(){
     }
 
     boutiques.forEach(bName=>{
-      // Nettoie Itendance
       if(bName==="Itendance") bName="Intendance";
       const shop = shopsObj[bName] || {};
       const vendeurs = shop.vendeurs || {};
@@ -190,35 +246,54 @@ function scanGlobal(){
 }
 
 function activer(boutique){
- if(!confirm(`Activer SEULEMENT ${boutique} pour 30j - 15.000 FC ?`)) return;
+ // VERSION CORRIGÉE - MARCHE POUR TOUS LES PATRONS, PAS SEULEMENT 7832
+ firebase.database().ref('shops/'+boutique+'/patronId').once('value').then(s=>{
+   let pid = s.val();
+   if(!pid){
+     firebase.database().ref('patrons').once('value').then(all=>{
+       const allVal=all.val()||{};
+       for(const k in allVal){ if(allVal[k].boutiques && allVal[k].boutiques[boutique]){ pid=k; break; } }
+       if(!pid) pid="7832";
+       activerSuite(boutique,pid);
+     });
+   } else {
+     activerSuite(boutique,pid);
+   }
+ });
+}
+
+function activerSuite(boutique,pid){
+ if(!confirm(`Activer SEULEMENT ${boutique} (Patron ${pid}) pour 30j - 15.000 FC ?`)) return;
  const fin = Date.now() + 30*86400000;
  const updates = {};
  updates[`shops/${boutique}/abonnements/expire`] = fin;
  updates[`shops/${boutique}/abonnements/expireISO`] = new Date(fin).toISOString();
  updates[`shops/${boutique}/abonnements/statut`] = 'actif';
- updates[`shops/${boutique}/patronId`] = "7832";
- updates[`patrons/7832/boutiques/${boutique}/expire`] = fin;
- updates[`patrons/7832/boutiques/${boutique}/expireISO`] = new Date(fin).toISOString();
- updates[`patrons/7832/boutiques/${boutique}/statut`] = 'actif';
- firebase.database().ref().update(updates).then(()=>{ alert(`✅ ${boutique} activée`); scanGlobal(); });
+ updates[`shops/${boutique}/patronId`] = pid;
+ updates[`patrons/${pid}/boutiques/${boutique}/expire`] = fin;
+ updates[`patrons/${pid}/boutiques/${boutique}/expireISO`] = new Date(fin).toISOString();
+ updates[`patrons/${pid}/boutiques/${boutique}/statut`] = 'actif';
+ firebase.database().ref().update(updates).then(()=>{ alert(`✅ ${boutique} activée pour ${pid}`); scanGlobal(); });
 }
 
 function bloquer(boutique){
- if(!confirm(`BLOQUER ${boutique} seule ?`)) return;
- const past = Date.now() - 10*86400000;
- const updates = {};
- updates[`shops/${boutique}/abonnements/expire`] = past;
- updates[`shops/${boutique}/abonnements/statut`] = 'bloqué';
- updates[`patrons/7832/boutiques/${boutique}/expire`] = past;
- updates[`patrons/7832/boutiques/${boutique}/statut`] = 'bloqué';
- firebase.database().ref().update(updates).then(()=> scanGlobal());
+ firebase.database().ref('shops/'+boutique+'/patronId').once('value').then(s=>{
+   let pid = s.val() || "7832";
+   if(!confirm(`BLOQUER ${boutique} seule (Patron ${pid}) ?`)) return;
+   const past = Date.now() - 10*86400000;
+   const updates = {};
+   updates[`shops/${boutique}/abonnements/expire`] = past;
+   updates[`shops/${boutique}/abonnements/statut`] = 'bloqué';
+   updates[`patrons/${pid}/boutiques/${boutique}/expire`] = past;
+   updates[`patrons/${pid}/boutiques/${boutique}/statut`] = 'bloqué';
+   firebase.database().ref().update(updates).then(()=> scanGlobal());
+ });
 }
 
 function nettoyerDoublons(){
  if(!confirm('Supprimer shops/Mbata, shops/Itendance et les doublons sous patrons/7832/Mbakana etc ?')) return;
  const updates = {};
  updates['shops/Mbata'] = null;
- updates['shops/Itendance'] = null;
  updates['shops/Itendance'] = null;
  updates['patrons/7832/Mbakana'] = null;
  updates['patrons/7832/Menkao1'] = null;
