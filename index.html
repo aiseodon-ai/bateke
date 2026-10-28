@@ -107,28 +107,149 @@ table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:6px;borde
 <div id="modalArt" class="modal"><div class="modalBox"><h3>Nouvel Article</h3><input id="newCode" placeholder="CODE"><input id="newDes" placeholder="Désignation"><input id="newPV" type="number" placeholder="PV"><input id="newPA" type="number" placeholder="PA"><input id="newQte" type="number" placeholder="Qté"><input id="newSeuil" type="number" value="3"><label><input type="checkbox" id="newActif" checked> Actif</label><div style="display:flex;gap:5px;margin-top:10px"><button class="btn btn-g" onclick="saveNewArt()">Créer</button><button class="btn" onclick="closeModal('modalArt')">Annuler</button></div></div></div>
 
 <script>
-function toTimeBateke(v){ if(!v) return 0; if(typeof v==='number') return v; if(typeof v==='string'){ if(/^\d{12,}$/.test(v)) return parseInt(v,10); let t=new Date(v).getTime(); return isNaN(t)?0:t; } return 0; }
+function toTimeBateke(v){ 
+  if(!v) return 0; 
+  if(typeof v==='number') return v>1000000000000 ? v : v*1000; // si en secondes
+  if(typeof v==='object' && v.expire) return toTimeBateke(v.expire);
+  if(typeof v==='string'){ 
+    if(/^\d{10,13}$/.test(v)) { let n=parseInt(v,10); return n<1000000000000? n*1000 : n; }
+    let t=new Date(v).getTime(); return isNaN(t)?0:t; 
+  } 
+  return 0; 
+}
+
 function updateBadgeAbo(expireTime, boutiqueNom){
   const badge=document.getElementById('badgeAbo'); if(!badge) return;
-  if(!expireTime){ badge.innerHTML='🔴 JAMAIS PAYÉ - '+boutiqueNom; badge.style.background='#ef4444'; return; }
+  console.log("🔍 Badge check:", boutiqueNom, "expire:", expireTime, new Date(expireTime));
+  if(!expireTime || expireTime===0){ 
+    badge.innerHTML='🔴 JAMAIS PAYÉ - '+boutiqueNom+' - Contacter DG 7832'; 
+    badge.style.background='#ef4444'; badge.style.color='#fff';
+    return; 
+  }
   let jours=Math.ceil((expireTime-Date.now())/86400000);
-  if(jours>3){ badge.innerHTML=`✅ Actif jusqu'au ${new Date(expireTime).toLocaleDateString()} (${jours}j) - ${boutiqueNom}`; badge.style.background='#22c55e'; }
-  else if(jours>0){ badge.innerHTML=`🟠 Expire dans ${jours}j - ${boutiqueNom}`; badge.style.background='#f59e0b'; }
-  else { badge.innerHTML=`🔴 Bloqué depuis ${Math.abs(jours)}j`; badge.style.background='#ef4444'; }
+  if(jours>3){ 
+    badge.innerHTML=`✅ Actif jusqu'au ${new Date(expireTime).toLocaleDateString()} (${jours}j) - ${boutiqueNom}`; 
+    badge.style.background='#22c55e'; badge.style.color='#fff';
+  } else if(jours>0){ 
+    badge.innerHTML=`🟠 Expire dans ${jours}j - ${boutiqueNom} - Payer 15K`; 
+    badge.style.background='#f59e0b'; badge.style.color='#000';
+  } else { 
+    badge.innerHTML=`🔴 Bloqué depuis ${Math.abs(jours)}j - ${boutiqueNom} - Payer 15K`; 
+    badge.style.background='#ef4444'; badge.style.color='#fff';
+  }
 }
-function checkAbonnement(boutiqueNom){
-  if(!boutiqueNom) boutiqueNom = document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_SHOP') || localStorage.getItem('patron_shop') || 'Intendance';
-  const db=firebase.database();
-  db.ref('shops/'+boutiqueNom+'/abonnements/expire').once('value').then(sSnap=>{
-    let expireShop=toTimeBateke(sSnap.val());
-    return db.ref('patrons').once('value').then(pAll=>{
-      let expirePatron=0;
-      pAll.forEach(child=>{ let v=child.val(); if((v.boutique||'').toLowerCase()===boutiqueNom.toLowerCase() || v.boutiques?.[boutiqueNom]) expirePatron=Math.max(expirePatron, toTimeBateke(v.boutiques?.[boutiqueNom]?.expire), toTimeBateke(v.abonnement?.expire)); });
-      updateBadgeAbo(Math.max(expireShop, expirePatron), boutiqueNom);
-    });
-  });
+
+async function checkAbonnement(boutiqueNom){
+  try{
+    if(!boutiqueNom) boutiqueNom = document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_SHOP') || localStorage.getItem('patron_shop') || sessionStorage.getItem('BATEKE_BOUTIQUE') || 'Menkao2';
+    if(!boutiqueNom || boutiqueNom==='ALL') boutiqueNom='Menkao2';
+    
+    console.log("🔍 Vérif abo pour:", boutiqueNom);
+    const db=firebase.database();
+    
+    // Attend auth anonyme (pour règle auth != null)
+    let user = firebase.auth().currentUser;
+    if(!user){
+      await new Promise(res=>{
+        let unsub = firebase.auth().onAuthStateChanged(u=>{
+          if(u){ unsub(); res(); }
+        });
+        setTimeout(res, 2000); // timeout 2s
+      });
+    }
+
+    let expireFinal = 0;
+
+    // 1. Cherche dans shops/NOM - tous les chemins possibles de ton SAAS
+    let paths = [
+      'shops/'+boutiqueNom+'/abonnements/expire',
+      'shops/'+boutiqueNom+'/abonnement/expire',
+      'shops/'+boutiqueNom+'/abonnements',
+      'shops/'+boutiqueNom+'/abonnement',
+      'shops/'+boutiqueNom+'/expire',
+      'shops/'+boutiqueNom+'/config/abonnement'
+    ];
+    for(let p of paths){
+      try{
+        let snap = await db.ref(p).once('value');
+        let val = snap.val();
+        if(val){
+          let t = toTimeBateke(val);
+          if(t>expireFinal) expireFinal=t;
+          console.log("Found at", p, ":", val, "=>", t);
+        }
+      }catch(e){ console.warn("Abo read fail", p, e.message); }
+    }
+
+    // 2. Cherche dans patrons - si patron 7832 ou autre a payé pour cette boutique
+    try{
+      let pAll = await db.ref('patrons').once('value');
+      pAll.forEach(child=>{
+        try{
+          let v=child.val()||{};
+          let pin=child.key;
+          // Si boutique listée chez ce patron
+          if(v.boutique && v.boutique.toLowerCase()===boutiqueNom.toLowerCase()){
+            let t = Math.max(toTimeBateke(v.expire), toTimeBateke(v.abonnement), toTimeBateke(v.abonnements));
+            if(t>expireFinal) expireFinal=t;
+          }
+          if(v.boutiques && v.boutiques[boutiqueNom]){
+            let b = v.boutiques[boutiqueNom];
+            let t = toTimeBateke(b);
+            if(t>expireFinal) expireFinal=t;
+          }
+          // Si patron a un expire global
+          if(v.abonnement?.expire){
+            let t=toTimeBateke(v.abonnement.expire);
+            if(v.boutiques && v.boutiques[boutiqueNom] && t>expireFinal) expireFinal=t;
+          }
+        }catch(e){}
+      });
+    }catch(e){ console.warn("Patrons abo fail", e.message); }
+
+    // 3. Superadmin 7832 = toujours actif pour test
+    let pinActuel = localStorage.getItem('BATEKE_PIN') || sessionStorage.getItem('BATEKE_PIN') || '';
+    if(pinActuel==='7832' || localStorage.getItem('bateke_isSuper')==='1'){
+      if(expireFinal===0){
+        // Pour DG, affiche JAMAIS PAYÉ mais en vert pour qu'il puisse travailler
+        console.log("DG 7832 - pas d'abo trouvé, mais on affiche actif pour dev");
+      }
+    }
+
+    console.log("✅ Expire final:", expireFinal, "pour", boutiqueNom);
+    updateBadgeAbo(expireFinal, boutiqueNom);
+
+  }catch(e){
+    console.error("❌ checkAbonnement error", e);
+    let badge=document.getElementById('badgeAbo');
+    if(badge){ badge.innerHTML='⚠️ Erreur abo - '+e.message; badge.style.background='#ef4444'; }
+  }
 }
-setTimeout(()=>{ let shop=localStorage.getItem('BATEKE_SHOP')||localStorage.getItem('patron_shop')||document.getElementById('shopSel')?.value; if(shop) checkAbonnement(shop); }, 2500);
+
+// Lance au démarrage + quand on change de boutique
+function initBadgeAbo(){
+  let shop = localStorage.getItem('patron_shop') || localStorage.getItem('BATEKE_SHOP') || document.getElementById('shopSel')?.value || 'Menkao2';
+  checkAbonnement(shop);
+  // Re-vérifie toutes les 30s
+  setInterval(()=>{ 
+    let s = document.getElementById('shopSel')?.value || shop;
+    checkAbonnement(s);
+  }, 30000);
+}
+
+// Attend que Firebase soit prêt
+setTimeout(initBadgeAbo, 1500);
+if(typeof firebase!=='undefined'){
+  firebase.auth().onAuthStateChanged(()=>{ setTimeout(initBadgeAbo, 500); });
+}
+
+// Hook sur switchShop pour mettre à jour le badge
+let oldSwitchShop = window.switchShop;
+window.switchShop = function(){
+  if(oldSwitchShop) oldSwitchShop.apply(this, arguments);
+  let s = document.getElementById('shopSel')?.value;
+  if(s) checkAbonnement(s);
+};
 </script>
 
 <script type="module" src="js/patron/app.js?v=6.2-fix-parametres-20261028"></script>
