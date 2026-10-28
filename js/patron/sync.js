@@ -1,4 +1,4 @@
-// js/patron/sync.js - V6.4 FIX SÉCURISÉ - FILTRE PAR BOUTIQUES DU PATRON
+// js/patron/sync.js - V6.8 FIX SÉCURISÉ ORDI COMMUN - sessionStorage + garde app ouverte
 import { STATE } from "../core/state.js";
 import { db } from "../core/firebase.js";
 
@@ -16,11 +16,7 @@ window.savePatronCache = savePatronCache;
 export function initShopsOffline(){
   let cg=JSON.parse(localStorage.getItem('patron_cache_global')||'null');
   if(cg&&cg.shops) STATE.SHOPS_LIST=cg.shops;
-  // PAS DE FALLBACK 4 BOUTIQUES DURES
   if(!STATE.SHOPS_LIST.length){
-    let pin = localStorage.getItem('BATEKE_PIN');
-    let cached = JSON.parse(localStorage.getItem('patron_cache')||'{}');
-    // fallback vide, on attend Firebase
     STATE.SHOPS_LIST=[];
   }
   window.SHOPS_LIST = STATE.SHOPS_LIST;
@@ -39,55 +35,84 @@ export function initShopsOffline(){
 }
 
 export async function initShops(){
-  console.log("🔄 initShops V6.4 SÉCURISÉ - filtre par patron");
+  console.log("🔄 initShops V6.8 SÉCURISÉ ORDI COMMUN");
   
-  let pin = localStorage.getItem('BATEKE_PIN') || localStorage.getItem('pin');
-  if(!pin){
-    console.log("🛑 initShops bloqué: pas de PIN");
-    document.getElementById('loginPat').style.display='flex';
+  // FIX CRITIQUE: lit sessionStorage d'abord
+  let pin = sessionStorage.getItem('BATEKE_PIN') 
+         || sessionStorage.getItem('pin')
+         || localStorage.getItem('BATEKE_PIN') 
+         || localStorage.getItem('pin');
+         
+  let role = sessionStorage.getItem('BATEKE_ROLE') 
+          || localStorage.getItem('BATEKE_ROLE');
+          
+  if(!pin && role!=='superadmin'){
+    console.log("🛑 initShops bloqué: pas de PIN ni session - login requis");
+    let loginDiv = document.getElementById('loginPat');
+    if(loginDiv) loginDiv.style.display='flex';
+    let loader = document.getElementById('appLoader');
+    if(loader) loader.style.display='none';
     return;
   }
   
-  // 1. Récupère patron pour connaître ses boutiques autorisées
+  if(pin==='SUPERADMIN' || role==='superadmin'){
+    pin='SUPERADMIN';
+  }
+  
   let mesBoutiques = [];
   try{
     if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously();
-    let pSnap = await db.ref('patrons/'+pin).once('value');
-    if(pSnap.exists()){
-      let patron = pSnap.val();
-      if(patron.boutiques) mesBoutiques = Object.keys(patron.boutiques);
-      else if(patron.boutique) mesBoutiques = [patron.boutique];
-      // Fix faute Itendance
-      mesBoutiques = mesBoutiques.map(b=> b==="Itendance"?"Intendance":b.trim());
-      mesBoutiques = [...new Set(mesBoutiques)];
-      console.log(`✅ Patron ${pin} autorisé:`, mesBoutiques);
-    } else {
-      // Superadmin ou vendeur? Si superadmin, on autorise tout
-      let role = localStorage.getItem('BATEKE_ROLE');
-      if(role==='superadmin'){
-        console.log("👑 SUPERADMIN - chargement tous shops");
-        // Pour superadmin on garde ancien comportement mais sécurisé
-        db.ref('shops').once('value').then(snap=>{
-          let data=snap.val()||{};
-          mesBoutiques=Object.keys(data);
-          lancerEcoute(mesBoutiques);
-        });
-        return;
+    if(pin!=='SUPERADMIN'){
+      let pSnap = await db.ref('patrons/'+pin).once('value');
+      if(pSnap.exists()){
+        let patron = pSnap.val();
+        if(patron.boutiques) mesBoutiques = Object.keys(patron.boutiques);
+        else if(patron.boutique) mesBoutiques = [patron.boutique];
+        mesBoutiques = mesBoutiques.map(b=> b==="Itendance"?"Intendance":b.trim());
+        mesBoutiques = [...new Set(mesBoutiques)];
+        console.log(`✅ Patron ${pin} autorisé:`, mesBoutiques);
       } else {
-        console.log(`🛑 PIN ${pin} introuvable - blocage`);
-        localStorage.clear();
-        document.getElementById('loginPat').style.display='flex';
-        return;
+        if(role==='superadmin'){
+          console.log("👑 SUPERADMIN - chargement tous shops");
+          db.ref('shops').once('value').then(snap=>{
+            let data=snap.val()||{};
+            mesBoutiques=Object.keys(data);
+            lancerEcoute(mesBoutiques);
+          });
+          return;
+        } else {
+          console.log(`🛑 PIN ${pin} introuvable en DB`);
+          sessionStorage.clear();
+          localStorage.removeItem('BATEKE_PIN');
+          document.getElementById('loginPat').style.display='flex';
+          let msg=document.getElementById('msgPat');
+          if(msg){ msg.innerText=`❌ PIN ${pin} INTROUVABLE`; msg.style.color='red'; }
+          return;
+        }
       }
+    } else {
+      db.ref('shops').once('value').then(snap=>{
+        let data=snap.val()||{};
+        mesBoutiques=Object.keys(data);
+        console.log("👑 SUPERADMIN boutiques:", mesBoutiques);
+        lancerEcoute(mesBoutiques);
+      });
+      return;
     }
   }catch(e){
-    console.error("Erreur get patron:", e);
-    return;
+    console.error("Erreur get patron, on garde app ouverte avec cache:", e);
+    let cached = JSON.parse(localStorage.getItem('patron_cache')||'{}');
+    mesBoutiques = Object.keys(cached);
+    if(mesBoutiques.length===0){
+      let lastShop = sessionStorage.getItem('BATEKE_BOUTIQUE') || localStorage.getItem('BATEKE_SHOP') || 'BOUTIQUE1';
+      mesBoutiques = [lastShop];
+    }
   }
   
   if(mesBoutiques.length===0){
-    console.log("🛑 Aucune boutique pour ce patron");
-    document.getElementById('listShops').innerHTML='<p style="color:red">Aucune boutique assignée. Contact DG.</p>';
+    console.log("🛑 Aucune boutique pour ce patron - affiche message mais reste connecté");
+    let listEl = document.getElementById('listShops');
+    if(listEl) listEl.innerHTML='<p style="color:red">Aucune boutique assignée. Contact DG au +243.</p>';
     return;
   }
   
@@ -96,16 +121,17 @@ export async function initShops(){
   function lancerEcoute(list){
     STATE.SHOPS_LIST = list;
     window.SHOPS_LIST = list;
-    // Définit shop courant
-    let savedShop = localStorage.getItem('patron_shop') || localStorage.getItem('BATEKE_SHOP');
+    let savedShop = sessionStorage.getItem('BATEKE_BOUTIQUE') || localStorage.getItem('patron_shop') || localStorage.getItem('BATEKE_SHOP');
     if(!savedShop || !list.includes(savedShop)){
       STATE.SHOP = list[0];
       window.SHOP = list[0];
+      sessionStorage.setItem('BATEKE_BOUTIQUE', list[0]);
       localStorage.setItem('patron_shop', list[0]);
       localStorage.setItem('BATEKE_SHOP', list[0]);
     } else {
       STATE.SHOP = savedShop;
       window.SHOP = savedShop;
+      sessionStorage.setItem('BATEKE_BOUTIQUE', savedShop);
     }
     
     list.forEach(s=>{
@@ -114,12 +140,12 @@ export async function initShops(){
     });
     window.ALL_DATA = STATE.ALL_DATA;
     let sel=document.getElementById('shopSel');
-    if(sel) sel.innerHTML=list.map(s=>`<option ${s===STATE.SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL">TOUTES</option>';
-    // Pour superadmin on ajoute TOUTES
-    if(list.length>1 && sel) sel.innerHTML+='<option value="ALL">TOUTES</option>';
+    if(sel){
+      sel.innerHTML=list.map(s=>`<option ${s===STATE.SHOP?'selected':''} value="${s}">${s}</option>`).join('');
+      if(list.length>1) sel.innerHTML+='<option value="ALL">TOUTES</option>';
+    }
     
     if(window.renderBoutiques) {
-      // On passe seulement ses boutiques
       db.ref('shops').once('value').then(snap=>{
         let allData=snap.val()||{};
         let filtered={};
@@ -138,6 +164,7 @@ export function switchShop(){
   let sel=document.getElementById('shopSel');
   STATE.SHOP = sel.value;
   window.SHOP = STATE.SHOP;
+  sessionStorage.setItem('BATEKE_BOUTIQUE', STATE.SHOP);
   localStorage.setItem('patron_shop', STATE.SHOP);
   STATE.PANIER_ACHAT=JSON.parse(localStorage.getItem('panier_achat_'+STATE.SHOP)||'[]');
   window.PANIER_ACHAT = STATE.PANIER_ACHAT;
@@ -150,7 +177,6 @@ export function switchShop(){
 function listenShop(s){
   db.ref('shops/'+s+'/stock').on('value',snap=>{
     STATE.ALL_DATA[s].stock=Object.values(snap.val()||{});
-    console.log(`🟢 SYNC ${s} stock: ${STATE.ALL_DATA[s].stock.length}`);
     savePatronCache();
     if(STATE.SHOP===s||STATE.SHOP==='ALL'){
       if(window.renderStock) window.renderStock();
@@ -282,4 +308,4 @@ window.renderPresenceKPI=renderPresenceKPI;
 window.refreshAll=refreshAll;
 window.fmtVu=fmtVu;
 
-console.log("✅ SYNC.JS V6.4 SÉCURISÉ CHARGÉ - filtre boutiques patron");
+console.log("✅ SYNC.JS V6.8 ORDI COMMUN FIXÉ");
