@@ -1,4 +1,4 @@
-// app.js - ORCHESTRATEUR V6.4 FIX LOGIN SÉCURISÉ
+// app.js - ORCHESTRATEUR V6.7 SECURE SAAS - ORDI COMMUN - sessionStorage + auto-lock 10min
 import "../core/firebase.js";
 import "../core/state.js";
 import "./sync.js";
@@ -16,70 +16,123 @@ import "./rapport.js";
 import "./compta.js";
 import "./parametres.js";
 
-console.log("✅ BATEKE V6.4 - SHOP:", window.SHOP);
+console.log("✅ BATEKE V6.7 SECURE - SHOP:", window.SHOP);
 
 let _initDone = false;
+let inactivityTimer = null;
+const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 min - change à 5 min si tu veux plus strict
+
+function resetInactivityTimer(){
+  if(inactivityTimer) clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(()=>{
+    console.log("🔒 Auto-lock 10min inactivité");
+    if(window.lockApp) window.lockApp();
+  }, INACTIVITY_LIMIT);
+}
+
+function startInactivityWatch(){
+  ['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>{
+    document.addEventListener(ev, resetInactivityTimer, {passive:true});
+  });
+  resetInactivityTimer();
+}
+
+function stopInactivityWatch(){
+  if(inactivityTimer) clearTimeout(inactivityTimer);
+  ['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>{
+    document.removeEventListener(ev, resetInactivityTimer);
+  });
+}
 
 async function secureInit(){
   if(_initDone) return;
   
-  let pin = localStorage.getItem('BATEKE_PIN') || localStorage.getItem('pin');
-  let role = localStorage.getItem('BATEKE_ROLE');
   const loginDiv = document.getElementById('loginPat');
+  const loader = document.getElementById('appLoader');
   
-  // 1. Pas de PIN -> montre login et STOP
+  // 🔒 SÉCURITÉ ORDI COMMUN: On lit sessionStorage, pas localStorage
+  // sessionStorage se vide quand on ferme l'onglet
+  let pin = sessionStorage.getItem('BATEKE_PIN') || sessionStorage.getItem('pin');
+  let role = sessionStorage.getItem('BATEKE_ROLE') || localStorage.getItem('BATEKE_ROLE');
+  
+  // 1. Pas de PIN en session -> montre login et STOP
   if(!pin){
-    console.log("🛑 PAS DE PIN - Login requis");
+    console.log("🛑 PAS DE PIN SESSION - Login requis (ordi commun)");
+    if(loader) loader.style.display='none';
     if(loginDiv) loginDiv.style.display='flex';
+    stopInactivityWatch();
     return;
   }
   
-  // 2. Superadmin -> OK
+  // 2. Superadmin -> OK (toi, tu peux rester en localStorage)
   if(role==='superadmin' || pin==='SUPERADMIN'){
     _initDone=true;
     console.log("✅ SUPERADMIN - initShops");
+    if(loader) loader.style.display='none';
+    if(loginDiv) loginDiv.style.display='none';
     if(typeof window.initShops === 'function') window.initShops();
+    startInactivityWatch();
     return;
   }
   
-  // 3. Vérifie PIN existe VRAIMENT dans Firebase
+  // 3. Vérifie PIN client SAAS existe VRAIMENT et actif
   try{
     if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously();
     let snap = await firebase.database().ref('patrons/'+pin).once('value');
     if(!snap.exists()){
-      // Vérifie si c'est un vendeur
-      let shopsSnap = await firebase.database().ref('shops').once('value');
-      let shops = shopsSnap.val()||{};
-      let isVendeur = false;
-      for(let sn in shops){
-        let vends = shops[sn].vendeurs||{};
-        for(let vk in vends){
-          if(String(vends[vk].pin||vk)===pin) isVendeur=true;
-        }
-      }
-      if(!isVendeur){
-        console.log(`🛑 PIN ${pin} INTROUVABLE dans patrons ni vendeurs - BLOQUÉ`);
-        localStorage.clear();
-        sessionStorage.clear();
-        if(loginDiv) loginDiv.style.display='flex';
-        document.getElementById('msgPat').innerText = `❌ PIN ${pin} INTROUVABLE`;
-        document.getElementById('msgPat').style.color='red';
-        return;
-      }
+      console.log(`🛑 PIN ${pin} INTROUVABLE - BLOQUÉ`);
+      sessionStorage.clear();
+      localStorage.removeItem('BATEKE_PIN');
+      if(loader) loader.style.display='none';
+      if(loginDiv) loginDiv.style.display='flex';
+      const msg = document.getElementById('msgPat');
+      if(msg){ msg.innerText = `❌ PIN ${pin} INTROUVABLE`; msg.style.color='red'; }
+      stopInactivityWatch();
+      return;
+    }
+    let patron = snap.val();
+    if(patron.actif===false){
+      console.log(`🛑 PIN ${pin} BLOQUÉ - Abonnement expiré`);
+      sessionStorage.clear();
+      localStorage.clear();
+      if(loader) loader.style.display='none';
+      if(loginDiv) loginDiv.style.display='flex';
+      const msg = document.getElementById('msgPat');
+      if(msg){ msg.innerText = `❌ Abonnement ${pin} expiré`; msg.style.color='red'; }
+      stopInactivityWatch();
+      return;
     }
     // PIN valide -> lance
     _initDone=true;
-    console.log(`✅ PIN ${pin} VALIDE - initShops`);
+    console.log(`✅ CLIENT SAAS ${pin} VALIDE - ${patron.nom} - initShops`);
+    if(loader) loader.style.display='none';
     if(loginDiv) loginDiv.style.display='none';
     if(typeof window.initShops === 'function') window.initShops();
+    startInactivityWatch();
   }catch(e){
     console.error("Erreur secureInit:", e);
-    // Si erreur réseau, on laisse login s'afficher mais on ne lance pas les shops
+    if(loader) loader.style.display='none';
     if(loginDiv) loginDiv.style.display='flex';
+    stopInactivityWatch();
+  }
+}
+
+// Lock manuel
+if(!window.lockApp){
+  window.lockApp = function(){
+    console.log("🔒 Verrouillage manuel");
+    sessionStorage.clear();
+    stopInactivityWatch();
+    const loginDiv = document.getElementById('loginPat');
+    const msg = document.getElementById('msgPat');
+    if(loginDiv) loginDiv.style.display='flex';
+    if(msg){ msg.innerText='🔒 Verrouillé - Entrez votre PIN'; msg.style.color='#f59e0b'; }
+    if(window.db) try{ firebase.database().ref().off(); }catch(e){}
   }
 }
 
 window.addEventListener('DOMContentLoaded', secureInit);
-
-// Empêche aussi les anciens appels directs
 window.secureInit = secureInit;
+window.resetInactivityTimer = resetInactivityTimer;
+
+console.log("✅ APP.JS V6.7 SECURE ORDI COMMUN CHARGÉ");
