@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V6.1 FIX LOGIN SÉCURISÉ</title><link rel="manifest" href="./manifest-patron.json">
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V6.1 - SAAS</title><link rel="manifest" href="./manifest-patron.json">
 <link rel="stylesheet" href="css/patron.css">
 <link rel="stylesheet" href="css/main.css">
 <link rel="icon" href="data:,">
@@ -7,8 +7,8 @@
 
 <div id="loginPat" style="position:fixed;inset:0;background:#0b0f14f2;z-index:9999;display:flex;align-items:center;justify-content:center">
   <div style="background:#fff;padding:25px;border-radius:16px;max-width:430px;width:90%;text-align:center;box-shadow:0 20px 60px #0005">
-    <h3>👑 PATRON V6.1 <span class="badge" style="background:#7c3aed;color:#fff;padding:3px 8px;border-radius:20px;font-size:11px">FIX LOGIN</span></h3>
-    <p style="font-size:11px;color:#0b5e2f;font-weight:bold">V6.1 - PIN Vérifié Firebase</p>
+    <h3>👑 PATRON V6.1</h3>
+    <p style="font-size:11px;color:#0b5e2f;font-weight:bold">SAAS - PIN + SuperAdmin</p>
     
     <div style="display:flex;background:#f1f5f9;border-radius:10px;padding:4px;margin:15px 0">
       <button id="btnModePin" onclick="switchLoginMode('pin')" style="flex:1;padding:10px;border-radius:8px;border:0;background:#0b5e2f;color:#fff;font-weight:bold;cursor:pointer">🔑 PIN</button>
@@ -27,7 +27,7 @@
     </div>
 
     <p id="msgPat" style="color:red;font-weight:bold;margin-top:12px;min-height:18px"></p>
-    <p id="authStatus" style="color:#22c55e;font-size:11px">V6.1 FIX - PIN vérifié dans Firebase</p>
+    <p id="authStatus" style="color:#22c55e;font-size:11px">V6.1 - auth.js gère le login</p>
   </div>
 </div>
 
@@ -44,9 +44,9 @@ function switchLoginMode(m){
 if(location.search.includes('saas') || location.hash.includes('saas')) switchLoginMode('email');
 </script>
 
-<header><h3 style="margin:0" id="headerEntreprise">👑 PATRON V6.1 FIX - <span id="connBadge">🟢 SYNC</span></h3>
+<header><h3 style="margin:0" id="headerEntreprise">👑 PATRON V6.1 - <span id="connBadge">🟢 SYNC</span></h3>
 <div id="badgeAbo" style="background:#262626;padding:6px 12px;border-radius:20px;font-size:12px;display:inline-block;margin:8px 0;color:#fff;border:1px solid #444">Vérif abonnement...</div>
-<div style="margin-top:6px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap"><select id="shopSel" onchange="switchShop()" style="width:130px"></select><input type="file" id="excelIn" accept=".xlsx,.xls" style="width:110px"><button class="btn btn-b" onclick="openNewArt()">+ Article</button></div><div id="queuePatronInfo" style="font-size:10px">V6.1 FIX LOGIN</div></header>
+<div style="margin-top:6px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap"><select id="shopSel" onchange="switchShop()" style="width:130px"></select><input type="file" id="excelIn" accept=".xlsx,.xls" style="width:110px"><button class="btn btn-b" onclick="openNewArt()">+ Article</button></div><div id="queuePatronInfo" style="font-size:10px">V6.1 SAAS</div></header>
 <div class="grid"><div class="card">💰 CA Jour<br><span class="kpi" id="caJour">0</span><br><small id="caJourDetail"></small></div><div class="card">📈 Bénéf Net<br><span class="kpi" id="benefJour">0</span></div><div class="card">🏦 À Verser<br><span class="kpi red" id="aVerser">0</span></div><div class="card">💳 Dettes Jour<br><span class="kpi orange" id="detteJour">0</span></div><div class="card" style="grid-column:1/-1;border:2px solid #0b5e2f"><h4 style="margin:0">🟢 Présence - <span id="presenceShopLab"></span></h4><div id="presenceKPIList" style="display:flex;gap:8px;flex-wrap:wrap"></div></div></div>
 <div class="tabs"><button id="btn-ventes" class="active" onclick="switchTab('ventes')">🔴 Ventes</button><button id="btn-stock" onclick="switchTab('stock')">📦 Stock</button><button id="btn-achat" onclick="switchTab('achat')">🛒 Achat</button><button id="btn-compta" onclick="switchTab('compta')">💼 Compta</button><button id="btn-rapport" onclick="switchTab('rapport')">📊 Rapport</button><button id="btn-crm" onclick="switchTab('crm')">👥 CRM</button><button id="btn-dettes" onclick="switchTab('dettes')">💳 Dettes</button><button id="btn-caisse" onclick="switchTab('caisse')">💰 Caisse</button><button id="btn-vendeurs" onclick="switchTab('vendeurs')">🔐 Vendeurs</button><button id="btn-boutiques" onclick="switchTab('boutiques')">🏪 Boutiques</button><button id="btn-parametres" onclick="switchTab('parametres')">⚙️ Parametre</button></div>
 
@@ -62,118 +62,6 @@ if(location.search.includes('saas') || location.hash.includes('saas')) switchLog
 <div id="boutiques" class="sec"><div class="card"><h4>🏪 Boutiques</h4><div style="display:grid;grid-template-columns:1fr 130px;gap:6px"><input id="newShop" placeholder="Ex: Limete"><button class="btn btn-g" onclick="createShop()">+ CRÉER</button></div><div id="listShops"></div></div></div>
 <div id="parametres" class="sec"><div class="card"><h4>⚙️ Paramètres - <span id="paramShopName"></span></h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><label>Nom boutique</label><input id="confNom"><label>Slogan</label><input id="confSlogan"><label>Adresse</label><input id="confAdresse"><label>Tél</label><input id="confTel"><label>Email</label><input id="confEmail"><label>RCCM</label><input id="confRccm"><label>Devise base</label><select id="confDeviseBase"><option value="FC">FC</option><option value="USD">USD</option></select></div><div><label>Devise affichage</label><select id="confDevise"><option value="FC">FC</option><option value="$">$</option></select><label>Taux USD->FC</label><input id="confTauxUSD" type="number" value="2850"><label>Logo</label><input type="file" id="confLogoFile" accept="image/*"><div><img id="logoPreview" style="max-width:120px"></div></div></div><button class="btn btn-g" onclick="saveConfig()">💾 Sauver</button><button class="btn btn-y" onclick="loadConfig()">🔄 Recharger</button></div></div>
 <div id="modalArt" class="modal"><div class="modalBox"><h3>Nouvel Article</h3><input id="newCode" placeholder="CODE"><input id="newDes" placeholder="Désignation"><input id="newPV" type="number" placeholder="PV"><input id="newPA" type="number" placeholder="PA"><input id="newQte" type="number" placeholder="Qté"><input id="newSeuil" type="number" value="3"><label><input type="checkbox" id="newActif" checked> Actif</label><div style="display:flex;gap:5px;margin-top:10px"><button class="btn btn-g" onclick="saveNewArt()">Créer</button><button class="btn" onclick="closeModal('modalArt')">Annuler</button></div></div></div>
-
-<script>
-// ==== FIX LOGIN SÉCURISÉ V6.1 - REMPLACE ANCIEN loginPat ====
-const firebaseConfigPat = {
-  apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",
-  authDomain: "bateke-v4.firebaseapp.com",
-  databaseURL: "https://bateke-v4-default-rtdb.firebaseio.com",
-  projectId: "bateke-v4",
-  storageBucket: "bateke-v4.firebasestorage.app",
-  messagingSenderId: "321333206282",
-  appId: "1:321333206282:web:6d1603446be3d195de6ef3"
-};
-if(!firebase.apps.length) firebase.initializeApp(firebaseConfigPat);
-
-async function loginPat(){
-  const mode = document.getElementById('modeEmail').style.display !== 'none' ? 'email' : 'pin';
-  const msgEl = document.getElementById('msgPat');
-  
-  if(mode==='email'){
-    // SUPERADMIN - garde ancien comportement
-    const email = document.getElementById('emailPat').value.trim();
-    const pass = document.getElementById('passPat').value.trim();
-    msgEl.innerText='⏳ Vérif SAAS...';
-    try{
-      await firebase.auth().signInWithEmailAndPassword(email, pass);
-      const uid = firebase.auth().currentUser.uid;
-      const snap = await firebase.database().ref('superadmins/'+uid).once('value');
-      if(!snap.exists()){ msgEl.innerText='❌ Pas superadmin'; return; }
-      localStorage.setItem('BATEKE_ROLE','superadmin');
-      document.getElementById('loginPat').style.display='none';
-      msgEl.innerText='';
-    }catch(e){ msgEl.innerText='❌ '+e.message; }
-    return;
-  }
-  
-  // MODE PIN - VÉRIFICATION FIREBASE RÉELLE
-  const pin = document.getElementById('pinPat').value.trim();
-  if(!pin || pin.length<2){ msgEl.innerText='❌ PIN vide'; return; }
-  msgEl.style.color='#f59e0b'; msgEl.innerText='⏳ Vérification PIN '+pin+' dans Firebase...';
-  
-  try{
-    await firebase.auth().signInAnonymously().catch(()=>{});
-    // 1. Check patron
-    const pSnap = await firebase.database().ref('patrons/'+pin).once('value');
-    if(pSnap.exists()){
-      const p = pSnap.val();
-      localStorage.setItem('BATEKE_PIN', pin);
-      localStorage.setItem('BATEKE_ROLE', 'patron');
-      localStorage.setItem('pin', pin);
-      localStorage.setItem('BATEKE_NOM', p.nom||pin);
-      document.getElementById('loginPat').style.display='none';
-      msgEl.innerText='';
-      location.reload();
-      return;
-    }
-    // 2. Check vendeur dans tous shops
-    const shopsSnap = await firebase.database().ref('shops').once('value');
-    const shops = shopsSnap.val()||{};
-    for(const shopName in shops){
-      const vendeurs = shops[shopName].vendeurs||{};
-      for(const vKey in vendeurs){
-        const v = vendeurs[vKey];
-        const vPin = String(v.pin||v.PIN||vKey);
-        if(vPin===pin){
-          if(v.actif===false){ msgEl.style.color='red'; msgEl.innerText='❌ Vendeur désactivé par patron'; return; }
-          localStorage.setItem('BATEKE_PIN', pin);
-          localStorage.setItem('pin', pin);
-          localStorage.setItem('BATEKE_ROLE', 'vendeur');
-          localStorage.setItem('BATEKE_BOUTIQUE', shopName);
-          localStorage.setItem('BATEKE_SHOP', shopName);
-          document.getElementById('loginPat').style.display='none';
-          msgEl.innerText='';
-          alert(`✅ Vendeur ${v.nom||vKey} - Boutique ${shopName}`);
-          location.href='vendeur/';
-          return;
-        }
-      }
-    }
-    // 3. INTROUVABLE = REFUS
-    msgEl.style.color='red';
-    msgEl.innerText=`❌ PIN ${pin} INTROUVABLE - N'existe ni patron ni vendeur. Contact DG.`;
-    localStorage.clear();
-  }catch(e){
-    msgEl.style.color='red';
-    msgEl.innerText='❌ Erreur: '+e.message;
-  }
-}
-
-// Auto-login si déjà connecté et PIN valide
-(async()=>{
-  const savedPin = localStorage.getItem('BATEKE_PIN') || localStorage.getItem('pin');
-  if(savedPin){
-    try{
-      await firebase.auth().signInAnonymously().catch(()=>{});
-      const s = await firebase.database().ref('patrons/'+savedPin).once('value');
-      if(s.exists()){
-        document.getElementById('loginPat').style.display='none';
-      } else {
-        // vérifie vendeur aussi
-        const shops = await firebase.database().ref('shops').once('value').then(x=>x.val()||{});
-        let ok=false;
-        for(const sn in shops){ 
-          const vends=shops[sn].vendeurs||{};
-          for(const vk in vends){ if(String(vends[vk].pin||vk)===savedPin) ok=true; }
-        }
-        if(ok) document.getElementById('loginPat').style.display='none';
-        else { localStorage.clear(); }
-      }
-    }catch(e){}
-  }
-})();
-</script>
 
 <script>
 function toTimeBateke(v){ if(!v) return 0; if(typeof v==='number') return v; if(typeof v==='string'){ if(/^\d{12,}$/.test(v)) return parseInt(v,10); let t=new Date(v).getTime(); return isNaN(t)?0:t; } return 0; }
@@ -203,45 +91,5 @@ function checkAbonnement(boutiqueNom){
 setTimeout(()=>{ let shop=localStorage.getItem('BATEKE_SHOP')||document.getElementById('shopSel')?.value; if(shop) checkAbonnement(shop); }, 2500);
 </script>
 
-<script type="module" src="js/patron/app.js?v=6.1-fix-login-20261027"></script>
-
-<!-- FIX GENERAL SÉCURISÉ - PLUS DE 7832 PAR DÉFAUT -->
-<script>
-function fixBoutiquesGeneralSecurise(){
-  let pin = localStorage.getItem('BATEKE_PIN') || localStorage.getItem('pin');
-  if(!pin) return; // PAS DE FALLBACK 7832!
-  
-  firebase.database().ref('patrons/'+pin).once('value').then(snap=>{
-    if(!snap.exists()) return;
-    const patron = snap.val();
-    let mesBoutiques = patron.boutiques ? Object.keys(patron.boutiques) : patron.boutique ? [patron.boutique] : [];
-    mesBoutiques = [...new Set(mesBoutiques.map(b=> b==="Itendance" ? "Intendance" : b.trim()))];
-    if(mesBoutiques.length===0) return;
-    
-    const sel = document.getElementById('shopSel');
-    if(sel){
-      const currentVal = sel.value || localStorage.getItem('BATEKE_SHOP');
-      if(sel.options.length !== mesBoutiques.length || !mesBoutiques.includes(currentVal)){
-        sel.innerHTML = '';
-        mesBoutiques.forEach(nom=>{
-          const opt = document.createElement('option'); opt.value=nom; opt.textContent=nom; if(nom===currentVal) opt.selected=true; sel.appendChild(opt);
-        });
-        if(currentVal && !mesBoutiques.includes(currentVal)){
-          sel.value = mesBoutiques[0]; localStorage.setItem('BATEKE_SHOP', mesBoutiques[0]); localStorage.setItem('BATEKE_BOUTIQUE', mesBoutiques[0]);
-        }
-      }
-    }
-    const listDiv = document.getElementById('listShops');
-    if(listDiv){
-      firebase.database().ref('shops').once('value').then(shopsSnap=>{
-        const shops = shopsSnap.val()||{};
-        let html=''; mesBoutiques.forEach(nom=>{ if(!shops[nom]) return; html+=`<div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #eee"><div><b>${nom}</b><br><small>${Object.keys(shops[nom].stock||{}).length} articles</small></div><button class="btn btn-b" onclick="localStorage.setItem('BATEKE_SHOP','${nom}'); location.reload();">Ouvrir</button></div>`; });
-        if(html) listDiv.innerHTML=html;
-      });
-    }
-  });
-}
-setTimeout(fixBoutiquesGeneralSecurise, 1500);
-setInterval(fixBoutiquesGeneralSecurise, 5000);
-</script>
+<script type="module" src="js/patron/app.js?v=6.1-clean-20261028"></script>
 </body></html>
