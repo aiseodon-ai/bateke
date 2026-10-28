@@ -1,8 +1,7 @@
-// js/patron/sync.js - FIDÈLE V4.9.25 MODULARISÉ - shops/MenkaoX/...
+// js/patron/sync.js - V6.4 FIX SÉCURISÉ - FILTRE PAR BOUTIQUES DU PATRON
 import { STATE } from "../core/state.js";
 import { db } from "../core/firebase.js";
 
-// Compat pour tous tes autres fichiers qui utilisent window.ALL_DATA
 window.SHOPS_LIST = STATE.SHOPS_LIST;
 window.SHOP = STATE.SHOP;
 window.ALL_DATA = STATE.ALL_DATA;
@@ -17,7 +16,13 @@ window.savePatronCache = savePatronCache;
 export function initShopsOffline(){
   let cg=JSON.parse(localStorage.getItem('patron_cache_global')||'null');
   if(cg&&cg.shops) STATE.SHOPS_LIST=cg.shops;
-  if(!STATE.SHOPS_LIST.length) STATE.SHOPS_LIST=['Menkao1','Menkao2','Mbakana','Itendance'];
+  // PAS DE FALLBACK 4 BOUTIQUES DURES
+  if(!STATE.SHOPS_LIST.length){
+    let pin = localStorage.getItem('BATEKE_PIN');
+    let cached = JSON.parse(localStorage.getItem('patron_cache')||'{}');
+    // fallback vide, on attend Firebase
+    STATE.SHOPS_LIST=[];
+  }
   window.SHOPS_LIST = STATE.SHOPS_LIST;
   STATE.SHOPS_LIST.forEach(s=>{
     if(!STATE.ALL_DATA[s]) STATE.ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{},vendeurs:{},presence:{},logs:{}};
@@ -33,26 +38,100 @@ export function initShopsOffline(){
   if(window.renderPanierAchat) window.renderPanierAchat();
 }
 
-export function initShops(){
-  console.log("🔄 initShops modular - écoute shops/*");
-  db.ref('shops').on('value',snap=>{
-    let data=snap.val()||{};
-    STATE.SHOPS_LIST=Object.keys(data);
-    if(!STATE.SHOPS_LIST.length) STATE.SHOPS_LIST=['Menkao1','Menkao2','Mbakana','Itendance'];
-    window.SHOPS_LIST = STATE.SHOPS_LIST;
-    STATE.SHOPS_LIST.forEach(s=>{
+export async function initShops(){
+  console.log("🔄 initShops V6.4 SÉCURISÉ - filtre par patron");
+  
+  let pin = localStorage.getItem('BATEKE_PIN') || localStorage.getItem('pin');
+  if(!pin){
+    console.log("🛑 initShops bloqué: pas de PIN");
+    document.getElementById('loginPat').style.display='flex';
+    return;
+  }
+  
+  // 1. Récupère patron pour connaître ses boutiques autorisées
+  let mesBoutiques = [];
+  try{
+    if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously();
+    let pSnap = await db.ref('patrons/'+pin).once('value');
+    if(pSnap.exists()){
+      let patron = pSnap.val();
+      if(patron.boutiques) mesBoutiques = Object.keys(patron.boutiques);
+      else if(patron.boutique) mesBoutiques = [patron.boutique];
+      // Fix faute Itendance
+      mesBoutiques = mesBoutiques.map(b=> b==="Itendance"?"Intendance":b.trim());
+      mesBoutiques = [...new Set(mesBoutiques)];
+      console.log(`✅ Patron ${pin} autorisé:`, mesBoutiques);
+    } else {
+      // Superadmin ou vendeur? Si superadmin, on autorise tout
+      let role = localStorage.getItem('BATEKE_ROLE');
+      if(role==='superadmin'){
+        console.log("👑 SUPERADMIN - chargement tous shops");
+        // Pour superadmin on garde ancien comportement mais sécurisé
+        db.ref('shops').once('value').then(snap=>{
+          let data=snap.val()||{};
+          mesBoutiques=Object.keys(data);
+          lancerEcoute(mesBoutiques);
+        });
+        return;
+      } else {
+        console.log(`🛑 PIN ${pin} introuvable - blocage`);
+        localStorage.clear();
+        document.getElementById('loginPat').style.display='flex';
+        return;
+      }
+    }
+  }catch(e){
+    console.error("Erreur get patron:", e);
+    return;
+  }
+  
+  if(mesBoutiques.length===0){
+    console.log("🛑 Aucune boutique pour ce patron");
+    document.getElementById('listShops').innerHTML='<p style="color:red">Aucune boutique assignée. Contact DG.</p>';
+    return;
+  }
+  
+  lancerEcoute(mesBoutiques);
+  
+  function lancerEcoute(list){
+    STATE.SHOPS_LIST = list;
+    window.SHOPS_LIST = list;
+    // Définit shop courant
+    let savedShop = localStorage.getItem('patron_shop') || localStorage.getItem('BATEKE_SHOP');
+    if(!savedShop || !list.includes(savedShop)){
+      STATE.SHOP = list[0];
+      window.SHOP = list[0];
+      localStorage.setItem('patron_shop', list[0]);
+      localStorage.setItem('BATEKE_SHOP', list[0]);
+    } else {
+      STATE.SHOP = savedShop;
+      window.SHOP = savedShop;
+    }
+    
+    list.forEach(s=>{
       if(!STATE.ALL_DATA[s]) STATE.ALL_DATA[s]={ventes:[],dep:[],vers:[],stock:[],entrees:[],clients:{},vendeurs:{},presence:{},logs:{}};
       listenShop(s);
     });
     window.ALL_DATA = STATE.ALL_DATA;
     let sel=document.getElementById('shopSel');
-    if(sel) sel.innerHTML=STATE.SHOPS_LIST.map(s=>`<option ${s===STATE.SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL">TOUTES</option>';
-    if(window.renderBoutiques) window.renderBoutiques(data);
+    if(sel) sel.innerHTML=list.map(s=>`<option ${s===STATE.SHOP?'selected':''} value="${s}">${s}</option>`).join('')+'<option value="ALL">TOUTES</option>';
+    // Pour superadmin on ajoute TOUTES
+    if(list.length>1 && sel) sel.innerHTML+='<option value="ALL">TOUTES</option>';
+    
+    if(window.renderBoutiques) {
+      // On passe seulement ses boutiques
+      db.ref('shops').once('value').then(snap=>{
+        let allData=snap.val()||{};
+        let filtered={};
+        list.forEach(b=>{ if(allData[b]) filtered[b]=allData[b]; });
+        window.renderBoutiques(filtered);
+      });
+    }
     if(window.updateLabels) updateLabels();
     if(window.refreshAll) refreshAll();
     if(window.loadConfig) window.loadConfig();
     savePatronCache();
-  });
+  }
 }
 
 export function switchShop(){
@@ -132,7 +211,6 @@ function listenShop(s){
   });
 }
 
-// --- Fonctions UI qui étaient globales ---
 export function updateLabels(){
   if(document.getElementById('labVenteShop')) document.getElementById('labVenteShop').innerText=STATE.SHOP;
   if(document.getElementById('labVendShop')) document.getElementById('labVendShop').innerText=STATE.SHOP;
@@ -194,7 +272,6 @@ export function refreshAll(){
   if(window.renderBoutiques) window.renderBoutiques(STATE.ALL_DATA);
 }
 
-// Expose global
 window.initShops=initShops;
 window.initShopsOffline=initShopsOffline;
 window.switchShop=switchShop;
@@ -205,4 +282,4 @@ window.renderPresenceKPI=renderPresenceKPI;
 window.refreshAll=refreshAll;
 window.fmtVu=fmtVu;
 
-console.log("✅ SYNC.JS FIDÈLE MODULAIRE CHARGÉ");
+console.log("✅ SYNC.JS V6.4 SÉCURISÉ CHARGÉ - filtre boutiques patron");
