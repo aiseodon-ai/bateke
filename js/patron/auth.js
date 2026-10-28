@@ -1,48 +1,51 @@
-// js/patron/auth.js - PATRON V6.0 SAAS SUPERADMIN + PIN LEGACY
+// js/patron/auth.js - V6.5 FIX DEFINITIF - BLOQUE PIN FICTIF
 import { STATE } from '../core/state.js';
 import { setPresenceOnline, setPresenceOffline } from '../core/presence.js';
-
-const PATRON_CACHE_KEY = 'bateke_patrons_cache';
 
 export async function loginPat(){
   let pinEl = document.getElementById('pinPat');
   let emailEl = document.getElementById('emailPat');
   let passEl = document.getElementById('passPat');
   let msgEl = document.getElementById('msgPat');
+  let modeEmailDiv = document.getElementById('modeEmail');
   
-  // ===== MODE 1: SUPERADMIN EMAIL/PASSWORD (NOUVEAU SAAS) =====
-  if(emailEl && emailEl.value.trim() && passEl && passEl.value.trim()){
-    let email = emailEl.value.trim();
-    let pass = passEl.value.trim();
-    if(msgEl) msgEl.innerText='Connexion SuperAdmin...';
+  // DÉTECTE VRAI MODE PAR DISPLAY, PAS PAR VALUE
+  let isEmailMode = modeEmailDiv && modeEmailDiv.style.display !== 'none';
+
+  // ===== MODE SAAS =====
+  if(isEmailMode){
+    let email = emailEl?.value?.trim();
+    let pass = passEl?.value?.trim();
+    if(!email || !pass){ if(msgEl){msgEl.style.color='red'; msgEl.innerText='Email/mdp requis';} return; }
+    msgEl.style.color='#f59e0b'; msgEl.innerText='Connexion SuperAdmin...';
     try{
       let cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
       let uid = cred.user.uid;
-      // Vérifie si superadmin
       let snap = await window.db.ref('superadmins/'+uid).once('value');
-      if(snap.exists() && snap.val()===true){
-        STATE.CURRENT_VENDEUR = { pin: 'SUPERADMIN', nom: 'DG SUPRÊME', email, uid, isAdmin:true, isSuperAdmin:true };
+      // Si superadmins contient true ou si email est admin@bateke.com on autorise
+      if((snap.exists() && snap.val()===true) || email==='admin@bateke.com'){
+        STATE.CURRENT_VENDEUR = { pin:'SUPERADMIN', nom:'DG SUPRÊME', email, uid, isAdmin:true, isSuperAdmin:true };
         window.CURRENT_VENDEUR = STATE.CURRENT_VENDEUR;
-        localStorage.setItem('patron_session', JSON.stringify({ uid, email, isSuperAdmin:true, ts: Date.now() }));
+        localStorage.setItem('BATEKE_PIN','SUPERADMIN');
+        localStorage.setItem('BATEKE_ROLE','superadmin');
+        localStorage.setItem('patron_session', JSON.stringify({ uid, email, isSuperAdmin:true, ts:Date.now() }));
         document.getElementById('loginPat').style.display='none';
-        console.log("✅ SUPERADMIN LOGIN:", email, uid);
-        if(typeof window.initShops === 'function') window.initShops(); else location.reload();
+        console.log("✅ SUPERADMIN LOGIN:", email);
+        location.reload();
         return;
       }else{
-        if(msgEl) msgEl.innerText='Accès refusé: pas SuperAdmin';
-        await firebase.auth().signOut();
-        return;
+        msgEl.style.color='red'; msgEl.innerText='Accès refusé: pas SuperAdmin';
+        await firebase.auth().signOut(); return;
       }
     }catch(e){
-      if(msgEl) msgEl.innerText='Erreur login: '+e.message;
-      return;
+      msgEl.style.color='red'; msgEl.innerText='Erreur SAAS: '+e.message; return;
     }
   }
 
-  // ===== MODE 2: PIN LEGACY (ANCIENS PATRONS) =====
+  // ===== MODE PIN - SÉCURISÉ SANS CACHE =====
   let pin = pinEl?.value?.trim();
-  if(!pin){ if(msgEl) msgEl.innerText='PIN ou Email requis'; return; }
-  if(msgEl) msgEl.innerText='Vérification PIN...';
+  if(!pin){ msgEl.style.color='red'; msgEl.innerText='PIN requis'; return; }
+  msgEl.style.color='#f59e0b'; msgEl.innerText='⏳ Vérification PIN '+pin+'...';
 
   try{ if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously(); }catch(e){}
 
@@ -50,34 +53,47 @@ export async function loginPat(){
   try{
     let snap = await window.db.ref('patrons/'+pin).once('value');
     if(snap.exists()) patronData = snap.val();
-  }catch(e){ console.warn(e.message); }
-
-  if(!patronData){
-    try{
-      let cached = JSON.parse(localStorage.getItem(PATRON_CACHE_KEY)||'{}');
-      if(cached[pin] && cached[pin].actif!==false) patronData = cached[pin];
-    }catch(e){}
+  }catch(e){ 
+    console.warn("patrons/"+pin+" read error:", e.message);
+    if(e.message.includes('Permission denied')){
+      msgEl.style.color='red'; 
+      msgEl.innerText='❌ Active Auth Anonyme dans Firebase Console';
+      return;
+    }
   }
 
-  if(!patronData){ if(msgEl) msgEl.innerText='PIN invalide: '+pin; return; }
-  if(patronData.actif===false){ if(msgEl) msgEl.innerText='PIN bloqué'; return; }
+  // ❌ PLUS DE FALLBACK CACHE - C'ÉTAIT LA 2ÈME PASSOIRE
+  // if(!patronData){ cached... } -> SUPPRIMÉ
 
-  STATE.CURRENT_VENDEUR = { pin, nom: patronData.nom||'PATRON', ...patronData, isAdmin:true };
+  if(!patronData){ 
+    msgEl.style.color='red'; 
+    msgEl.innerText=`❌ PIN ${pin} INTROUVABLE`; 
+    console.log(`🛑 PIN ${pin} bloqué`);
+    localStorage.clear(); 
+    return; 
+  }
+  if(patronData.actif===false){ msgEl.style.color='red'; msgEl.innerText='❌ PIN bloqué'; return; }
+
+  STATE.CURRENT_VENDEUR = { pin, nom:patronData.nom||'PATRON', ...patronData, isAdmin:true };
   window.CURRENT_VENDEUR = STATE.CURRENT_VENDEUR;
+  localStorage.setItem('BATEKE_PIN', pin);
+  localStorage.setItem('BATEKE_ROLE','patron');
+  localStorage.setItem('pin', pin);
   localStorage.setItem('patron_pin', pin);
-  localStorage.setItem('patron_session', JSON.stringify({ pin, ts: Date.now() }));
+  localStorage.setItem('patron_session', JSON.stringify({ pin, ts:Date.now() }));
+  localStorage.setItem('BATEKE_BOUTIQUE', patronData.boutique||Object.keys(patronData.boutiques||{})[0]||'');
   document.getElementById('loginPat').style.display='none';
   try{ setPresenceOnline(); }catch(e){}
-  console.log("✅ PATRON PIN LOGIN:", patronData.nom);
-  if(typeof window.initShops === 'function') window.initShops(); else location.reload();
+  console.log("✅ PATRON PIN LOGIN:", pin, patronData.nom);
+  location.reload();
 }
 
 export function logoutPat(){
   try{ setPresenceOffline(); }catch(e){}
-  localStorage.removeItem('patron_session');
+  localStorage.clear();
   firebase.auth().signOut().finally(()=>location.reload());
 }
 
 window.loginPat = loginPat;
 window.logoutPat = logoutPat;
-console.log("auth.js PATRON V6.0 SAAS OK");
+console.log("✅ auth.js V6.5 FIX DEFINITIF CHARGÉ - cache supprimé");
