@@ -39,7 +39,44 @@ table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:6px;borde
 
 <div id="compta" class="sec"><div class="card" style="background:#111;color:#22c55e;border:3px solid #22c55e"><h3>💼 COMPTA V4.9.10 EXACT</h3></div><div class="card"><div class="comptaGrid"><div><label>Base</label><input id="cBase" type="number" value="50000"></div><div><label>Com %</label><input id="cCom" type="number" value="10"></div><div><label>Loyer</label><input id="cLoyer" type="number" value="100000"></div><div><label>Fixes</label><input id="cAutresFixe" type="number" value="0"></div><div><label>Emprunt</label><input id="cEmprunt" type="number" value="0"></div><div><label>Prime %</label><input id="cPrime" type="number" value="25"></div><div><label>Patron %</label><input id="cPatron" type="number" value="45"></div><div><label>Dev %</label><input id="cDev" type="number" value="30"></div></div><button class="btn btn-g" onclick="saveComptaParams()">💾 Sauver</button><small id="comptaParamStatus"></small></div><div class="card"><div style="display:grid;grid-template-columns:1fr 1fr 120px;gap:6px"><input type="date" id="cDu"><input type="date" id="cAu"><button class="btn btn-b" onclick="calcCompta()">🔍 CALCULER</button></div><div style="display:flex;gap:5px;margin-top:6px"><button class="btn btn-y" onclick="setPeriode('mois')">Ce mois</button><button class="btn btn-y" onclick="setPeriode('moisPasse')">Mois passé</button><button class="btn btn-y" onclick="setPeriode('aujourdhui')">Auj</button><button class="btn btn-b" onclick="pdfCompta()">📄 PDF</button></div></div><div id="comptaResult"></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div class="card" style="border-left:5px solid #22c55e;background:#111;color:#fff"><h4>📅 Point Journalier</h4><div id="pointJournalier"></div></div><div class="card" style="border-left:5px solid #0ea5e9"><h4>💧 Trésorerie</h4><div id="tresorerieBox"></div></div><div class="card" style="border-left:5px solid #f59e0b"><h4>⚠️ Seuil Rentabilité</h4><div id="seuilBox"></div></div></div><div class="card"><h4>📊 Compte Résultat</h4><div id="compteResultat"></div></div></div>
 
-<div id="rapport" class="sec"><div class="card"><h4>📊 Rapport V4.9.14</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><label>Du</label><input type="date" id="du"><label>Au</label><input type="date" id="au"><label>Type</label><select id="typeRapport" onchange="onTypeChange()" style="grid-column:span 2"><option value="synthese_avec_benef">⭐ SYNTHESE AVEC BENEF + STOCK</option><option value="synthese_sans_benef">⭐ SYNTHESE SANS BENEF + STOCK</option><option value="synthese_achats">🛒 SYNTHESE ACHATS + STOCK</option><option value="synthese">⭐ SYNTHESE GENERALE</option><option value="vente_article">📦 VENTE PAR ARTICLE</option><option value="top">🏆 TOP 20</option><option value="dettes">💳 DETTES</option></select><div id="filtreExtra" style="grid-column:span 2"></div></div><div style="margin-top:8px;display:flex;gap:6px"><button class="btn btn-g" onclick="genRapport()">🔍 Générer</button><button class="btn btn-y" onclick="pdfRapportOnly()">📄 PDF</button><button class="btn btn-b" onclick="exportExcelRapport()">📊 Excel</button></div><div id="rapportC" style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:8px;overflow:auto;min-height:120px;margin-top:8px">Clique Générer</div><canvas id="chartRapport" style="max-height:400px"></canvas></div></div>
+<div id="rapport" class="sec"><div class="card"><h4>📊 Rapport V4.9.14 - RESTAURÉ COMPLET V4.9.10</h4>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<label>Du</label><input type="date" id="du">
+<label>Au</label><input type="date" id="au">
+<label>Type rapport - 17 types de ton monolithe</label>
+<select id="typeRapport" onchange="onTypeChange()" style="grid-column:span 2">
+<option value="synthese_avec_benef">⭐ SYNTHESE VENTES AVEC BENEFICE + STOCK ACTUEL (CA + Bénéf + Stock)</option>
+<option value="synthese_sans_benef">⭐ SYNTHESE VENTES SANS BENEFICE + STOCK ACTUEL (CA + Qté + Stock)</option>
+<option value="synthese_achats">🛒 SYNTHESE DES ACHATS / ENTREES + STOCK ACTUEL (NOUVEAU)</option>
+<option value="synthese">⭐ SYNTHESE GENERALE - V4.9.14 STABLE</option>
+<option value="synthese_ventes_vendeur">⭐ VENTES VENDEUR DETAIL + STOCK</option>
+<option value="synthese_ventes_patron">⭐ VENTES PATRON TOUTES BOUTIQUES</option>
+<option value="synthese_entrees">⭐ ENTREES STOCK DETAIL</option>
+<option value="synthese_depenses">⭐ DEPENSES - V4.9.10</option>
+<option value="synthese_caisse">⭐ CAISSE DETAIL</option>
+<option value="ca_periode">📅 CA PAR JOUR</option>
+<option value="vente_article">📦 VENTE PAR ARTICLE + STOCK ACTUEL</option>
+<option value="entree_article">📥 ENTREE PAR ARTICLE + STOCK</option>
+<option value="top">🏆 TOP 20 + STOCK ACTUEL</option>
+<option value="invendu">💤 INVENDUS + STOCK</option>
+<option value="depense_type">💸 DEPENSE PAR TYPE</option>
+<option value="ca_client">👤 CA PAR CLIENT</option>
+<option value="dettes">💳 DETTES - V4.9.14</option>
+</select>
+<div id="filtreExtra" style="grid-column:span 2"></div>
+</div>
+<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+<button class="btn btn-g" onclick="genRapport()">🔍 Générer Rapport V4.9.14</button>
+<button class="btn btn-y" onclick="pdfRapportOnly()">📄 PDF Rapport</button>
+<button class="btn btn-b" onclick="exportExcelRapport()">📊 Excel Rapport</button>
+<button class="btn btn-super" onclick="pdfCompta()">💼 PDF Compta V4.9.10</button>
+</div>
+<div id="rapportC" style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:8px;overflow:auto;min-height:120px;margin-top:8px;white-space:pre-wrap">Clique Générer - V4.9.14 intacte</div>
+<canvas id="chartRapport" style="max-height:400px;margin-top:10px"></canvas>
+<div style="margin-top:8px;font-size:10px;color:#64748b;background:#f8fafc;padding:8px;border-radius:8px">
+<b>Légende V4.9.25:</b> Tous les rapports incluent STOCK ACTUEL pour ordi commun. SYNTHESE ACHATS = nouveau V4.9.10. CA_PAR_JOUR = graphique Chart.js.
+</div>
+</div></div>
 
 <div id="crm" class="sec"><div class="card"><h4>👥 CRM</h4><input id="searchCli" placeholder="Nom ou Tel" oninput="renderCRM()"><div style="overflow:auto"><table><thead><tr><th>Nom</th><th>Tél</th><th>Nb</th><th>Total</th><th>Dette</th><th>Dernière</th></tr></thead><tbody id="crmList"></tbody></table></div></div></div>
 <div id="dettes" class="sec"><div class="card"><h4>💳 Dettes</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Tél</th><th>Boutique</th><th>Vendeur</th><th>Total</th><th>Payé</th><th>Reste</th></tr></thead><tbody id="dettesList"></tbody></table></div></div></div>
