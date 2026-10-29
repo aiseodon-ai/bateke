@@ -190,17 +190,102 @@ export async function supprimerBoutique(shop){
   }catch(e){ alert(e.message); }
 }
 
+// === FIX V8.6: SELECTEUR BOUTIQUE QUI ACTUALISE VRAIMENT LES DONNÉES ===
 export function selectShop(shop){
-  window.SHOP=shop;
+  if(!shop || shop.trim()===''){ return; }
+  if(shop==='ALL'){ 
+    // Mode toutes boutiques - Patron voit tout
+    shop = 'ALL';
+  }
+  console.log(`🔄 Changement boutique: ${window.SHOP} → ${shop}`);
+
+  // 1. Sauve partout (compat V4.9 + V6)
+  window.SHOP = shop;
   localStorage.setItem('patron_shop', shop);
   localStorage.setItem('BATEKE_SHOP', shop);
+  localStorage.setItem('BATEKE_BOUTIQUE', shop);
   sessionStorage.setItem('BATEKE_BOUTIQUE', shop);
-  window.PANIER_ACHAT=JSON.parse(localStorage.getItem('panier_achat_'+shop)||'[]');
-  let elSel=document.getElementById('shopSel'); if(elSel) elSel.value=shop;
-  if(typeof window.updateLabels==='function') window.updateLabels();
-  if(typeof window.refreshAll==='function') window.refreshAll();
+  sessionStorage.setItem('SHOP', shop);
+
+  // 2. MAJ UI immédiate (header, labels)
+  let header = document.getElementById('headerEntreprise');
+  if(header) header.innerHTML = `👑 ETS BATEKE - ${shop} - <span id="connBadge">🔄 SYNC...</span>`;
+  
+  let labPresence = document.getElementById('presenceShopLab');
+  if(labPresence) labPresence.innerText = shop;
+  
+  let labVente = document.getElementById('labVenteShop');
+  if(labVente) labVente.innerText = shop;
+
+  let presenceTitle = document.querySelector('.card h4');
+  if(presenceTitle && presenceTitle.innerText.includes('Présence')){
+    presenceTitle.innerHTML = `🟢 Présence - <span id="presenceShopLab">${shop}</span>`;
+  }
+
+  // 3. Panier achat spécifique boutique
+  try{
+    let panierKey = 'panier_achat_'+shop;
+    window.PANIER_ACHAT = JSON.parse(localStorage.getItem(panierKey)||'[]');
+    if(typeof window.renderPanierAchat==='function') window.renderPanierAchat();
+  }catch(e){}
+
+  // 4. Badge abonnement
   if(typeof window.checkAbonnement==='function') window.checkAbonnement(shop);
+
+  // 5. RECHARGEMENT DES DONNÉES - C'EST CE QUI MANQUAIT
+  // On essaie toutes les fonctions possibles de ton app.js
+  let reloaded = false;
+  
+  if(typeof window.initData==='function'){
+    window.initData(shop);
+    reloaded = true;
+    console.log("✅ initData() appelé pour", shop);
+  }
+  if(typeof window.loadAllData==='function'){
+    window.loadAllData(shop);
+    reloaded = true;
+    console.log("✅ loadAllData() appelé pour", shop);
+  }
+  if(typeof window.initShops==='function'){
+    // initShops recharge ALL_DATA depuis Firebase
+    window.initShops().then(()=>{
+      console.log("✅ initShops() terminé pour", shop);
+      if(typeof window.refreshAll==='function') window.refreshAll();
+      if(typeof window.updateLabels==='function') window.updateLabels();
+      if(typeof window.renderVentes==='function') window.renderVentes();
+      if(typeof window.renderStock==='function') window.renderStock();
+    });
+    reloaded = true;
+  }
+  if(typeof window.refreshAll==='function' && !reloaded){
+    window.refreshAll();
+    reloaded = true;
+  }
+
+  // 6. Si aucune fonction n'existe (app.js V6 cassé), on force reload page - 100% sûr
+  if(!reloaded){
+    console.warn("⚠️ Aucune fonction de reload trouvée - on fait location.reload()");
+    setTimeout(()=>location.reload(), 300);
+  } else {
+    // Même si on a rechargé, on force un refresh visuel après 800ms
+    setTimeout(()=>{
+      if(typeof window.refreshAll==='function') window.refreshAll();
+      if(typeof window.updateLabels==='function') window.updateLabels();
+      console.log(`✅ Données actualisées pour ${shop}`);
+    }, 800);
+  }
 }
+
+export function switchShop(){
+  let sel = document.getElementById('shopSel');
+  if(sel && sel.value){
+    selectShop(sel.value);
+  }
+}
+
+// Garde les autres fonctions de V8.5
+window.selectShop = selectShop;
+window.switchShop = switchShop;
 export function copyLienShop(shop){
   let origin = location.origin.startsWith('file') ? 'https://aiseodon-ai.github.io/bateke' : location.origin;
   let base = origin + location.pathname.replace(/\/patron\/.*|\/index\.html.*/,'') + '/';
