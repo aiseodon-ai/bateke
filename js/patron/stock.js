@@ -154,15 +154,46 @@ export function supp(uid){
 }
 
 export function saveNewArt(){
-  let code=document.getElementById('newCode')?.value.trim();
+  let codeEl = document.getElementById('newCode');
+  let desEl = document.getElementById('newDes');
+  let pvEl = document.getElementById('newPV');
+  let paEl = document.getElementById('newPA');
+  let qteEl = document.getElementById('newQte');
+  let seuilEl = document.getElementById('newSeuil');
+  let actifEl = document.getElementById('newActif');
+
+  let code = codeEl?.value.trim().toUpperCase();
   if(!code){ alert('CODE vide'); return; }
-  let data={CODE:code,Designation:document.getElementById('newDes').value,'Prix Unit':Number(document.getElementById('newPV').value)||0,'Prix Achat':Number(document.getElementById('newPA').value)||0,Quantite:Number(document.getElementById('newQte').value)||0,seuil:Number(document.getElementById('newSeuil').value)||3,actif:document.getElementById('newActif')?.checked!==false};
+  let des = desEl?.value.trim();
+  if(!des){ alert('Désignation vide'); return; }
+
+  let data={
+    CODE:code,
+    Designation:des,
+    'Prix Unit':Number(pvEl?.value)||0,
+    'Prix Achat':Number(paEl?.value)||0,
+    Quantite:Number(qteEl?.value)||0,
+    seuil:Number(seuilEl?.value)||3,
+    actif: actifEl?.checked!==false
+  };
+  
   let s=getShop();
   let dbRef = window.db || firebase.database();
-  dbRef.ref('shops/'+s+'/stock/'+code).set(data).then(()=>{ 
+  
+  dbRef.ref('shops/'+s+'/stock/'+code).set(data).then(()=>{
+    // ✅ VIDAGE DES CHAMPS - c'est ce qui manquait
+    if(codeEl) codeEl.value='';
+    if(desEl) desEl.value='';
+    if(pvEl) pvEl.value='';
+    if(paEl) paEl.value='';
+    if(qteEl) qteEl.value='';
+    if(seuilEl) seuilEl.value='3';
+    if(actifEl) actifEl.checked=true;
+    
     try{ closeModal('modalArt'); }catch(e){}
-    renderStock(); 
-  });
+    renderStock();
+    console.log('✅ Article créé et champs vidés:', code);
+  }).catch(e=> alert('Erreur: '+e.message));
 }
 
 // Expose global
