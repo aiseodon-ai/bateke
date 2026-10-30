@@ -1,16 +1,15 @@
-// js/patron/boutiques.js - V8.23 V6.8 FIX - respecte state.js + window.SHOP
-// Ne touche plus au selecteur, ne casse plus la présence
+// js/patron/boutiques.js - V8.24 FINAL - utilise STATE.setShop() - FIX 3 JOURS
+import { STATE } from "../core/state.js";
 
-function renderBoutiques(data){
+function renderBoutiques(){
   try{
-    let shops = window.SHOPS_LIST || [];
+    let shops = (window.STATE?.SHOPS_LIST || window.SHOPS_LIST || STATE.SHOPS_LIST || []);
     if(shops.length===0 && window.ALL_DATA) shops = Object.keys(window.ALL_DATA);
-    let allData = window.ALL_DATA || {};
+    let allData = window.ALL_DATA || STATE.ALL_DATA || {};
 
     let elList = document.getElementById('listShops');
     let elLinks = document.getElementById('allLinks');
 
-    // V6.2 / V6.8: si les IDs n'existent pas, on les crée après l'input Ex: Limete
     if(!elList){
       let inputNew = document.getElementById('newShop');
       if(inputNew){
@@ -51,8 +50,7 @@ function renderBoutiques(data){
     base = base.replace(/patron\/$/,'');
     let baseV = base + 'vendeur.html';
 
-    // Vrai shop actuel depuis state.js / window.SHOP
-    let realShop = window.SHOP || localStorage.getItem('patron_shop') || shops[0] || 'Menkao1';
+    let realShop = STATE.SHOP || window.SHOP || localStorage.getItem('patron_shop') || shops[0];
 
     if(elList && shops.length>0){
       elList.innerHTML = shops.map(shop=>{
@@ -64,9 +62,9 @@ function renderBoutiques(data){
           <small>${nb} articles • ${nbVend} vendeurs</small><br>
           <small style="color:#0b5e2f;font-size:9px;word-break:break-all">${baseV}?shop=${encodeURIComponent(shop)}</small></div>
           <div style="display:flex;gap:4px">
-            <button class="btn btn-b" style="width:auto;padding:6px 10px;font-size:11px" onclick="selectShop('${shop}')">Ouvrir</button>
-            <button class="btn" style="width:auto;padding:6px 8px;font-size:10px;background:#f59e0b" onclick="renommerBoutique('${shop}')">✏️</button>
-            <button class="btn btn-r" style="width:auto;padding:6px 8px;font-size:10px" onclick="supprimerBoutique('${shop}')">🗑️</button>
+            <button class="btn btn-b" style="width:auto;padding:6px 10px;font-size:11px" onclick="window.selectShop('${shop}')">Ouvrir</button>
+            <button class="btn" style="width:auto;padding:6px 8px;font-size:10px;background:#f59e0b" onclick="window.renommerBoutique('${shop}')">✏️</button>
+            <button class="btn btn-r" style="width:auto;padding:6px 8px;font-size:10px" onclick="window.supprimerBoutique('${shop}')">🗑️</button>
           </div>
         </div>`;
       }).join('');
@@ -78,74 +76,56 @@ function renderBoutiques(data){
         let ns = (allData[s]?.stock?.length||0);
         return `<div style="padding:10px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;background:#fff">
           <b>🏪 ${s}</b> <small>${ns} art</small>
-          <div style="display:flex;gap:4px;margin-top:6px"><input value="${lien2}" id="inputLien_${s}" readonly style="flex:1;background:#f1f5f9;font-size:11px;padding:6px;border-radius:6px"><button class="btn btn-b" style="width:auto;font-size:10px" onclick="copyInput('inputLien_${s}')">Copier</button></div>
+          <div style="display:flex;gap:4px;margin-top:6px"><input value="${lien2}" id="inputLien_${s}" readonly style="flex:1;background:#f1f5f9;font-size:11px;padding:6px;border-radius:6px"><button class="btn btn-b" style="width:auto;font-size:10px" onclick="window.copyInput('inputLien_${s}')">Copier</button></div>
           <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
-            <button class="btn btn-g" style="width:auto;font-size:10px" onclick="shareWhatsApp('${s}')">WhatsApp</button>
-            <button class="btn" style="width:auto;font-size:10px;background:#f59e0b" onclick="renommerBoutique('${s}')">Renommer</button>
-            <button class="btn" style="width:auto;font-size:10px;background:#111;color:#fff" onclick="openQR('${s}')">QR</button>
-            <button class="btn btn-r" style="width:auto;font-size:10px" onclick="supprimerBoutique('${s}')">Supprimer</button>
+            <button class="btn btn-g" style="width:auto;font-size:10px" onclick="window.shareWhatsApp('${s}')">WhatsApp</button>
+            <button class="btn" style="width:auto;font-size:10px;background:#f59e0b" onclick="window.renommerBoutique('${s}')">Renommer</button>
+            <button class="btn" style="width:auto;font-size:10px;background:#111;color:#fff" onclick="window.openQR('${s}')">QR</button>
+            <button class="btn btn-r" style="width:auto;font-size:10px" onclick="window.supprimerBoutique('${s}')">Supprimer</button>
           </div>
           <div id="qr_${s}" style="display:none;margin-top:10px;text-align:center"></div>
         </div>`;
       }).join('');
     }
 
-    // FIX CRITIQUE V6.8: NE PAS reconstruire le selecteur, ça cassait le onchange
+    // NE PAS reconstruire le selecteur - ça cassait
     let sel = document.getElementById('shopSel');
-    if(sel && shops.length>0){
-      // Si vide, on le remplit une seule fois
-      if(sel.options.length===0){
+    if(sel){
+      if(sel.options.length===0 && shops.length>0){
         sel.innerHTML = shops.map(s=>`<option value="${s}">${s}</option>`).join('') + '<option value="ALL">TOUTES</option>';
       }
-      sel.value = realShop;
+      if(shops.includes(realShop)) sel.value = realShop;
     }
-  }catch(e){ console.error('renderBoutiques V8.23', e); }
+  }catch(e){ console.error('renderBoutiques V8.24', e); }
 }
 
-// FIX CENTRAL V6.8: met à jour le vrai SHOP dans state.js + window.SHOP
 function setRealShop(shop){
-  console.log('🔥 setRealShop V6.8: '+shop);
-  
-  try{ localStorage.setItem('patron_shop', shop); }catch(e){}
-  try{ localStorage.setItem('BATEKE_SHOP', shop); }catch(e){}
-  
-  // 1. window.SHOP - utilisé par app.js et tout le monolithe
+  console.log('🔥 V8.24 setRealShop via STATE.setShop: '+shop);
+  // LA SEULE BONNE FAÇON EN V6.8
+  if(window.STATE && window.STATE.setShop){
+    window.STATE.setShop(shop);
+  } else if(STATE && STATE.setShop){
+    STATE.setShop(shop);
+  } else {
+    // fallback
+    window.SHOP = shop;
+    localStorage.setItem('patron_shop', shop);
+  }
+  // Force aussi le global pour les anciens fichiers
   window.SHOP = shop;
-  
-  // 2. Essaie de mettre à jour le let SHOP de core/state.js via window et via eval global
-  try{
-    // Si state.js a exposé un setter
-    if(window.setShop) window.setShop(shop);
-    if(window.setCurrentShop) window.setCurrentShop(shop);
-    if(window.STATE && window.STATE.setShop) window.STATE.setShop(shop);
-  }catch(e){}
-
-  // 3. Force via eval dans le contexte global (pour le let SHOP de state.js)
-  try{ window.eval('if(typeof SHOP!=="undefined"){SHOP="'+shop+'"}'); }catch(e){}
-  try{ eval('if(typeof SHOP!=="undefined"){SHOP="'+shop+'"}'); }catch(e){}
-  
-  // 4. Si tu as un export state.js avec fonction update
-  try{
-    // Pour ES modules, on ne peut pas assigner direct, mais on peut stocker dans un global que state.js lit
-    window._BATEKE_FORCED_SHOP = shop;
-  }catch(e){}
+  localStorage.setItem('patron_shop', shop);
 }
 
 export function selectShop(shop){
   console.log('👉 selectShop '+shop);
   setRealShop(shop);
   
-  try{ 
-    let pan = localStorage.getItem('panier_achat_'+shop);
-    if(window.PANIER_ACHAT!==undefined) window.PANIER_ACHAT = pan?JSON.parse(pan):[];
-    if(typeof PANIER_ACHAT!=='undefined') PANIER_ACHAT = pan?JSON.parse(pan):[];
-  }catch(e){}
-
   let sel = document.getElementById('shopSel');
   if(sel) sel.value = shop;
 
-  try{ if(typeof window.updateLabels==='function') window.updateLabels(); else if(typeof updateLabels==='function') updateLabels(); }catch(e){}
-  try{ if(typeof window.refreshAll==='function') window.refreshAll(); else if(typeof refreshAll==='function') refreshAll(); }catch(e){}
+  try{ if(window.updateLabels) window.updateLabels(); }catch(e){}
+  try{ if(window.refreshAll) window.refreshAll(); }catch(e){}
+  try{ renderBoutiques(); }catch(e){}
 }
 
 export function switchShop(){
@@ -154,23 +134,13 @@ export function switchShop(){
   let shop = sel.value;
   console.log('👉 switchShop '+shop);
   setRealShop(shop);
-  
-  try{ 
-    let pan = localStorage.getItem('panier_achat_'+shop);
-    if(window.PANIER_ACHAT!==undefined) window.PANIER_ACHAT = pan?JSON.parse(pan):[];
-  }catch(e){}
 
-  try{ if(typeof window.updateLabels==='function') window.updateLabels(); else if(typeof updateLabels==='function') updateLabels(); }catch(e){}
-  try{ if(typeof window.refreshAll==='function') window.refreshAll(); else if(typeof refreshAll==='function') refreshAll(); }catch(e){}
-  try{ if(typeof window.renderAchatStock==='function') window.renderAchatStock(); }catch(e){}
-  try{ if(typeof window.renderPanierAchat==='function') window.renderPanierAchat(); }catch(e){}
+  try{ if(window.updateLabels) window.updateLabels(); }catch(e){}
+  try{ if(window.refreshAll) window.refreshAll(); }catch(e){}
+  try{ if(window.renderAchatStock) window.renderAchatStock(); }catch(e){}
+  try{ if(window.renderPanierAchat) window.renderPanierAchat(); }catch(e){}
+  try{ renderBoutiques(); }catch(e){}
 }
-
-// Expose aussi en window pour les onclick HTML
-window.selectShop = selectShop;
-window.switchShop = switchShop;
-window.renderBoutiques = renderBoutiques;
-window.setRealShop = setRealShop;
 
 export function createShop(){
   let n=document.getElementById('newShop').value.trim();
@@ -197,7 +167,8 @@ export function renommerBoutique(oldShop){
 }
 export function supprimerBoutique(shop){
   if(!shop) return;
-  if(window.SHOPS_LIST && window.SHOPS_LIST.length<=1){ alert('Dernière boutique'); return; }
+  let list = window.SHOPS_LIST || STATE.SHOPS_LIST || [];
+  if(list.length<=1){ alert('Dernière boutique'); return; }
   let c=prompt('Tape OUI pour supprimer "'+shop+'":');
   if(!c||c.toLowerCase()!=='oui') return;
   firebase.database().ref('shops/'+shop).remove().then(()=>{ alert('✅ Supprimée'); location.reload(); });
@@ -226,7 +197,18 @@ export function openQR(shop){
 }
 export function copyLien(){ let el=document.getElementById('lienVendeur')||document.getElementById('lienV'); if(el&&navigator.clipboard) navigator.clipboard.writeText(el.innerText).then(()=> alert('✅ Copié')); }
 
-window.createShop=createShop; window.renommerBoutique=renommerBoutique; window.supprimerBoutique=supprimerBoutique;
-window.copyLienShop=copyLienShop; window.copyInput=copyInput; window.shareWhatsApp=shareWhatsApp; window.openQR=openQR; window.copyLien=copyLien;
+// Expose en window pour onclick
+window.selectShop = selectShop;
+window.switchShop = switchShop;
+window.renderBoutiques = renderBoutiques;
+window.createShop = createShop;
+window.renommerBoutique = renommerBoutique;
+window.supprimerBoutique = supprimerBoutique;
+window.copyLienShop = copyLienShop;
+window.copyInput = copyInput;
+window.shareWhatsApp = shareWhatsApp;
+window.openQR = openQR;
+window.copyLien = copyLien;
+window.setRealShop = setRealShop;
 
-console.log('✅ V8.23 V6.8 - SHOP dans state.js + window.SHOP - fix 3 jours');
+console.log('✅ V8.24 FINAL - utilise STATE.setShop() - FIX 3 JOURS');
