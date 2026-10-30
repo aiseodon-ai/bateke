@@ -93,6 +93,54 @@ export async function loginPat(){
     return; 
   }
 
+
+  // ===== 🔒 FIX V6.9 - CHECK ABO PAR BOUTIQUE - JAMAIS PAYÉ =====
+  let boutiquePrincipale = patronData.boutique || Object.keys(patronData.boutiques||{})[0];
+  if(!boutiquePrincipale){
+    msgEl.style.color='red';
+    msgEl.innerText='❌ Aucune boutique assignée - Contact DG';
+    return;
+  }
+
+  // Vérifie expire dans 2 endroits (patrons et shops) pour être sûr
+  let expirePatron = 0;
+  try{ expirePatron = patronData.boutiques?.[boutiquePrincipale]?.expire || patronData.abonnement_fin || 0; }catch(e){}
+
+  let expireShop = 0;
+  try{
+    let snapShop = await window.db.ref('shops/'+boutiquePrincipale+'/abonnements/expire').once('value');
+    expireShop = snapShop.val() || 0;
+    if(typeof expireShop === 'string') expireShop = parseInt(expireShop,10) || new Date(expireShop).getTime() || 0;
+  }catch(e){ console.warn('check shop abo', e.message); }
+
+  let expireFinal = Math.max(expirePatron, expireShop); // prend le plus grand des 2 pour éviter faux blocage
+  // Si les 2 sont à 0 = JAMAIS PAYÉ
+  if(expirePatron===0 && expireShop===0) expireFinal = 0;
+
+  let now = Date.now();
+  
+  if(!expireFinal || expireFinal===0){
+    msgEl.style.color='red';
+    msgEl.innerHTML=`🚫 ${boutiquePrincipale} JAMAIS PAYÉ<br><small>Contact DG - 15K/30j</small>`;
+    console.log(`🛑 BOUTIQUE ${boutiquePrincipale} JAMAIS PAYÉ - PIN ${pin} bloqué`);
+    sessionStorage.clear();
+    localStorage.removeItem('BATEKE_PIN');
+    return;
+  }
+  
+  if(expireFinal < now){
+    let joursRetard = Math.ceil((now - expireFinal)/86400000);
+    msgEl.style.color='red';
+    msgEl.innerHTML=`🚫 ${boutiquePrincipale} BLOQUÉ depuis ${joursRetard}j<br><small>Expire: ${new Date(expireFinal).toLocaleDateString()} - Paye 15K</small>`;
+    console.log(`🛑 BOUTIQUE ${boutiquePrincipale} BLOQUÉE - PIN ${pin}`);
+    sessionStorage.clear();
+    localStorage.removeItem('BATEKE_PIN');
+    return;
+  }
+
+  let joursRestants = Math.ceil((expireFinal-now)/86400000);
+  console.log(`✅ ABO OK - ${boutiquePrincipale} - ${joursRestants}j restants`);
+  
   STATE.CURRENT_VENDEUR = { pin, nom:patronData.nom||'PATRON', ...patronData, isAdmin:true };
   window.CURRENT_VENDEUR = STATE.CURRENT_VENDEUR;
   
