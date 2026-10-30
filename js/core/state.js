@@ -53,3 +53,10 @@ console.log("✅ STATE V4.9.27 chargé - SHOP:", STATE.SHOP, "PANIER:", STATE.PA
 
 export const SHOP = STATE.SHOP;
 export const ALL_DATA = STATE.ALL_DATA;
+
+// state.js - V4.9.27 - AJOUTE ÇA À LA FIN
+window.STATE = STATE; // expose STATE global
+window.setShop = STATE.setShop; // pour que boutiques.js puisse l'appeler même sans import
+
+// Fix export SHOP qui était une copie figée
+export function getShop(){ return STATE.SHOP; }
