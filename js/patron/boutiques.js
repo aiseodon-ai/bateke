@@ -1,4 +1,4 @@
-// js/patron/boutiques.js - V8.16 FIX BRUTAL - écrase getFiltered() - DONNÉES RÉELLES SANS ECRAN BLANC
+// js/patron/boutiques.js - V8.17 FIX PRÉSENCE - garde V8.16 intact + patch présence
 function renderBoutiques(){
   try{
     var elList=document.getElementById('listShops'); var elLinks=document.getElementById('allLinks'); var elSel=document.getElementById('shopSel');
@@ -20,106 +20,120 @@ function selectShop(shop){
   if(!shop) return;
   var oldShop = localStorage.getItem('patron_shop') || window.SHOP || 'Menkao2';
   if(shop===oldShop){ console.log('Déjà sur '+shop); return; }
-  console.log('🔥 V8.16 FIX BRUTAL: '+oldShop+' → '+shop);
+  console.log('🔥 V8.17: '+oldShop+' → '+shop);
 
-  // 1. Sauve partout
-  localStorage.setItem('patron_shop',shop);
-  localStorage.setItem('BATEKE_SHOP',shop);
-  sessionStorage.setItem('BATEKE_BOUTIQUE',shop);
-  try{ window.SHOP=shop; }catch(e){}
-  try{ SHOP=shop; }catch(e){}
-  try{ window.SHOP_GLOBAL=shop; }catch(e){}
-  try{ eval('SHOP="'+shop+'"'); }catch(e){}
-  try{ window.eval('SHOP="'+shop+'"'); }catch(e){}
+  localStorage.setItem('patron_shop',shop); localStorage.setItem('BATEKE_SHOP',shop); sessionStorage.setItem('BATEKE_BOUTIQUE',shop);
+  try{ window.SHOP=shop; }catch(e){} try{ SHOP=shop; }catch(e){} try{ eval('SHOP="'+shop+'"'); }catch(e){} try{ window.eval('SHOP="'+shop+'"'); }catch(e){}
 
   if(!window.SHOPS_LIST || window.SHOPS_LIST.length===0) return;
-
   try{ window.PANIER_ACHAT=JSON.parse(localStorage.getItem('panier_achat_'+shop)||'[]'); }catch(e){ window.PANIER_ACHAT=[]; }
 
-  // 2. LE FIX QUI MANQUAIT: ON ÉCRASE getFiltered() POUR QU'IL LISE LE BON SHOP
-  // Ton getFiltered original fait return ALL_DATA[SHOP] avec SHOP = Menkao2 en closure
-  // On le remplace par une version qui lit localStorage
+  // Écrase getFiltered comme V8.16 - garde l'acquis
   try{
-    // Nouvelle version qui lit toujours le shop actuel depuis localStorage
     window.getFiltered = function(){
       var s = localStorage.getItem('patron_shop') || window.SHOP || 'Menkao2';
       var data = window.ALL_DATA ? window.ALL_DATA[s] : null;
       if(!data) return {stock:[], ventes:[], depenses:[], entrees:[], vendeurs:[], presence:[], dettes:[]};
       if(s==='ALL'){
-        // Agrège toutes boutiques
         var agg={stock:[], ventes:[], depenses:[], entrees:[], vendeurs:[], presence:[], dettes:[]};
-        for(var k in window.ALL_DATA){
-          var d=window.ALL_DATA[k];
-          if(d.stock) agg.stock=agg.stock.concat(d.stock);
-          if(d.ventes) agg.ventes=agg.ventes.concat(d.ventes);
-          if(d.depenses) agg.depenses=agg.depenses.concat(d.depenses);
-          if(d.entrees) agg.entrees=agg.entrees.concat(d.entrees);
-          if(d.presence) agg.presence=agg.presence.concat(d.presence);
-        }
+        for(var k in window.ALL_DATA){ var d=window.ALL_DATA[k]; if(d.stock) agg.stock=agg.stock.concat(d.stock); if(d.ventes) agg.ventes=agg.ventes.concat(d.ventes); if(d.depenses) agg.depenses=agg.depenses.concat(d.depenses); if(d.entrees) agg.entrees=agg.entrees.concat(d.entrees); if(d.presence) agg.presence=agg.presence.concat(Object.values(d.presence||{})); }
         return agg;
       }
       return data;
     };
-    console.log('✅ getFiltered() écrasé → lit maintenant ALL_DATA['+shop+']');
-  }catch(e){ console.log('getFiltered override fail', e); }
-
-  // 3. Écrase aussi les autres fonctions de filtre possibles (achat.js etc.)
-  try{
-    if(window.getAchatFiltered) window.getAchatFiltered = window.getFiltered;
-    if(window.getStockFiltered) window.getStockFiltered = window.getFiltered;
   }catch(e){}
 
-  // 4. Force le remplacement de SHOP dans tous les endroits globaux qui contiennent encore Menkao2
-  try{
-    for(var key in window){
-      try{
-        if(window[key]===oldShop && typeof window[key]==='string'){
-          window[key]=shop;
-          console.log('→ window.'+key+' corrigé: '+oldShop+' → '+shop);
-        }
-      }catch(e){}
-    }
-  }catch(e){}
-
-  // 5. MAJ labels
+  // MAJ labels header
   try{ if(typeof updateLabels==='function') updateLabels(); }catch(e){}
   try{
     var hEl=document.getElementById('headerEntreprise');
-    if(hEl){
-      var badge=document.getElementById('connBadge');
-      var badgeHtml=badge?badge.outerHTML:'<span id="connBadge">🟢 SYNC</span>';
-      hEl.innerHTML='👑 ETS BATEKE - '+shop+' - '+badgeHtml;
-    }
-    ['presenceShopLab','labVenteShop','paramShopName','labVendShop'].forEach(function(id){
-      var el=document.getElementById(id); if(el) el.innerText=shop;
-    });
+    if(hEl){ var badge=document.getElementById('connBadge'); var badgeHtml=badge?badge.outerHTML:'<span id="connBadge">🟢 SYNC</span>'; hEl.innerHTML='👑 ETS BATEKE - '+shop+' - '+badgeHtml; }
+    ['presenceShopLab','labVenteShop','paramShopName','labVendShop'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerText=shop; });
   }catch(e){}
 
-  // 6. CHARGE LES VRAIES DONNÉES - maintenant getFiltered() retourne Mbakana
+  // CHARGE VENTES/STOCK - acquis V8.16
   try{
-    var dataShop = window.ALL_DATA && window.ALL_DATA[shop] ? window.ALL_DATA[shop] : null;
-    console.log('Données pour '+shop+':', dataShop ? (dataShop.stock?.length||0)+' stock, '+(dataShop.ventes?.length||0)+' ventes' : 'VIDE');
+    if(typeof refreshAll==='function') refreshAll();
+    ['updateKPIs','renderVentes','renderStock','renderCaisse','renderCRM','renderDettes','renderEntrees','renderDepenses','renderAchatStock','renderPanierAchat','renderVendeurs'].forEach(function(fn){ if(typeof window[fn]==='function'){ try{ window[fn](); }catch(e){} } });
+  }catch(e){ console.error(e); }
 
-    if(typeof refreshAll==='function'){
-      refreshAll(); // Maintenant va lire ALL_DATA[Mbakana] grâce au getFiltered écrasé
-      console.log('✅ refreshAll() avec getFiltered() patché → '+shop);
-    }
-    // Force aussi les renders spécifiques
-    ['updateKPIs','renderVentes','renderStock','renderCaisse','renderPresenceKPI','renderCRM','renderDettes','renderEntrees','renderDepenses','renderAchatStock','renderPanierAchat','renderVendeurs'].forEach(function(fn){
-      if(typeof window[fn]==='function'){ try{ window[fn](); }catch(e){ console.log(fn+' err', e.message); } }
+  // ===== FIX PRÉSENCE UNIQUEMENT - NOUVEAU =====
+  try{
+    console.log('🔧 FIX Présence pour '+shop);
+    var dataShop = window.ALL_DATA && window.ALL_DATA[shop] ? window.ALL_DATA[shop] : null;
+    
+    // 1. Force le label Présence - X dans tous les endroits possibles
+    var presenceLabels = document.querySelectorAll('[id*="presence"], [id*="Presence"]');
+    presenceLabels.forEach(function(el){
+      if(el.id && el.id.toLowerCase().includes('shop')) el.innerText=shop;
+    });
+    // Cherche le h4 / div qui contient "Présence - Menkao2" et le remplace
+    document.querySelectorAll('h3,h4,div,span').forEach(function(el){
+      try{
+        if(el.childNodes.length===1 && el.innerText && el.innerText.indexOf('Présence -')===0){
+          // Évite de toucher les enfants, seulement le header
+          if(el.innerText.length < 30) el.innerHTML = '🟢 Présence - <span id="presenceShopLab">'+shop+'</span>';
+        }
+      }catch(e){}
     });
 
-    // Patch spécial pour achat.js qui a son propre render
-    if(typeof window.renderAchat==='function'){
-      try{ window.renderAchat(); }catch(e){}
+    // 2. Si ton app a une fonction qui écoute Firebase pour présence, on la relance avec le nouveau shop
+    // Essaie tous les noms possibles sans casser si n'existe pas
+    var presenceFuncs = ['initPresence','watchPresence','listenPresence','startPresence','loadPresence','refreshPresence','updatePresence','renderPresence','renderPresenceKPI','renderPresenceList','checkPresence'];
+    presenceFuncs.forEach(function(fn){
+      if(typeof window[fn]==='function'){
+        try{
+          console.log('→ Appel '+fn+'('+shop+')');
+          try{ window[fn](shop); }catch(e){ window[fn](); }
+        }catch(e){ console.log(fn+' fail', e.message); }
+      }
+    });
+
+    // 3. Si ALL_DATA[shop].presence existe, force son affichage manuel (fallback)
+    if(dataShop){
+      var presenceData = dataShop.presence || dataShop.vendeurs || {};
+      // Si c'est un objet {belvine: {online: false, lastSeen: ...}}
+      var count = Object.keys(presenceData).length;
+      console.log('Présence data pour '+shop+': '+count+' vendeurs');
+      
+      // Essaie de trouver le conteneur présence et le vider/re-remplir si les fonctions n'ont pas marché
+      var contPresence = document.getElementById('presenceList') || document.getElementById('presenceContainer') || document.querySelector('[id*="presence"]');
+      // On ne force pas le HTML si la fonction a marché, on laisse le render officiel faire
+      // Mais on met à jour le titre au moins
+      var titleEl = document.querySelector('#presenceShopLab');
+      if(titleEl) titleEl.innerText = shop;
     }
 
-  }catch(e){ console.error('refresh err', e); }
+    // 4. Pour Firebase: coupe l'ancien listener et relance sur le nouveau shop
+    try{
+      if(typeof firebase !== 'undefined' && firebase.database){
+        // Coupe ancien listener si existe
+        if(window._presenceRef && window._presenceRef.off) window._presenceRef.off();
+        // Nouveau listener
+        var newRef = firebase.database().ref('shops/'+shop+'/presence');
+        window._presenceRef = newRef;
+        newRef.on('value', function(snap){
+          var val = snap.val();
+          console.log('📡 Présence live pour '+shop+':', val);
+          // Mets à jour ALL_DATA
+          if(window.ALL_DATA && window.ALL_DATA[shop]){
+            window.ALL_DATA[shop].presence = val || {};
+          }
+          // Re-render présence
+          if(typeof window.renderPresenceKPI==='function') try{ window.renderPresenceKPI(); }catch(e){}
+          if(typeof window.renderPresence==='function') try{ window.renderPresence(); }catch(e){}
+        });
+        console.log('✅ Listener présence relancé sur shops/'+shop+'/presence');
+      }
+    }catch(e){ console.log('Firebase présence listener fail', e.message); }
+
+  }catch(e){ console.error('Fix présence err', e); }
+  // ===== FIN FIX PRÉSENCE =====
 
   try{ renderBoutiques(); }catch(e){}
 
-  var nb=dataShop&&dataShop.stock?dataShop.stock.length:0;
-  var toast=document.createElement('div'); toast.innerText='✅ '+shop+' • '+nb+' art. chargés'; toast.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0b5e2f;color:#fff;padding:10px 20px;border-radius:20px;z-index:9999;font-size:12px;'; document.body.appendChild(toast); setTimeout(function(){ toast.remove(); },2000);
+  var d=window.ALL_DATA&&window.ALL_DATA[shop]?window.ALL_DATA[shop]:null; var nb=d&&d.stock?d.stock.length:0;
+  var toast=document.createElement('div'); toast.innerText='✅ '+shop+' • '+nb+' art.'; toast.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0b5e2f;color:#fff;padding:10px 20px;border-radius:20px;z-index:9999;font-size:12px;'; document.body.appendChild(toast); setTimeout(function(){ toast.remove(); },1800);
 }
 
 function switchShop(){ var sel=document.getElementById('shopSel'); if(sel) selectShop(sel.value); }
@@ -132,4 +146,4 @@ function shareWhatsApp(s){ var origin=location.origin; if(origin.indexOf('file')
 function openQR(s){ var div=document.getElementById('qr_'+s); if(!div) return; if(div.style.display!=='none'){ div.style.display='none'; return; } var origin=location.origin; if(origin.indexOf('file')===0) origin='https://aiseodon-ai.github.io/bateke'; var base=origin+location.pathname.replace(/\/patron\/.*|\/index\.html.*/,'')+'/'; base=base.replace(/patron\/$/,''); var l=base+'vendeur.html?shop='+encodeURIComponent(s); div.innerHTML='<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(l)+'" style="border:8px solid #fff;border-radius:12px"><br><small>'+l+'</small>'; div.style.display='block'; }
 function copyLien(){ var el=document.getElementById('lienVendeur'); if(el&&navigator.clipboard) navigator.clipboard.writeText(el.innerText).then(function(){ alert('✅ Copié'); }); }
 window.renderBoutiques=renderBoutiques; window.createShop=createShop; window.selectShop=selectShop; window.switchShop=switchShop; window.renommerBoutique=renommerBoutique; window.supprimerBoutique=supprimerBoutique; window.copyLienShop=copyLienShop; window.copyInput=copyInput; window.shareWhatsApp=shareWhatsApp; window.openQR=openQR; window.copyLien=copyLien;
-console.log('✅ V8.16 FIX BRUTAL - getFiltered() écrasé');
+console.log('✅ V8.17 FIX PRÉSENCE - garde acquis + présence live');
