@@ -113,3 +113,70 @@ export function calcCompta(){
 }
 
 window.calcCompta = calcCompta;
+
+// PDF COMPTA SAFE V8.27 - ne plante pas si comptaResult vide
+export function pdfCompta(){
+  try{
+    let du = document.getElementById('cDu')?.value || '';
+    let au = document.getElementById('cAu')?.value || '';
+    let shop = (window.STATE?.SHOP || window.SHOP || localStorage.getItem('patron_shop') || 'Menkao1');
+    
+    let comptaHtml = document.getElementById('comptaResult')?.innerHTML || '<p>Aucun calcul - Clique CALCULER d\'abord</p>';
+    let pointJ = document.getElementById('pointJournalier')?.innerHTML || '';
+    let compteRes = document.getElementById('compteResultat')?.innerHTML || '';
+    let tresor = document.getElementById('tresorerieBox')?.innerHTML || '';
+    let seuil = document.getElementById('seuilBox')?.innerHTML || '';
+
+    if(comptaHtml.includes('Choisis dates') || comptaHtml.includes('Aucun calcul')){
+      alert('⚠️ Clique d\'abord sur 🔍 CALCULER avec Du/Au');
+      return;
+    }
+
+    let w = window.open('','_blank','width=1100,height=800');
+    if(!w){ alert('Pop-up bloqué - autorise les pop-ups'); return; }
+
+    w.document.write(`
+<html><head><meta charset="UTF-8"><title>COMPTA ${shop} ${du} au ${au}</title>
+<style>
+  body{font-family:Arial;font-size:12px;padding:20px}
+  table{width:100%;border-collapse:collapse;margin:8px 0} 
+  th,td{border:1px solid #000;padding:6px;font-size:11px;text-align:left} 
+  th{background:#111;color:#fff}
+  .card{border:1px solid #ddd;padding:10px;margin:10px 0;border-radius:8px}
+  h2{border-bottom:3px solid #0b5e2f;padding-bottom:8px}
+  @media print{.no-print{display:none}}
+</style></head>
+<body>
+<h2>💼 COMPTA V4.9.10 EXACT - ${shop} - Du ${du} au ${au} - V8.27 SAFE</h2>
+<div style="background:#111;color:#22c55e;padding:8px;border-radius:8px">Base totale + Emprunt inclus - Seuil corrigé ✅</div>
+
+${comptaHtml}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+  <div class="card"><h4>📅 Point Journalier</h4>${pointJ}</div>
+  <div class="card"><h4>💧 Trésorerie</h4>${tresor}</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+  <div class="card"><h4>⚠️ Seuil</h4>${seuil}</div>
+  <div class="card"><h4>📊 Compte Résultat</h4>${compteRes}</div>
+</div>
+
+<div class="no-print" style="text-align:center;margin-top:20px">
+  <button onclick="window.print()" style="padding:12px 24px;background:#0b5e2f;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px">🖨️ IMPRIMER / PDF</button>
+  <button onclick="window.close()" style="padding:12px 24px;background:#ef4444;color:#fff;border:none;border-radius:8px;margin-left:10px;cursor:pointer">Fermer</button>
+</div>
+
+<div style="text-align:center;font-size:10px;color:#888;margin-top:20px">
+  Généré le ${new Date().toLocaleString('fr-FR')} - ${shop} - V8.27 SAFE
+</div>
+</body></html>`);
+    w.document.close();
+  }catch(e){
+    console.error('pdfCompta SAFE error', e);
+    alert('Erreur PDF: '+e.message);
+  }
+}
+
+window.pdfCompta = pdfCompta;
+console.log('✅ PDF COMPTA V8.27 SAFE chargé');
