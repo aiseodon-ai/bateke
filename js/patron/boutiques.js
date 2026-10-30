@@ -15,7 +15,7 @@ function renderBoutiques(){
     if(elSel){ var cur=localStorage.getItem('patron_shop')||window.SHOP||shops[0]; var o=''; for(var k=0;k<shops.length;k++) o+='<option value="'+shops[k]+'" '+(shops[k]==cur?'selected':'')+'>'+shops[k]+'</option>'; o+='<option value="ALL" '+(cur==='ALL'?'selected':'')+'>TOUTES</option>'; elSel.innerHTML=o; }
   }catch(e){ console.log(e); }
 }
-
+ 
 function selectShop(shop){
   if(!shop) return;
   var oldShop = localStorage.getItem('patron_shop') || window.SHOP || 'Menkao2';
