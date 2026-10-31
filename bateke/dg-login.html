@@ -33,7 +33,7 @@ async function loginDG(){
       sessionStorage.setItem('BATEKE_ROLE','superadmin');
       sessionStorage.setItem('BATEKE_PIN','SUPERADMIN');
       msg.style.color='#22c55e';msg.innerText='✅ DG OK';
-      setTimeout(()=>location.href='../../superadmin/superadmin-v7.html',800);
+      setTimeout(()=>location.href='https://aiseodon-ai.github.io/bateke/superadmin/',800);
     }else{msg.style.color='red';msg.innerText='Pas SuperAdmin';await firebase.auth().signOut();}
   }catch(e){msg.style.color='red';msg.innerText=e.message;}
 }
