@@ -95,7 +95,7 @@ function trouverPatronDeShop(shopName, patronsObj){
 // ===== NOUVEAU V7.6 - VOIR COMME PATRON (SUPPORT) =====
 function viewAsPatron(shopName, patronId){
   if(!shopName){ alert('Boutique manquante'); return; }
-  if(!confirm(`👁️ Ouvrir l'interface PATRON comme ${shopName} (Patron ${patronId||''}) en mode SUPPORT DG?\n\nTu verras exactement ce que le patron voit. Bandeau rouge.`)) return;
+  if(!confirm(`👁️ Ouvrir PATRON comme ${shopName} (Patron ${patronId}) en mode SUPPORT DG?`)) return;
   
   sessionStorage.setItem('DG_SUPPORT_MODE','1');
   sessionStorage.setItem('DG_SUPPORT_SHOP', shopName);
@@ -104,20 +104,18 @@ function viewAsPatron(shopName, patronId){
   localStorage.setItem('BATEKE_ROLE','superadmin');
   localStorage.setItem('BATEKE_PIN','7832');
   
-  // Log audit
   try{
     firebase.database().ref('logs_support/'+Date.now()).set({
-      dg: '7832',
-      shop: shopName,
-      patronId: patronId||'',
-      action: 'view_as_patron',
-      ts: Date.now(),
-      date: new Date().toISOString()
+      dg: '7832', shop: shopName, patronId: patronId||'', action: 'view_as_patron', ts: Date.now(), date: new Date().toISOString()
     });
   }catch(e){}
   
-  // Ouvre patron.html avec params support
-  let url = `https://aiseodon-ai.github.io/bateke/patron.html?support=${encodeURIComponent(shopName)}&pid=${encodeURIComponent(patronId||'')}&dg=7832`;
+  // TON PATRON = index.html pas patron.html
+  let base = window.location.href.split('superadmin')[0]; // https://aiseodon-ai.github.io/bateke/
+  let url = base + '?support='+encodeURIComponent(shopName)+'&pid='+encodeURIComponent(patronId||'')+'&dg=7832';
+  // ou si tu préfères explicite: base + 'index.html?support=...'
+  
+  console.log('👁️ Ouverture patron:', url);
   window.open(url, '_blank');
 }
 
