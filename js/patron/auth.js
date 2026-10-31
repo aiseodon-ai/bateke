@@ -82,23 +82,88 @@ export async function loginPat(){
         localStorage.setItem('CURRENT_SHOP', supportShopName);
         localStorage.setItem('patron_session', JSON.stringify({ pin:pidFinal, nom:patronData.nom, ts:Date.now(), boutique:supportShopName, isSupport:true }));
 
-        setTimeout(()=>{
-          let old = document.getElementById('dgSupportBanner');
-          if(old) old.remove();
-          let banner = document.createElement('div');
-          banner.id='dgSupportBanner';
-          banner.innerHTML = `🛠️ MODE SUPPORT DG - Tu vois comme <b>${supportShopName}</b> (Patron ${pidFinal} - ${patronData.nom||''}) - <button onclick="window.exitSupport()" style="background:#fff;color:#000;border:0;padding:2px 10px;border-radius:10px;cursor:pointer;font-weight:bold;margin-left:8px">✖️ Quitter Support</button>`;
-          banner.style.cssText='position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:8px;text-align:center;z-index:99999;font-size:13px;font-family:Inter';
-          document.body.prepend(banner);
-          let loginDiv = document.getElementById('loginPat');
-          if(loginDiv) loginDiv.style.display='none';
-          try{ setPresenceOnline(); }catch(e){}
-          // Force re-init de ton app V6.2 pour charger les bonnes données
-          try{ if(window.initApp) window.initApp(); }catch(e){}
-          try{ if(window.loadData) window.loadData(); }catch(e){}
-          try{ if(window._initDone) window._initDone=false; if(window.init) window.init(); }catch(e){}
-        },400);
-        
+// ===== BANDEAU SUPPORT DG - ROBUSTE V7.4 =====
+(() => {
+  const createBanner = () => {
+    try {
+      // évite doublon
+      let old = document.getElementById('dgSupportBanner');
+      if (old) old.remove();
+
+      if (!document.body) return false;
+
+      let banner = document.createElement('div');
+      banner.id = 'dgSupportBanner';
+      banner.setAttribute('data-support', '1');
+      // Utilise textContent pour le shop/nom pour éviter XSS, innerHTML seulement pour le bouton
+      let safeShop = document.createElement('span');
+      safeShop.textContent = supportShopName;
+      safeShop.style.fontWeight = '900';
+      
+      let safePatron = document.createElement('span');
+      safePatron.textContent = ` (Patron ${pidFinal} - ${patronData.nom || ''})`;
+
+      banner.appendChild(document.createTextNode('🛠️ MODE SUPPORT DG - Tu vois comme '));
+      banner.appendChild(safeShop);
+      banner.appendChild(safePatron);
+      banner.appendChild(document.createTextNode(' '));
+
+      let btn = document.createElement('button');
+      btn.textContent = '✖️ Quitter Support';
+      btn.style.cssText = 'background:#fff;color:#000;border:0;padding:2px 10px;border-radius:10px;cursor:pointer;font-weight:bold;margin-left:8px';
+      btn.onclick = () => window.exitSupport && window.exitSupport();
+      banner.appendChild(btn);
+
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:8px;text-align:center;z-index:9999999;font-size:13px;font-family:Inter,system-ui;line-height:1.4;box-shadow:0 2px 10px rgba(0,0,0,.3)';
+
+      // prepend sécurisé
+      if (document.body.firstChild) document.body.insertBefore(banner, document.body.firstChild);
+      else document.body.appendChild(banner);
+
+      // padding une seule fois
+      if (document.body.dataset.supportPadding !== '1') {
+        document.body.style.paddingTop = (parseInt(getComputedStyle(document.body).paddingTop || '0') + 38) + 'px';
+        document.body.dataset.supportPadding = '1';
+      }
+
+      let loginDiv = document.getElementById('loginPat');
+      if (loginDiv) loginDiv.style.display = 'none';
+
+      try { setPresenceOnline && setPresenceOnline(); } catch(e){}
+
+      return true;
+    } catch(e){ console.warn('banner fail', e); return false; }
+  };
+
+  const tryInitApp = () => {
+    try { window.initApp && window.initApp(); } catch(e){}
+    try { window.loadData && window.loadData(); } catch(e){}
+    try { 
+      if (window._initDone) window._initDone = false;
+      window.init && window.init(); 
+    } catch(e){}
+  };
+
+  // 1. Essaye maintenant
+  setTimeout(() => { createBanner(); tryInitApp(); }, 400);
+  
+  // 2. Re-essaye après le gros init V6.2
+  setTimeout(() => { createBanner(); }, 1500);
+  setTimeout(() => { createBanner(); }, 3000);
+
+  // 3. MutationObserver: si V6.2 supprime le bandeau, on le remet
+  try {
+    const obs = new MutationObserver(() => {
+      if (!document.getElementById('dgSupportBanner') && sessionStorage.getItem('DG_SUPPORT_MODE')==='1') {
+        createBanner();
+      }
+    });
+    obs.observe(document.body || document.documentElement, { childList: true, subtree: false });
+    // stop après 15s pour pas consommer
+    setTimeout(() => obs.disconnect(), 15000);
+  } catch(e){}
+})();
+        //
         return;
       }catch(e){
         console.warn('Support mode fail', e);
