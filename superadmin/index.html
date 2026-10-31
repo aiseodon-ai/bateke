@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN DG V7.5 FULL INTÉGRAL + INSCRIPTION</title><base href="/bateke/">
+<title>BATEKE - SUPERADMIN DG V7.6 + VOIR PATRON</title><base href="/bateke/">
 <style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:20px}
  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
@@ -9,7 +9,7 @@
  .ok{color:#22c55e} .bad{color:#ef4444} .warn{color:orange} .muted{color:#888;font-size:11px}
  table{width:100%;border-collapse:collapse;margin-top:10px} th,td{padding:10px;border-bottom:1px solid #262626;text-align:left;font-size:12px}
  button{background:#7c3aed;color:#fff;border:0;padding:8px 12px;border-radius:8px;font-weight:bold;cursor:pointer;margin:2px;font-size:12px}
- .btn-g{background:#22c55e} .btn-r{background:#ef4444} .btn-o{background:#f59e0b} .btn-b{background:#3b82f6}
+ .btn-g{background:#22c55e} .btn-r{background:#ef4444} .btn-o{background:#f59e0b} .btn-b{background:#3b82f6} .btn-dark{background:#262626;border:1px solid #444}
  .pin-badge{background:#222;border:1px solid #444;padding:3px 8px;border-radius:20px;margin:2px;display:inline-block;font-size:11px}
  .pin-patron{background:#7c3aed;color:#fff} .pin-vendeur{background:#1f2937;color:#a5b4fc;border-color:#7c3aed}
  input{padding:10px;border-radius:8px;border:1px solid #444;background:#0a0a0a;color:#fff;box-sizing:border-box}
@@ -18,7 +18,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head><body>
-<h1>👑 BATEKE SUPERADMIN DG V7.4 - FULL + PIN VENDEURS</h1>
+<h1>👑 BATEKE SUPERADMIN DG V7.6 - FULL + VOIR PATRON</h1>
 <div class="grid">
  <div class="card"><div>Boutiques</div><div id="totalBoutiques" class="kpi">...</div><div id="detailBoutiques" class="muted"></div></div>
  <div class="card"><div>CA Jour Global</div><div id="caGlobal" class="kpi">...</div></div>
@@ -28,39 +28,34 @@
 
 <div class="card" style="border:1px solid #a855f7"><h3>🔧 Outils DG - 7832 Multi-boutiques</h3>
 <button class="btn-b" onclick="scanGlobal()">🔄 Re-scanner</button>
-<button class="btn-o" onclick="nettoyerDoublons()">🧹 Nettoyer Doublons Mbata/Mbakana/Itendance</button>
+<button class="btn-o" onclick="nettoyerDoublons()">🧹 Nettoyer Doublons</button>
 <span id="statusScan" class="muted"></span>
 </div>
 
-<!-- ==== AJOUT V7.5 - INSCRIPTION CLIENT SANS EMAIL ==== -->
 <div class="card" style="border:2px solid #22c55e">
-<h3>➕ INSCRIRE NOUVEAU CLIENT (Patron + 1ère Boutique) - SANS EMAIL - PIN SEULEMENT</h3>
-<div class="muted" style="margin-bottom:10px">Email PAS nécessaire pour patrons. Seulement PIN. Le patron créera lui-même ses autres boutiques et vendeurs après.</div>
+<h3>➕ INSCRIRE NOUVEAU CLIENT (Patron + 1ère Boutique) - SANS EMAIL</h3>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
 <input id="newPatronId" placeholder="PIN ID (ex: 1234)" type="number" style="width:100%">
-<input id="newPatronNom" placeholder="Nom client (ex: Maman Lolo)" style="width:100%">
-<input id="newBoutiqueNom" placeholder="1ère Boutique (ex: Limete)" style="width:100%">
+<input id="newPatronNom" placeholder="Nom client" style="width:100%">
+<input id="newBoutiqueNom" placeholder="1ère Boutique" style="width:100%">
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
 <input id="newPatronPin" placeholder="PIN connexion (si vide = même que ID)" type="number" style="width:100%">
-<input id="newPatronPhone" placeholder="Tél client (ex: 081...)" style="width:100%">
+<input id="newPatronPhone" placeholder="Tél client" style="width:100%">
 </div>
-<button class="btn-g" style="width:100%;margin-top:10px;padding:14px;font-size:14px" onclick="creerPatron()">✅ CRÉER CLIENT + BOUTIQUE (Bloquée jusqu'à paiement 15K)</button>
+<button class="btn-g" style="width:100%;margin-top:10px;padding:14px;font-size:14px" onclick="creerPatron()">✅ CRÉER CLIENT + BOUTIQUE (Bloquée jusqu'à paiement)</button>
 <div id="msgCreate" class="muted" style="margin-top:8px"></div>
 </div>
-<!-- ==== FIN AJOUT V7.5 ==== -->
 
-<div class="card"><h3>📅 Abonnements SAAS 15K - PAR BOUTIQUE (prudent)</h3>
-<div class="muted">7832 peut payer 2 boutiques maintenant, 2 plus tard. Chaque boutique bloquée séparément.</div>
-<table><thead><tr><th>Boutique</th><th>Patron</th><th>Expire</th><th>Jours</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tableAbo"></tbody></table>
+<div class="card"><h3>📅 Abonnements SAAS 15K - PAR BOUTIQUE</h3>
+<table><thead><tr><th>Boutique</th><th>Patron</th><th>Expire</th><th>Jours</th><th>Statut</th><th>Actions + Support</th></tr></thead><tbody id="tableAbo"></tbody></table>
 </div>
 
-<div class="card" style="border:2px solid #a855f7"><h3>🔑 Tableau PIN + VENDEURS - Par Boutique (FIX V7.4)</h3>
-<div class="muted">Affiche maintenant: PIN Patron + TOUS les PIN vendeurs de chaque boutique (depuis shops/*/vendeurs)</div>
-<table><thead><tr><th>Patron ID</th><th>Boutique</th><th>PIN Patron</th><th>Vendeurs (PIN + Nom + Statut)</th><th>Abo</th></tr></thead><tbody id="tablePin"></tbody></table>
+<div class="card" style="border:2px solid #a855f7"><h3>🔑 Tableau PIN + VENDEURS</h3>
+<table><thead><tr><th>Patron ID</th><th>Boutique</th><th>PIN Patron</th><th>Vendeurs</th><th>Abo</th><th>Support</th></tr></thead><tbody id="tablePin"></tbody></table>
 </div>
 
-<div class="card"><h3>Boutiques Détectées - Stock/Ventes</h3><div id="listeBoutiques"></div><div class="muted" id="debugPaths" style="margin-top:10px"></div></div>
+<div class="card"><h3>Boutiques Détectées</h3><div id="listeBoutiques"></div><div class="muted" id="debugPaths" style="margin-top:10px"></div></div>
 
 <script>
 const CODE_DG = "BATEKE2026";
@@ -76,9 +71,7 @@ const firebaseConfig = {
   appId: "1:321333206282:web:6d1603446be3d195de6ef3"
 };
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-
 const DG_MAP = { "7832": ["Intendance","Menkao1","Menkao2","Mbakana"] };
-
 firebase.auth().signInAnonymously().then(()=>{ scanGlobal(); }).catch(e=>{
   document.getElementById('statusScan').innerText='❌ Auth failed: '+e.message;
 });
@@ -89,7 +82,6 @@ function toTime(v){
   if(typeof v === 'string'){ if(/^\d{12,}$/.test(v)) return parseInt(v,10); let t=new Date(v).getTime(); return isNaN(t)?0:t; }
   return 0;
 }
-
 function trouverPatronDeShop(shopName, patronsObj){
   for(const pid in patronsObj){
     const p = patronsObj[pid];
@@ -100,7 +92,35 @@ function trouverPatronDeShop(shopName, patronsObj){
   return null;
 }
 
-// ==== AJOUT V7.5 - FONCTION CREATION CLIENT SANS EMAIL ====
+// ===== NOUVEAU V7.6 - VOIR COMME PATRON (SUPPORT) =====
+function viewAsPatron(shopName, patronId){
+  if(!shopName){ alert('Boutique manquante'); return; }
+  if(!confirm(`👁️ Ouvrir l'interface PATRON comme ${shopName} (Patron ${patronId||''}) en mode SUPPORT DG?\n\nTu verras exactement ce que le patron voit. Bandeau rouge.`)) return;
+  
+  sessionStorage.setItem('DG_SUPPORT_MODE','1');
+  sessionStorage.setItem('DG_SUPPORT_SHOP', shopName);
+  sessionStorage.setItem('DG_SUPPORT_PID', patronId||'');
+  sessionStorage.setItem('DG_SUPPORT_TS', Date.now());
+  localStorage.setItem('BATEKE_ROLE','superadmin');
+  localStorage.setItem('BATEKE_PIN','7832');
+  
+  // Log audit
+  try{
+    firebase.database().ref('logs_support/'+Date.now()).set({
+      dg: '7832',
+      shop: shopName,
+      patronId: patronId||'',
+      action: 'view_as_patron',
+      ts: Date.now(),
+      date: new Date().toISOString()
+    });
+  }catch(e){}
+  
+  // Ouvre patron.html avec params support
+  let url = `https://aiseodon-ai.github.io/bateke/patron.html?support=${encodeURIComponent(shopName)}&pid=${encodeURIComponent(patronId||'')}&dg=7832`;
+  window.open(url, '_blank');
+}
+
 function creerPatron(){
   const pinId = document.getElementById('newPatronId').value.trim();
   const nom = document.getElementById('newPatronNom').value.trim();
@@ -109,10 +129,8 @@ function creerPatron(){
   let pinConn = document.getElementById('newPatronPin').value.trim();
   if(!pinConn) pinConn = pinId;
   const phone = document.getElementById('newPatronPhone').value.trim();
-  
   if(!pinId || !nom || !boutique){ alert("Remplis PIN, Nom, Boutique"); return; }
-  if(!confirm(`Créer client SANS EMAIL:\nPIN ID: ${pinId}\nNom: ${nom}\nBoutique: ${boutique}\nPIN connexion: ${pinConn}\nTél: ${phone}\n\nAprès, il pourra créer lui-même ses autres boutiques et vendeurs. Confirmer ?`)) return;
-  
+  if(!confirm(`Créer client SANS EMAIL:\nPIN ID: ${pinId}\nNom: ${nom}\nBoutique: ${boutique}\nPIN connexion: ${pinConn}`)) return;
   const updates = {};
   updates[`patrons/${pinId}/pin`] = pinConn;
   updates[`patrons/${pinId}/nom`] = nom;
@@ -121,7 +139,6 @@ function creerPatron(){
   updates[`patrons/${pinId}/boutiques/${boutique}/statut`] = 'bloqué';
   updates[`patrons/${pinId}/boutiques/${boutique}/expire`] = 0;
   updates[`patrons/${pinId}/boutiques/${boutique}/created`] = Date.now();
-  
   updates[`shops/${boutique}/patronId`] = pinId;
   updates[`shops/${boutique}/nom`] = boutique;
   updates[`shops/${boutique}/abonnements/statut`] = 'bloqué';
@@ -129,14 +146,12 @@ function creerPatron(){
   updates[`shops/${boutique}/created`] = Date.now();
   updates[`shops/${boutique}/stock`] = {};
   updates[`shops/${boutique}/vendeurs`] = {};
-  
   firebase.database().ref().update(updates).then(()=>{
-    document.getElementById('msgCreate').innerHTML = `<span class="ok">✅ Client ${pinId} (${nom}) + Boutique ${boutique} créés SANS EMAIL! PIN=${pinConn} - Boutique BLOQUÉE → Clique +30J ci-dessous. Le client pourra créer lui-même ses autres boutiques/vendeurs.</span>`;
+    document.getElementById('msgCreate').innerHTML = `<span class="ok">✅ Client ${pinId} + Boutique ${boutique} créés! PIN=${pinConn} - BLOQUÉE</span>`;
     document.getElementById('newPatronId').value=''; document.getElementById('newPatronNom').value=''; document.getElementById('newBoutiqueNom').value=''; document.getElementById('newPatronPin').value=''; document.getElementById('newPatronPhone').value='';
     setTimeout(scanGlobal, 1500);
   }).catch(e=> alert("Erreur: "+e.message));
 }
-// ==== FIN AJOUT ====
 
 function scanGlobal(){
  document.getElementById('statusScan').innerText='⏳ Scan...';
@@ -146,14 +161,11 @@ function scanGlobal(){
    db.ref('patrons').once('value').then(s=>s.val()||{})
  ]).then(([shopsObj, patronsObj])=>{
   const shopNames = Object.keys(shopsObj||{}).filter(k=>k!=="shops" && k!=="Mbata" && k!=="Itendance");
-  
   document.getElementById('totalBoutiques').innerText = shopNames.length;
   document.getElementById('detailBoutiques').innerText = shopNames.join(", ");
   document.getElementById('totalPatrons').innerText = Object.keys(patronsObj).length;
   document.getElementById('debugPaths').innerText = "Shops: "+shopNames.join(", ") + " | Patrons: "+Object.keys(patronsObj).length;
-
   let caGlobal=0, rowsAbo='', actifs=0, bloques=0, htmlList='';
-
   shopNames.forEach(name=>{
     const shop = shopsObj[name]||{};
     const ventes = shop.ventes || {}; let caShop=0;
@@ -163,19 +175,15 @@ function scanGlobal(){
     let stockCount = Object.keys(shop.stock||{}).length;
     let vendeursCount = Object.keys(shop.vendeurs||{}).length;
     htmlList+=`<div style="display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #222"><span><b>${name}</b> - ${stockCount} prod, ${vendeursCount} vend, ${Object.keys(ventes).length} ventes</span><b>${caShop.toLocaleString()} FC</b></div>`;
-
     const tShop = toTime(shop.abonnements?.expire);
     const pid = shop.patronId || trouverPatronDeShop(name, patronsObj) || "-";
     const jours = tShop ? Math.ceil((tShop - Date.now())/86400000) : -9999;
-    
     let statut='';
     if(!tShop){ statut='<span class="bad">JAMAIS PAYÉ</span>'; bloques++; }
     else if(jours<0){ statut='<span class="bad">BLOQUÉ '+jours+'j</span>'; bloques++; }
     else { statut='<span class="ok">ACTIF '+jours+'j</span>'; actifs++; }
-
     let aff = tShop ? new Date(tShop).toLocaleDateString() : '—';
-    let patronLabel = pid==="7832" ? "7832 (DG BATEKE)" : pid;
-    
+    let patronLabel = pid==="7832" ? "7832 (DG)" : pid;
     rowsAbo+=`<tr>
       <td><b>${name}</b></td>
       <td>${patronLabel}</td>
@@ -183,20 +191,19 @@ function scanGlobal(){
       <td>${tShop?jours+'j':''}</td>
       <td>${statut}</td>
       <td>
-        <button class="btn-g" onclick="activer('${name}')">+30J 15K</button>
+        <button class="btn-g" onclick="activer('${name}')">+30J</button>
         <button class="btn-r" onclick="bloquer('${name}')">BLOQUER</button>
+        <button class="btn-dark" onclick="viewAsPatron('${name}','${pid}')">👁️ Voir Patron</button>
       </td>
     </tr>`;
   });
-
   document.getElementById('caGlobal').innerText = caGlobal.toLocaleString()+' FC';
   document.getElementById('listeBoutiques').innerHTML = htmlList || '<span class="muted">Aucune boutique</span>';
   document.getElementById('tableAbo').innerHTML = rowsAbo || '<tr><td colspan=6>Aucune boutique</td></tr>';
   document.getElementById('abos').innerText = `${actifs} / ${shopNames.length}`;
-  document.getElementById('abosDetail').innerText = `Actifs:${actifs} Bloqués:${bloques} - Mode PAR BOUTIQUE`;
-  document.getElementById('statusScan').innerText='✅ Scan OK - 7832 gère 4 boutiques séparément';
+  document.getElementById('abosDetail').innerText = `Actifs:${actifs} Bloqués:${bloques}`;
+  document.getElementById('statusScan').innerText='✅ Scan OK V7.6';
 
-  // TABLEAU PIN + VENDEURS - FIX V7.4 FULL (GARDÉ INTACT)
   let rowsPin='';
   for(const pid in patronsObj){
     const p = patronsObj[pid];
@@ -204,49 +211,44 @@ function scanGlobal(){
     if(p.boutiques) boutiques = Object.keys(p.boutiques);
     else if(p.boutique) boutiques = [p.boutique];
     else if(DG_MAP[pid]) boutiques = DG_MAP[pid];
-    
     if(boutiques.length===0){
-      rowsPin+=`<tr><td>${pid}</td><td><span class="muted">—</span></td><td><span class="pin-badge pin-patron">👑 ${p.pin||p.PIN||pid}</span></td><td><span class="muted">Aucun vendeur</span></td><td>—</td></tr>`;
+      rowsPin+=`<tr><td>${pid}</td><td>—</td><td><span class="pin-badge pin-patron">👑 ${p.pin||pid}</span></td><td>Aucun</td><td>—</td><td><button class="btn-dark" onclick="viewAsPatron('${p.boutique||''}','${pid}')">👁️</button></td></tr>`;
       continue;
     }
-
     boutiques.forEach(bName=>{
       if(bName==="Itendance") bName="Intendance";
       const shop = shopsObj[bName] || {};
       const vendeurs = shop.vendeurs || {};
       let vendeursHtml = '';
-      
       if(Object.keys(vendeurs).length===0){
-        vendeursHtml = '<span class="muted">Aucun vendeur créé dans shops/'+bName+'/vendeurs</span>';
+        vendeursHtml = '<span class="muted">Aucun vendeur</span>';
       } else {
         Object.keys(vendeurs).forEach(vk=>{
           const v = vendeurs[vk];
-          const vPin = v.pin || v.PIN || vk;
-          const vNom = v.nom || v.name || vk;
+          const vPin = v.pin || vk;
+          const vNom = v.nom || vk;
           const vActif = v.actif!==false;
-          vendeursHtml += `<span class="pin-badge pin-vendeur">${vActif?'🟢':'🔴'} ${vPin} - ${vNom}</span> `;
+          vendeursHtml += `<span class="pin-badge pin-vendeur">${vActif?'🟢':'🔴'} ${vPin}-${vNom}</span> `;
         });
       }
-      
-      const exp = toTime(p.boutiques?.[bName]?.expire || shop.abonnements?.expire || p.abonnement?.expire || p.abonnement_fin);
+      const exp = toTime(p.boutiques?.[bName]?.expire || shop.abonnements?.expire);
       const jours = exp ? Math.ceil((exp-Date.now())/86400000) : -9999;
       const statutAbo = !exp ? '<span class="bad">JAMAIS</span>' : jours>=0 ? `<span class="ok">${jours}j</span>` : `<span class="bad">BLOQUÉ</span>`;
-      
       rowsPin+=`<tr>
-        <td><b>${pid}</b>${pid==="7832"?' (DG)':''}</td>
+        <td><b>${pid}</b></td>
         <td><b>${bName}</b></td>
-        <td><span class="pin-badge pin-patron">👑 ${p.pin||p.PIN||pid}</span></td>
+        <td><span class="pin-badge pin-patron">👑 ${p.pin||pid}</span></td>
         <td>${vendeursHtml}</td>
         <td>${statutAbo}</td>
+        <td><button class="btn-dark" onclick="viewAsPatron('${bName}','${pid}')">👁️ Voir</button></td>
       </tr>`;
     });
   }
-  document.getElementById('tablePin').innerHTML = rowsPin || '<tr><td colspan=5>Aucun patron</td></tr>';
+  document.getElementById('tablePin').innerHTML = rowsPin || '<tr><td colspan=6>Aucun patron</td></tr>';
  });
 }
 
 function activer(boutique){
- // VERSION CORRIGÉE - MARCHE POUR TOUS LES PATRONS, PAS SEULEMENT 7832
  firebase.database().ref('shops/'+boutique+'/patronId').once('value').then(s=>{
    let pid = s.val();
    if(!pid){
@@ -256,14 +258,11 @@ function activer(boutique){
        if(!pid) pid="7832";
        activerSuite(boutique,pid);
      });
-   } else {
-     activerSuite(boutique,pid);
-   }
+   } else { activerSuite(boutique,pid); }
  });
 }
-
 function activerSuite(boutique,pid){
- if(!confirm(`Activer SEULEMENT ${boutique} (Patron ${pid}) pour 30j - 15.000 FC ?`)) return;
+ if(!confirm(`Activer ${boutique} (${pid}) 30j?`)) return;
  const fin = Date.now() + 30*86400000;
  const updates = {};
  updates[`shops/${boutique}/abonnements/expire`] = fin;
@@ -273,13 +272,12 @@ function activerSuite(boutique,pid){
  updates[`patrons/${pid}/boutiques/${boutique}/expire`] = fin;
  updates[`patrons/${pid}/boutiques/${boutique}/expireISO`] = new Date(fin).toISOString();
  updates[`patrons/${pid}/boutiques/${boutique}/statut`] = 'actif';
- firebase.database().ref().update(updates).then(()=>{ alert(`✅ ${boutique} activée pour ${pid}`); scanGlobal(); });
+ firebase.database().ref().update(updates).then(()=>{ alert(`✅ ${boutique} activée`); scanGlobal(); });
 }
-
 function bloquer(boutique){
  firebase.database().ref('shops/'+boutique+'/patronId').once('value').then(s=>{
    let pid = s.val() || "7832";
-   if(!confirm(`BLOQUER ${boutique} seule (Patron ${pid}) ?`)) return;
+   if(!confirm(`BLOQUER ${boutique} ?`)) return;
    const past = Date.now() - 10*86400000;
    const updates = {};
    updates[`shops/${boutique}/abonnements/expire`] = past;
@@ -289,18 +287,11 @@ function bloquer(boutique){
    firebase.database().ref().update(updates).then(()=> scanGlobal());
  });
 }
-
 function nettoyerDoublons(){
- if(!confirm('Supprimer shops/Mbata, shops/Itendance et les doublons sous patrons/7832/Mbakana etc ?')) return;
+ if(!confirm('Supprimer doublons?')) return;
  const updates = {};
- updates['shops/Mbata'] = null;
- updates['shops/Itendance'] = null;
- updates['patrons/7832/Mbakana'] = null;
- updates['patrons/7832/Menkao1'] = null;
- updates['patrons/7832/Intendance'] = null;
- updates['patrons/7832/Menkao2'] = null;
- updates['patrons/7832/Itendance'] = null;
- firebase.database().ref().update(updates).then(()=>{ alert('✅ Doublons supprimés'); scanGlobal(); });
+ updates['shops/Mbata'] = null; updates['shops/Itendance'] = null;
+ firebase.database().ref().update(updates).then(()=>{ alert('✅'); scanGlobal(); });
 }
 </script>
 </body></html>
