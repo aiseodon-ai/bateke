@@ -247,4 +247,30 @@ window.switchShop = function(){
 </script>
 
 <script type="module" src="js/patron/app.js?v=6.2-fix-parametres-20261028"></script>
+<script>
+// 🔴 BANDEAU SUPPORT DG - FIX V7.3 - TOUJOURS VISIBLE
+(function(){
+  function showSupportBanner(){
+    let params = new URLSearchParams(location.search);
+    let shop = params.get('support') || params.get('support_boutique') || sessionStorage.getItem('DG_SUPPORT_SHOP');
+    let pid = params.get('pid') || sessionStorage.getItem('DG_SUPPORT_PID');
+    let isSupport = sessionStorage.getItem('DG_SUPPORT_MODE')==='1' && shop;
+    
+    if(isSupport && !document.getElementById('dgSupportBanner')){
+      let b = document.createElement('div');
+      b.id='dgSupportBanner';
+      b.innerHTML = `🛠️ MODE SUPPORT DG - Tu vois comme <b>${shop}</b> (Patron ${pid||''}) <button onclick="window.exitSupport&&window.exitSupport()" style="background:#fff;color:#ef4444;border:0;padding:4px 12px;border-radius:12px;cursor:pointer;font-weight:900;margin-left:12px">✖️ Quitter Support</button>`;
+      b.style.cssText='position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:10px;text-align:center;z-index:999999;font-weight:bold;font-family:Inter,system-ui;box-shadow:0 4px 12px rgba(0,0,0,.4)';
+      document.body.prepend(b);
+      document.body.style.paddingTop='44px';
+      console.log('🔴 Bandeau support affiché pour', shop, pid);
+    }
+  }
+  // Lance 3 fois pour être sûr après tous les reloads V6.2
+  setTimeout(showSupportBanner, 500);
+  setTimeout(showSupportBanner, 1500);
+  setTimeout(showSupportBanner, 3000);
+  window.addEventListener('load', showSupportBanner);
+})();
+</script>
 </body></html>
