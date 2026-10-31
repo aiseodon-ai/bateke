@@ -152,7 +152,7 @@ function creerPatron(){
     setTimeout(scanGlobal, 1500);
   }).catch(e=> alert("Erreur: "+e.message));
 }
-
+ 
 function scanGlobal(){
  document.getElementById('statusScan').innerText='⏳ Scan...';
  const db = firebase.database();
