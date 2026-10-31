@@ -1,30 +1,41 @@
-<!-- bateke/dg-7832-login.html - URL SECRETE DG SEUL -->
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>DG ONLY</title></head><body style="background:#000;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh">
-<div style="background:#111;padding:30px;border-radius:16px;border:2px solid #a855f7;max-width:350px;width:100%">
-<h2>👑 DG SUPRÊME ONLY</h2>
-<input id="email" placeholder="Email DG" style="width:100%;padding:10px;margin:5px 0">
-<input id="pass" type="password" placeholder="Mot de passe" style="width:100%;padding:10px;margin:5px 0">
-<button onclick="loginDG()" style="width:100%;padding:12px;background:#a855f7;color:#fff;border:none;border-radius:8px;font-weight:bold">ENTRER</button>
-<p id="msg" style="color:red"></p>
-</div> 
+<!-- bateke/bateke/dg-login.html - URL SECRETE DG SEUL - V7.0 -->
+<!DOCTYPE html><html lang="fr"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>DG ONLY</title>
+<style>body{background:#000;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;font-family:Arial}.box{background:#111;padding:30px;border-radius:16px;border:2px solid #a855f7;max-width:350px;width:90%}input{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:1px solid #333;background:#000;color:#fff;box-sizing:border-box}button{width:100%;padding:12px;background:#a855f7;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;margin-top:10px}</style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head><body>
+<div class="box">
+<h2>👑 DG SUPRÊME ONLY</h2>
+<input id="email" type="email" placeholder="admin@bateke.com">
+<input id="pass" type="password" placeholder="Mot de passe">
+<button onclick="loginDG()">ENTRER</button>
+<p id="msg" style="color:red;min-height:18px"></p>
+</div>
 <script>
 const firebaseConfig={apiKey:"AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4"};
-firebase.initializeApp(firebaseConfig);
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 async function loginDG(){
   let email=document.getElementById('email').value.trim();
   let pass=document.getElementById('pass').value.trim();
+  let msg=document.getElementById('msg');
+  if(!email||!pass){msg.innerText='Email/mdp requis';return;}
+  msg.style.color='#f59e0b';msg.innerText='Vérification...';
   try{
     let cred=await firebase.auth().signInWithEmailAndPassword(email,pass);
     let snap=await firebase.database().ref('superadmins/'+cred.user.uid).once('value');
     if(snap.val()===true || email==='admin@bateke.com'){
-      location.href='./superadmin-v7.html'; // ta page DG V7.5
-    } else {
-      document.getElementById('msg').innerText='Pas SuperAdmin';
-      await firebase.auth().signOut();
-    }
-  }catch(e){ document.getElementById('msg').innerText=e.message; }
+      localStorage.setItem('BATEKE_ROLE','superadmin');
+      localStorage.setItem('BATEKE_PIN','SUPERADMIN');
+      sessionStorage.setItem('BATEKE_ROLE','superadmin');
+      sessionStorage.setItem('BATEKE_PIN','SUPERADMIN');
+      msg.style.color='#22c55e';msg.innerText='✅ DG OK';
+      setTimeout(()=>location.href='../../superadmin/superadmin-v7.html',800);
+    }else{msg.style.color='red';msg.innerText='Pas SuperAdmin';await firebase.auth().signOut();}
+  }catch(e){msg.style.color='red';msg.innerText=e.message;}
 }
-</script></body></html>
+</script>
+</body></html>
