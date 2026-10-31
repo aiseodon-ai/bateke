@@ -56,7 +56,7 @@
 <button class="btn btn-g" onclick="doChangePinForce()">✅ VALIDER</button>
 <p id="changePinMsg" style="color:red;font-size:12px"></p>
 </div></div>
-<header><h3 style="margin:0">🛒 V5.6.4 SECURE - <span id="shopName"></span> - <small id="vendeurName" style="background:#fff;color:#0b5e2f;padding:2px 6px;border-radius:6px"></small></h3>
+<header><h3 style="margin:0">🛒 V5.6.5 SECURE - <span id="shopName"></span> - <small id="vendeurName" style="background:#fff;color:#0b5e2f;padding:2px 6px;border-radius:6px"></small> <small id="badgeAbo" style="background:#111;color:#22c55e;padding:3px 8px;border-radius:12px;font-size:10px;display:none"></small></h3>
 <div style="display:flex;gap:5px;justify-content:center;margin-top:6px;flex-wrap:wrap">
 <select id="shopSel" onchange="switchShop()" style="width:110px"></select>
 <small id="caJour" style="background:#fff;color:#0b5e2f;padding:4px 8px;border-radius:12px;font-weight:bold">CA Jour: 0</small>
@@ -128,18 +128,70 @@ function toTimeBateke(v){
   if(typeof v==='string'){ if(/^\d{12,}$/.test(v)) return parseInt(v,10); let t=new Date(v).getTime(); return isNaN(t)?0:t; }
   return 0;
 }
+
+function bloquerVendeur(shop, t, raison){
+  document.body.innerHTML = `<div style="background:#000;color:#fff;padding:40px;text-align:center;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center">
+    <h1 style="color:#ef4444;font-size:32px">🔒 Boutique Bloquée</h1>
+    <h2 style="color:#fff">${shop}</h2>
+    <p style="background:#ef4444;color:#fff;padding:10px 20px;border-radius:12px;font-weight:bold">${raison}</p>
+    <p style="margin-top:10px">${t? 'Expire le '+new Date(t).toLocaleDateString() : 'JAMAIS PAYÉ'}</p>
+    <p style="color:#facc15">Contacte ton patron pour renouveler 15.000 FC / 30j</p>
+    <p style="font-size:12px;color:#888">Airtel 0998111387 / Mpesa 0816640963</p>
+    <button onclick="logoutAll()" style="margin-top:20px;padding:12px 24px;background:#fff;color:#000;border:none;border-radius:8px;font-weight:bold">Déconnecter</button>
+  </div>`;
+  // Désactive vente même si l'utilisateur contourne
+  window.validerVente = function(){ alert('🔒 '+raison); return false; };
+}
+
 function checkAboVendeur(){
-  const shop = new URLSearchParams(location.search).get('shop') || localStorage.getItem('BATEKE_SHOP') || 'Menkao1';
-  firebase.database().ref('shops/'+shop+'/abonnements/expire').once('value').then(snap=>{
-    let t=toTimeBateke(snap.val());
-    if(!t) return; // nouvelle boutique pas encore payée -> laisse passer
-    let jours=Math.ceil((t-Date.now())/86400000);
-    if(jours < -3){
-      document.body.innerHTML = `<div style="background:#000;color:#fff;padding:40px;text-align:center;min-height:100vh"><h1 style="color:red">🔒 Boutique Bloquée</h1><p>${shop} - Abonnement expiré le ${new Date(t).toLocaleDateString()}</p><p>Contacte ton patron pour renouveler 15.000 FC</p><p>Airtel 0998111387 / Mpesa 0816640963</p></div>`;
+  const shop = new URLSearchParams(location.search).get('shop') || localStorage.getItem('BATEKE_SHOP') || localStorage.getItem('shop') || 'Menkao1';
+  let badge = document.getElementById('badgeAbo');
+  
+  firebase.database().ref('shops/'+shop+'/abonnements').once('value').then(snap=>{
+    let abo = snap.val()||{};
+    let t = toTimeBateke(abo.expire);
+    let now = Date.now();
+    
+    // === CAS 1: JAMAIS PAYÉ ===
+    if(!t || t===0){
+      bloquerVendeur(shop, 0, 'JAMAIS PAYÉ - 15K requis');
+      if(badge){ badge.style.display='inline-block'; badge.style.background='#ef4444'; badge.style.color='#fff'; badge.innerText='⛔ JAMAIS PAYÉ'; }
+      return;
     }
+    
+    let jours = Math.ceil((t-now)/86400000);
+    
+    // === CAS 2: BLOQUÉ ===
+    if(jours < 0){
+      bloquerVendeur(shop, t, `BLOQUÉ depuis ${Math.abs(jours)}j - Renouvelle`);
+      return;
+    }
+    
+    // === CAS 3: ACTIF avec badge ===
+    if(badge){
+      badge.style.display='inline-block';
+      if(jours <=3){
+        badge.style.background='#ef4444'; badge.style.color='#fff';
+        badge.innerText=`⚠️ ${jours}j restants`;
+      } else if(jours <=7){
+        badge.style.background='#f59e0b'; badge.style.color='#000';
+        badge.innerText=`⏳ ${jours}j`;
+      } else {
+        badge.style.background='#22c55e'; badge.style.color='#000';
+        badge.innerText=`✅ ${jours}j`;
+      }
+    }
+  }).catch(e=>{
+    console.warn('check abo vendeur error', e.message);
+    // Si offline, on laisse vendre mais on affiche badge offline
+    if(badge){ badge.style.display='inline-block'; badge.style.background='#888'; badge.innerText='📶 Offline'; }
   });
 }
-setTimeout(checkAboVendeur, 1500);
+
+// Check immédiat + toutes les 60s + à chaque retour online
+setTimeout(checkAboVendeur, 1000);
+setInterval(checkAboVendeur, 60000);
+window.addEventListener('online', checkAboVendeur);
 </script>
   
 <script type="module" src="js/vendeur/app.js?v=5.6.5-appcheck-fixed"></script>
