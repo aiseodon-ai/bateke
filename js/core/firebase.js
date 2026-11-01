@@ -46,33 +46,36 @@ setTimeout(()=>{
 }, 300);
 
 // === FIX V6.4.1 - FORCE BOUTIQUE EN MODE SUPPORT DG ===
+// === FIX V6.4.2 - FORCE BOUTIQUE SANS EFFACER LES 4 ===
 function forceSupportShop(){
   try{
     let params = new URLSearchParams(location.search);
     let shop = params.get('support') || params.get('support_boutique') || sessionStorage.getItem('DG_SUPPORT_SHOP');
-    if(!shop || !isSupportDG) return;
+    if(!shop) return;
     
     let sel = document.getElementById('shopSel');
-    if(sel){
-      // Force la liste à cette boutique
-      sel.innerHTML = `<option value="${shop}">${shop}</option>`;
+    if(!sel) return;
+
+    // Si la liste a déjà 4 boutiques, on ne l'efface pas, on sélectionne juste
+    if(sel.options.length > 1){
       sel.value = shop;
-      // Déclenche ton switchShop existant
-      sel.dispatchEvent(new Event('change'));
-      console.log("✅ FORCE SHOP SUPPORT:", shop);
+      if(sel.value === shop){
+        sel.dispatchEvent(new Event('change'));
+        console.log("✅ SELECT SUPPORT:", shop, "parmi", sel.options.length, "boutiques");
+        return;
+      }
     }
-    // Force aussi les labels
-    let lab = document.getElementById('paramShopName');
-    if(lab) lab.innerText = shop;
-    let labVente = document.getElementById('labVenteShop');
-    if(labVente) labVente.innerText = shop;
+    // Si liste pas encore chargée, on attend
+    if(sel.options.length <= 1){
+      console.log("⏳ Attente chargement des 4 boutiques...");
+      setTimeout(forceSupportShop, 1000);
+    }
   }catch(e){ console.warn("forceSupportShop", e.message); }
 }
-// Lance 3 fois pour être sûr après render
-setTimeout(forceSupportShop, 800);
-setTimeout(forceSupportShop, 2000);
-setTimeout(forceSupportShop, 4000);
-document.addEventListener('DOMContentLoaded', forceSupportShop);
+document.addEventListener('DOMContentLoaded', ()=>{
+  setTimeout(forceSupportShop, 1500);
+  setTimeout(forceSupportShop, 3500);
+});
 
 export { db, auth };
 console.log("🔥 BATEKE V4 FINAL V6.4.1 - AppCheck ON + SUPPORT FORCE");
