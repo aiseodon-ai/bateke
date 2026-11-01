@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN V8.2 PRO</title><base href="/bateke/">
+<title>BATEKE - SUPERADMIN V8.3 PRO + PAIEMENTS</title><base href="/bateke/">
 <style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:16px}
  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
@@ -14,12 +14,13 @@
  .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:99999}
  .modal-box{background:#171717;border:1px solid #333;border-radius:16px;padding:20px;max-width:520px;width:92%;max-height:85vh;overflow:auto}
  .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap} .tab{padding:8px 14px;border-radius:20px;cursor:pointer;background:#222;border:1px solid #333} .tab.active{background:#7c3aed;border-color:#7c3aed}
+ .badge-notif{background:#ef4444;color:#fff;border-radius:10px;padding:2px 7px;font-size:10px;margin-left:5px;display:none}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head><body>
-<h1>👑 BATEKE SUPERADMIN V8.2 PRO</h1>
+<h1>👑 BATEKE SUPERADMIN V8.3 PRO + PAIEMENTS</h1>
 
 <div class="grid">
  <div class="card"><div>Boutiques</div><div id="totalBoutiques" class="kpi">...</div></div>
@@ -31,6 +32,7 @@
 <div class="tabs">
   <div class="tab active" data-tab="clients" onclick="switchTab('clients',this)">👥 Clients</div>
   <div class="tab" data-tab="boutiques" onclick="switchTab('boutiques',this)">🏪 Boutiques / Abos</div>
+  <div class="tab" data-tab="paiements" onclick="switchTab('paiements',this)">💳 Paiements <span id="notifPaiement" class="badge-notif">0</span></div>
   <div class="tab" data-tab="create" onclick="switchTab('create',this)">➕ Nouveau Client</div>
   <button class="btn-b" style="margin-left:auto" onclick="scanGlobal()">🔄 Re-scanner</button>
 </div>
@@ -42,6 +44,12 @@
 
 <div id="tab-boutiques" style="display:none">
   <div style="overflow:auto"><table><thead><tr><th>Boutique</th><th>Patron</th><th>Expire</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tableAbo"></tbody></table></div>
+</div>
+
+<div id="tab-paiements" style="display:none">
+  <h3>💳 Demandes de paiement en attente (Airtel / Mpesa)</h3>
+  <div style="overflow:auto"><table><thead><tr><th>Boutique</th><th>TX ID / Réseau</th><th>Payeur</th><th>Montant</th><th>Action DG</th></tr></thead><tbody id="tablePaiements"><tr><td colspan=5 class="muted">Aucune demande</td></tr></tbody></table></div>
+  <small class="muted">Les paiements viennent de /abonnement/ - TX ID unique vérifié côté client</small>
 </div>
 
 <div id="tab-create" style="display:none">
@@ -92,6 +100,7 @@ let G_SHOPS={}, G_PATRONS={}, G_CURRENT_PID=null;
 function switchTab(t, el){
   document.getElementById('tab-clients').style.display = t==='clients'?'block':'none';
   document.getElementById('tab-boutiques').style.display = t==='boutiques'?'block':'none';
+  document.getElementById('tab-paiements').style.display = t==='paiements'?'block':'none';
   document.getElementById('tab-create').style.display = t==='create'?'block':'none';
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   if(el) el.classList.add('active');
@@ -107,8 +116,9 @@ function scanGlobal(){
  const db=firebase.database();
  Promise.all([
    db.ref('shops').once('value').then(s=>s.val()||{}),
-   db.ref('patrons').once('value').then(s=>s.val()||{})
- ]).then(([shopsObj, patronsObj])=>{
+   db.ref('patrons').once('value').then(s=>s.val()||{}),
+   db.ref('paiements_abonnements').once('value').then(s=>s.val()||{})
+ ]).then(([shopsObj, patronsObj, paiementsObj])=>{
   G_SHOPS=shopsObj; G_PATRONS=patronsObj;
   let shopNames=Object.keys(G_SHOPS).filter(k=>!['shops','Mbata','Itendance'].includes(k));
   let actifs=0, bloques=0;
@@ -149,6 +159,26 @@ function scanGlobal(){
    htmlAbo+=`<tr><td><b>${name}</b></td><td>${pid}</td><td>${aff}</td><td>${statut}</td><td><button class="btn-g" onclick="activer('${name}')">+30J</button> <button class="btn-r" onclick="bloquer('${name}')">BLOQUER</button> <button class="btn-dark" onclick="viewAsPatron('${name}','${pid}')">👁️</button></td></tr>`;
   });
   document.getElementById('tableAbo').innerHTML=htmlAbo||'<tr><td colspan=5>Aucune boutique</td></tr>';
+
+  // === PATCH PAIEMENTS UNIQUEMENT ===
+  let htmlPay=''; let countAttente=0;
+  Object.entries(paiementsObj||{}).forEach(([key,p])=>{
+    if(p.statut!=='en_attente') return;
+    countAttente++;
+    htmlPay+=`<tr>
+      <td><b>${p.boutique}</b><br><span class="muted">Patron ${p.patronId||''}</span></td>
+      <td><b>${p.transactionId}</b><br><span class="muted">${p.reseau} → ${p.numeroDG||''}</span></td>
+      <td><a href="https://wa.me/${(p.phonePayer||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366">📱 ${p.phonePayer}</a><br><span class="muted">${p.date?new Date(p.date).toLocaleString():''}</span></td>
+      <td>${p.montant||15000} FC</td>
+      <td>
+        <button class="btn-g" onclick="activerPaiement('${key}','${p.boutique}','${p.patronId||''}')">✅ Activer +30J</button>
+        <button class="btn-r" onclick="rejeterPaiement('${key}')">❌ Rejeter</button>
+        <a href="https://wa.me/${(p.phonePayer||'').replace(/[^0-9]/g,'')}?text=Bonjour%20votre%20paiement%20${p.transactionId}%20pour%20${p.boutique}%20est%20confirme%20et%20active%2030j" target="_blank"><button class="btn-b">WhatsApp</button></a>
+      </td></tr>`;
+  });
+  document.getElementById('tablePaiements').innerHTML=htmlPay||'<tr><td colspan=5 class="muted">Aucune demande en attente</td></tr>';
+  let notif=document.getElementById('notifPaiement');
+  if(notif){ notif.innerText=countAttente; notif.style.display=countAttente>0?'inline-block':'none'; }
  }).catch(e=>{
    console.error(e);
    document.getElementById('tableClients').innerHTML=`<tr><td colspan=6 style="color:#ef4444">❌ Erreur: ${e.message}</td></tr>`;
@@ -187,6 +217,31 @@ function creerPatron(){
 }
 function activer(b){ firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let fin=Date.now()+30*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=fin; up[`patrons/${pid}/boutiques/${b}/expire`]=fin; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='actif'; up[`shops/${b}/abonnements/expireISO`]=new Date(fin).toISOString(); firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
 function bloquer(b){ if(!confirm(`Bloquer ${b}?`)) return; firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let past=Date.now()-10*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=past; up[`patrons/${pid}/boutiques/${b}/expire`]=past; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='bloqué'; firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
+
+// === NOUVELLES FONCTIONS PAIEMENTS ===
+function activerPaiement(key,boutique,pid){
+ if(!boutique) return alert('Boutique manquante');
+ if(!confirm(`Activer ${boutique} +30J?\nTX ${key}\nVérifie bien Airtel/Mpesa avant!`)) return;
+ let pidFinal=pid||trouverPatronDeShop(boutique,G_PATRONS)||'7832';
+ if(!pidFinal || pidFinal==='—') pidFinal='7832';
+ let fin=Date.now()+30*86400000;
+ let up={};
+ up[`shops/${boutique}/abonnements/expire`]=fin;
+ up[`shops/${boutique}/abonnements/expireISO`]=new Date(fin).toISOString();
+ up[`shops/${boutique}/abonnements/statut`]='actif';
+ up[`patrons/${pidFinal}/boutiques/${boutique}/expire`]=fin;
+ up[`patrons/${pidFinal}/boutiques/${boutique}/expireISO`]=new Date(fin).toISOString();
+ up[`patrons/${pidFinal}/boutiques/${boutique}/statut`]='actif';
+ up[`paiements_abonnements/${key}/statut`]='valide';
+ up[`paiements_abonnements/${key}/validePar`]='DG';
+ up[`paiements_abonnements/${key}/valideLe`]=Date.now();
+ up[`abonnements_demandes/${boutique}`]=null;
+ firebase.database().ref().update(up).then(()=>{ alert(`✅ ${boutique} activée 30j`); scanGlobal(); });
+}
+function rejeterPaiement(key){
+ if(!confirm('Rejeter ce paiement? Le client devra repayer.')) return;
+ firebase.database().ref(`paiements_abonnements/${key}`).update({statut:'rejete', rejeteLe:Date.now()}).then(()=>scanGlobal());
+}
 
 firebase.auth().signInAnonymously().then(()=>{ scanGlobal(); }).catch(e=>{ document.getElementById('tableClients').innerHTML=`<tr><td colspan=6 style="color:red">Auth failed: ${e.message}</td></tr>`; });
 </script>
