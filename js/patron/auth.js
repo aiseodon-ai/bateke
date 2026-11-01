@@ -1,4 +1,4 @@
-// js/patron/auth.js - V7.4 FIX BANDEAU 30s + PATRON NORMAL
+// js/patron/auth.js - V7.5 REDIRECT ABO + PATCH PAIEMENT
 import { STATE } from '../core/state.js';
 import { setPresenceOnline, setPresenceOffline } from '../core/presence.js';
 
@@ -9,15 +9,12 @@ export async function loginPat(){
   let supportShopParam = urlParams.get('support') || urlParams.get('support_boutique');
   let supportPidParam = urlParams.get('pid');
 
-  // ===== FIX 1: SUPPORT UNIQUEMENT SI URL ?support= EST PRESENT =====
-  // Si pas de ?support= dans l'URL, on nettoie l'ancien mode support qui traînait
   let hasSupportUrl = !!supportShopParam;
   let isDgSupport = false;
   
   if(hasSupportUrl){
     isDgSupport = true;
   } else {
-    // Pas de ?support= => on est en patron normal, on nettoie tout
     if(sessionStorage.getItem('DG_SUPPORT_MODE')==='1'){
       sessionStorage.removeItem('DG_SUPPORT_MODE');
       sessionStorage.removeItem('DG_SUPPORT_SHOP');
@@ -30,8 +27,6 @@ export async function loginPat(){
   if(isDgSupport){
     let supportShopName = supportShopParam || sessionStorage.getItem('DG_SUPPORT_SHOP');
     let supportPid = supportPidParam || sessionStorage.getItem('DG_SUPPORT_PID');
-
-    // Bandeau instantané (ne dépend pas de Firebase)
     try{
       if(supportShopName && !document.getElementById('dgSupportBanner')){
         let b = document.createElement('div');
@@ -44,13 +39,11 @@ export async function loginPat(){
         if(loginDiv) loginDiv.style.display='none';
       }
     }catch(e){}
-
-    // ===== FIX 2: ATTEND FIREBASE AVANT DB =====
     let tries = 0;
     let waitFirebase = setInterval(async ()=>{
       tries++;
       if(!window.db || !window.firebase || !firebase.apps || firebase.apps.length===0){
-        if(tries>100){ clearInterval(waitFirebase); return; } // 30s max
+        if(tries>100){ clearInterval(waitFirebase); return; }
         return;
       }
       clearInterval(waitFirebase);
@@ -71,7 +64,6 @@ export async function loginPat(){
           }
         }
         if(!patronData) throw new Error('Patron introuvable pour '+supportShopName+' / '+supportPid);
-
         let pidFinal = patronData._pid || patronData.pin || supportPid || 'SUPPORT';
         let vendeurObj = { 
           pin: pidFinal, nom: (patronData.nom||'PATRON')+' (Support DG)', ...patronData,
@@ -101,7 +93,6 @@ export async function loginPat(){
     return;
   }
   
-  // ===== LOGIN NORMAL PATRON - SANS SUPPORT =====
   try{ document.getElementById('dgSupportBanner')?.remove(); document.body.style.paddingTop='0'; window.BATEKE_ABO_BYPASS=false; }catch(e){}
 
   let pin = pinEl?.value?.trim();
@@ -132,15 +123,31 @@ export async function loginPat(){
   let expireFinal = Math.max(expirePatron, expireShop);
   if(expirePatron===0 && expireShop===0) expireFinal = 0;
   let now = Date.now();
+
+  // === PATCH UNIQUEMENT: REDIRECTION VERS ABONNEMENT ===
+  function goAbonnement(boutique, pid, expireVal, joursRetard){
+    let url = `/bateke/abonnement/?boutique=${encodeURIComponent(boutique)}&patron=${encodeURIComponent(pid)}&expire=${expireVal||0}`;
+    if(msgEl){
+      msgEl.style.color='red';
+      let title = !expireVal || expireVal===0 ? `🚫 ${boutique} JAMAIS PAYÉ` : `🚫 ${boutique} BLOQUÉ depuis ${joursRetard||0}j`;
+      msgEl.innerHTML = `${title}<br><small>Expire: ${expireVal?new Date(expireVal).toLocaleDateString():'JAMAIS'}</small><br><a href="${url}" style="display:block;margin-top:10px;background:#22c55e;color:#fff;padding:14px;border-radius:12px;text-align:center;text-decoration:none;font-weight:900;font-size:14px">💳 PAYER 15.000 FC - RÉACTIVER MAINTENANT</a><br><small style="color:#888">Redirection auto dans 3s...</small>`;
+    }
+    sessionStorage.clear();
+    localStorage.removeItem('BATEKE_PIN');
+    setTimeout(()=>{ location.href=url; }, 3500);
+  }
+
   if(!expireFinal || expireFinal===0){
-    if(msgEl){ msgEl.style.color='red'; msgEl.innerHTML=`🚫 ${boutiquePrincipale} JAMAIS PAYÉ<br><small>Contact DG - 15K/30j</small>`; }
-    sessionStorage.clear(); localStorage.removeItem('BATEKE_PIN'); return;
+    goAbonnement(boutiquePrincipale, pin, 0, 0);
+    return;
   }
   if(expireFinal < now){
     let joursRetard = Math.ceil((now - expireFinal)/86400000);
-    if(msgEl){ msgEl.style.color='red'; msgEl.innerHTML=`🚫 ${boutiquePrincipale} BLOQUÉ depuis ${joursRetard}j<br><small>Expire: ${new Date(expireFinal).toLocaleDateString()} - Paye 15K</small>`; }
-    sessionStorage.clear(); localStorage.removeItem('BATEKE_PIN'); return;
+    goAbonnement(boutiquePrincipale, pin, expireFinal, joursRetard);
+    return;
   }
+  // === FIN PATCH ===
+
   let joursRestants = Math.ceil((expireFinal-now)/86400000);
   STATE.CURRENT_VENDEUR = { pin, nom:patronData.nom||'PATRON', ...patronData, isAdmin:true, boutique:boutiquePrincipale, expire:expireFinal, joursRestants };
   window.CURRENT_VENDEUR = STATE.CURRENT_VENDEUR;
@@ -194,4 +201,4 @@ window.exitSupport = function(){
 
 window.loginPat = loginPat;
 window.logoutPat = logoutPat;
-console.log("✅ auth.js V7.4 - FIX PATRON NORMAL + SUPPORT INSTANTANE");
+console.log("✅ auth.js V7.5 - REDIRECT ABONNEMENT AUTO");
