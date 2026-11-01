@@ -1,7 +1,7 @@
 // js/patron/auth.js - V7.5 REDIRECT ABO + PATCH PAIEMENT
 import { STATE } from '../core/state.js';
 import { setPresenceOnline, setPresenceOffline } from '../core/presence.js';
-
+ 
 export async function loginPat(){
   let pinEl = document.getElementById('pinPat');
   let msgEl = document.getElementById('msgPat');
