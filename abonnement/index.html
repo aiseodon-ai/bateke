@@ -1,39 +1,124 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BATEKE - Abonnement 15.000 FC</title><base href="/bateke/">
-<style>body{background:#0a0a0a;color:#fff;font-family:Inter;padding:16px}.card{background:#171717;border:1px solid #262626;border-radius:18px;padding:20px;margin:12px 0}.price{font-size:42px;font-weight:900;color:#22c55e}.btn{width:100%;padding:16px;border-radius:14px;border:0;font-weight:900;font-size:16px;cursor:pointer;margin:6px 0}.btn-airtel{background:#ff0000;color:#fff}.btn-mpesa{background:#1ab759;color:#fff}input{width:100%;padding:14px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;margin:8px 0;box-sizing:border-box}</style>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<style>
+body{background:#0a0a0a;color:#fff;font-family:Inter,system-ui;padding:16px;max-width:480px;margin:auto}
+.card{background:#171717;border:1px solid #262626;border-radius:18px;padding:20px;margin:12px 0}
+.price{font-size:32px;font-weight:900;color:#22c55e}
+.btn{width:100%;padding:16px;border-radius:14px;border:0;font-weight:900;font-size:15px;cursor:pointer;margin:6px 0}
+.btn-airtel{background:#ff0000;color:#fff} .btn-mpesa{background:#1ab759;color:#fff}
+input{width:100%;padding:14px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;margin:8px 0;box-sizing:border-box}
+.badge{display:inline-block;padding:4px 10px;border-radius:20px;background:#262626;font-size:11px}
+.wait{animation:pulse 1.5s infinite} @keyframes pulse{0%{opacity:1} 50%{opacity:.5} 100%{opacity:1}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head><body>
 <h1>🔒 Abonnement BATEKE</h1>
-<div class="card"><div class="price">15.000 FC <span style="font-size:14px;color:#888">/ mois / <span id="shopLabel">boutique</span></span></div><div id="bloqueInfo" style="color:#ef4444;margin-top:8px"></div></div>
-<div class="card"><h3>1. Choisis</h3><button class="btn btn-airtel" onclick="selectPay('AIRTEL','0998111387')">AIRTEL MONEY - 0998111387</button><button class="btn btn-mpesa" onclick="selectPay('MPESA','0816640963')">M-PESA - 0816640963</button><div id="payInstr" style="display:none;background:#111;padding:12px;border-radius:12px;margin-top:10px"></div></div>
-<div class="card"><h3>2. Confirme (après envoi)</h3><input id="shopName" placeholder="Nom boutique"><input id="txId" placeholder="ID Transaction (ex: PP240... ou 1234567890)"><input id="phonePayer" placeholder="Ton numéro qui a payé"><button class="btn" style="background:#7c3aed;color:#fff" onclick="submitPay()">J'AI PAYÉ - ENVOYER AU DG</button><div id="status"></div></div>
+<div class="card" style="border-color:#22c55e"><span class="badge">PRIX FIXE KINSHASA</span><div class="price">15.000 FC <span style="font-size:12px;color:#888">/ mois / <span id="shopLabel">boutique</span></span></div><div id="bloqueInfo" style="color:#ef4444;margin-top:8px;font-size:13px"></div></div>
+
+<div class="card"><h3>1. Choisis ton réseau</h3>
+<button class="btn btn-airtel" onclick="selectPay('AIRTEL','0998111387')">AIRTEL MONEY - 0998111387</button>
+<button class="btn btn-mpesa" onclick="selectPay('MPESA','0816640963')">M-PESA - 0816640963</button>
+<div id="payInstr" style="display:none;background:#111;padding:12px;border-radius:12px;margin-top:10px;font-size:13px"></div>
+</div>
+
+<div class="card" id="cardPay"><h3>2. Confirme ton paiement</h3>
+<input id="shopName" placeholder="Nom boutique (ex: Menkao1)">
+<input id="txId" placeholder="ID Transaction Airtel/Mpesa">
+<input id="phonePayer" placeholder="Ton numéro qui a payé">
+<button class="btn" style="background:#7c3aed;color:#fff" onclick="submitPay()">J'AI PAYÉ - ENVOYER AU DG</button>
+<div id="status" style="margin-top:12px;font-size:14px"></div>
+</div>
+
+<div class="card" id="cardWaiting" style="display:none;border-color:#f59e0b;text-align:center">
+<h2 class="wait">⏳ En attente DG...</h2>
+<p>On vérifie ton ID <b id="waitTx"></b></p>
+<p style="color:#888;font-size:12px">Laisse cette page ouverte. Dès que le DG valide ton paiement <b id="waitShop"></b> sera réactivée auto.</p>
+<div style="margin-top:10px"><div style="width:100%;height:6px;background:#222;border-radius:10px;overflow:hidden"><div style="width:100%;height:100%;background:#f59e0b;animation:load 2s infinite"></div></div></div>
+<style>@keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}</style>
+</div>
+
+<div class="card" id="cardSuccess" style="display:none;border-color:#22c55e;text-align:center;background:#052e16">
+<h1 style="color:#22c55e">✅ ACTIVÉE!</h1>
+<p>Ta boutique <b id="successShop"></b> est réactivée pour 30 jours</p>
+<p style="color:#888;font-size:12px">Expire le <span id="successExpire"></span></p>
+<a id="btnReturn" href="/bateke/" class="btn" style="background:#22c55e;color:#fff;text-decoration:none;display:block;text-align:center;margin-top:12px">🔓 RETOURNER AU LOGIN</a>
+</div>
+
+<div class="card" style="border-color:#222"><a href="https://wa.me/243998111387?text=DG%20j'ai%20pay%C3%A9%20mon%20abonnement%20BATEKE" style="color:#25D366;text-decoration:none">💬 WhatsApp DG → 0998111387</a></div>
+
 <script>
 const firebaseConfig={apiKey:"AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 firebase.auth().signInAnonymously();
 const db=firebase.database();
 let selected={reseau:'',numero:''};
+let currentListener=null;
+let currentShopListener=null;
+
 const params=new URLSearchParams(location.search);
-let boutiqueParam=params.get('boutique')||'';
+let boutiqueParam=(params.get('boutique')||'').replace(/[^a-zA-Z0-9]/g,'');
 let patronParam=params.get('patron')||'';
 let expireParam=params.get('expire')||'';
 document.getElementById('shopName').value=boutiqueParam;
 document.getElementById('shopLabel').innerText=boutiqueParam||'boutique';
-if(expireParam){ let j=Math.ceil((Date.now()-Number(expireParam))/86400000); document.getElementById('bloqueInfo').innerHTML=`⛔ Boutique <b>${boutiqueParam}</b> bloquée depuis ${j}j - Patron ${patronParam}`; }
-function selectPay(r,n){ selected={reseau:r,numero:n}; let d=document.getElementById('payInstr'); d.style.display='block'; d.innerHTML=`✅ <b>${r}</b> → Envoie <b>15.000 FC</b> au <b>${n}</b><br>1. Ouvre ${r==='AIRTEL'?'*501#':'*1122#'}<br>2. Garde le SMS avec l'ID`; }
+if(boutiqueParam){
+  document.getElementById('bloqueInfo').innerHTML=`⛔ Boutique <b>${boutiqueParam}</b> bloquée - Patron ${patronParam||''}`;
+  // Si déjà en attente, passe direct en mode waiting
+  db.ref('abonnements_demandes/'+boutiqueParam).once('value').then(s=>{
+    if(s.exists()){ startWaitingMode(s.val().transactionId, boutiqueParam); listenActivation(boutiqueParam); }
+  });
+}
+
+function selectPay(r,n){ selected={reseau:r,numero:n}; let d=document.getElementById('payInstr'); d.style.display='block'; d.innerHTML=`✅ <b>${r}</b> → Envoie <b>15.000 FC</b> au <b>${n}</b><br>1. Ouvre ${r==='AIRTEL'?'*501#':'*1122#'}<br>2. Copie l'ID du SMS`; }
+function startWaitingMode(tx, shop){
+  document.getElementById('cardPay').style.display='none';
+  document.getElementById('cardWaiting').style.display='block';
+  document.getElementById('waitTx').innerText=tx;
+  document.getElementById('waitShop').innerText=shop;
+}
+function showSuccess(shop, expire){
+  document.getElementById('cardWaiting').style.display='none';
+  document.getElementById('cardPay').style.display='none';
+  document.getElementById('cardSuccess').style.display='block';
+  document.getElementById('successShop').innerText=shop;
+  document.getElementById('successExpire').innerText=expire?new Date(expire).toLocaleDateString():'30 jours';
+  document.getElementById('btnReturn').href=`/bateke/?boutique=${encodeURIComponent(shop)}`;
+  // Son + vibration
+  try{ navigator.vibrate([200,100,200]); }catch(e){}
+  try{ new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); }catch(e){}
+}
+function listenActivation(shop){
+  if(currentShopListener) db.ref('shops/'+shop+'/abonnements/expire').off('value', currentShopListener);
+  currentShopListener = db.ref('shops/'+shop+'/abonnements/expire').on('value', snap=>{
+    let exp=snap.val(); if(!exp) return;
+    if(typeof exp==='string') exp=parseInt(exp,10)||new Date(exp).getTime();
+    if(exp > Date.now()){
+      showSuccess(shop, exp);
+      // Stop listeners
+      db.ref('shops/'+shop+'/abonnements/expire').off('value', currentShopListener);
+    }
+  });
+}
 function submitPay(){
- const shop=document.getElementById('shopName').value.trim().replace(/[^a-zA-Z0-9]/g,''); const tx=document.getElementById('txId').value.trim().toUpperCase(); const phone=document.getElementById('phonePayer').value.trim();
- if(!shop||!tx||!phone||!selected.reseau) return alert('Remplis tout + choisis réseau');
- if(tx.length<6) return alert('ID Transaction trop court');
- document.getElementById('status').innerHTML='⏳ Vérification doublon...';
- // Anti-doublon TX ID
+ const shop=document.getElementById('shopName').value.trim().replace(/[^a-zA-Z0-9]/g,'');
+ const tx=document.getElementById('txId').value.trim().toUpperCase();
+ const phone=document.getElementById('phonePayer').value.trim();
+ if(!shop||!tx||!phone||!selected.reseau) return alert('Remplis tout: boutique, TX ID, numéro + choisis Airtel/Mpesa');
+ if(tx.length<5) return alert('ID Transaction trop court');
+ document.getElementById('status').innerHTML='⏳ Vérification...';
  db.ref('paiements_abonnements').orderByChild('transactionId').equalTo(tx).once('value').then(s=>{
   if(s.exists()){ document.getElementById('status').innerHTML='<span style="color:#ef4444">❌ Cet ID a déjà été utilisé</span>'; return; }
   const data={boutique:shop,patronId:patronParam||'',transactionId:tx,phonePayer:phone,reseau:selected.reseau,numeroDG:selected.numero,montant:15000,statut:'en_attente',date:Date.now(),dateISO:new Date().toISOString()};
   db.ref('paiements_abonnements').push(data).then(()=>{
    db.ref('abonnements_demandes/'+shop).set(data);
-   document.getElementById('status').innerHTML=`<b style="color:#22c55e">✅ Demande envoyée DG!</b><br>ID <b>${tx}</b> pour <b>${shop}</b><br>Le DG va vérifier Airtel/Mpesa et activer en 2 min.<br><br><a href="https://wa.me/243998111387?text=DG%20j'ai%20pay%C3%A9%2015000FC%20pour%20${shop}%20TX:${tx}%20${selected.reseau}" style="color:#25D366">→ Prévenir DG sur WhatsApp</a>`;
+   startWaitingMode(tx, shop);
+   listenActivation(shop);
   });
  });
 }
-</script></body></html>
+// Auto-listen si page ouverte avec boutique déjà active (cas retour)
+if(boutiqueParam){ listenActivation(boutiqueParam); }
+</script>
+</body></html>
