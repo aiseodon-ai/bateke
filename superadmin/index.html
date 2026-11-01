@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN V8.1 FIX DATA</title><base href="/bateke/">
+<title>BATEKE - SUPERADMIN V8.2 PRO</title><base href="/bateke/">
 <style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:16px}
  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
@@ -14,17 +14,15 @@
  .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:99999}
  .modal-box{background:#171717;border:1px solid #333;border-radius:16px;padding:20px;max-width:520px;width:92%;max-height:85vh;overflow:auto}
  .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap} .tab{padding:8px 14px;border-radius:20px;cursor:pointer;background:#222;border:1px solid #333} .tab.active{background:#7c3aed;border-color:#7c3aed}
- .ca-blur{filter:blur(6px);cursor:pointer;user-select:none}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head><body>
-<h1>👑 BATEKE SUPERADMIN V8.1 - FIX DATA + SAAS</h1>
+<h1>👑 BATEKE SUPERADMIN V8.2 PRO</h1>
 
 <div class="grid">
  <div class="card"><div>Boutiques</div><div id="totalBoutiques" class="kpi">...</div></div>
- <div class="card"><div>CA Jour Global (privé)</div><div id="caGlobal" class="kpi ca-blur" onclick="revealCA(this)">•••• FC</div><small class="muted">Clique pour voir - loggé</small></div>
  <div class="card"><div>Patrons</div><div id="totalPatrons" class="kpi">...</div></div>
  <div class="card"><div>Actifs / Bloqués</div><div id="abos" class="kpi">...</div><div id="abosDetail" class="muted"></div></div>
 </div>
@@ -89,7 +87,7 @@ const firebaseConfig = {
 };
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
-let G_SHOPS={}, G_PATRONS={}, G_CURRENT_PID=null, G_CA=0;
+let G_SHOPS={}, G_PATRONS={}, G_CURRENT_PID=null;
 
 function switchTab(t, el){
   document.getElementById('tab-clients').style.display = t==='clients'?'block':'none';
@@ -102,29 +100,26 @@ function switchTab(t, el){
 
 function toTime(v){ if(!v) return 0; if(typeof v==='number') return v; if(typeof v==='string' && /^\d{12,}$/.test(v)) return parseInt(v,10); let d=new Date(v).getTime(); return isNaN(d)?0:d; }
 function trouverPatronDeShop(s, patrons){ for(let pid in patrons){ let p=patrons[pid]; if(p.boutiques && p.boutiques[s]) return pid; if((p.boutique||'').toLowerCase()===s.toLowerCase()) return pid; } return null; }
-function revealCA(el){ if(!confirm('Voir CA global? Loggé dans logs_support')) return; el.innerText=G_CA.toLocaleString()+' FC'; el.classList.remove('ca-blur'); try{firebase.database().ref('logs_support/'+Date.now()).set({action:'view_ca_global', ca:G_CA, ts:Date.now()});}catch(e){} }
 function viewAsPatron(shop, pid){ if(!shop){ alert('Pas de boutique'); return; } sessionStorage.setItem('DG_SUPPORT_MODE','1'); sessionStorage.setItem('DG_SUPPORT_SHOP',shop); sessionStorage.setItem('DG_SUPPORT_PID',pid); window.open(`../?support=${encodeURIComponent(shop)}&pid=${encodeURIComponent(pid)}`, '_blank'); }
 
 function scanGlobal(){
  const q=(document.getElementById('searchClient')?.value||'').toLowerCase();
  const db=firebase.database();
- // FIX CRITIQUE: lire shops et patrons séparément (compatible avec tes rules)
  Promise.all([
    db.ref('shops').once('value').then(s=>s.val()||{}),
    db.ref('patrons').once('value').then(s=>s.val()||{})
  ]).then(([shopsObj, patronsObj])=>{
   G_SHOPS=shopsObj; G_PATRONS=patronsObj;
   let shopNames=Object.keys(G_SHOPS).filter(k=>!['shops','Mbata','Itendance'].includes(k));
-  let ca=0, actifs=0, bloques=0;
+  let actifs=0, bloques=0;
   shopNames.forEach(n=>{
-   let shop=G_SHOPS[n]||{}; let today=new Date().toISOString().slice(0,10); Object.values(shop.ventes||{}).forEach(v=>{ if(v && (v.date||'').slice(0,10)===today) ca+=Number(v.total||0); });
+   let shop=G_SHOPS[n]||{};
    let exp=toTime(shop.abonnements?.expire); if(exp && exp>Date.now()) actifs++; else bloques++;
   });
-  G_CA=ca;
   document.getElementById('totalBoutiques').innerText=shopNames.length;
   document.getElementById('totalPatrons').innerText=Object.keys(G_PATRONS).length;
   document.getElementById('abos').innerText=`${actifs} / ${bloques}`;
-  document.getElementById('abosDetail').innerText=`Actifs:${actifs} Bloqués:${bloques} | CA: ${ca>0?'caché':'0'}`;
+  document.getElementById('abosDetail').innerText=`Actifs:${actifs} Bloqués:${bloques}`;
 
   let htmlClients='';
   Object.entries(G_PATRONS).forEach(([pid,p])=>{
@@ -156,7 +151,7 @@ function scanGlobal(){
   document.getElementById('tableAbo').innerHTML=htmlAbo||'<tr><td colspan=5>Aucune boutique</td></tr>';
  }).catch(e=>{
    console.error(e);
-   document.getElementById('tableClients').innerHTML=`<tr><td colspan=6 style="color:#ef4444">❌ Erreur: ${e.message}<br><small class="muted">Vérifie que Auth Anonyme est activé dans Firebase Console</small></td></tr>`;
+   document.getElementById('tableClients').innerHTML=`<tr><td colspan=6 style="color:#ef4444">❌ Erreur: ${e.message}</td></tr>`;
  });
 }
 
