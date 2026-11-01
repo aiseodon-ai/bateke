@@ -1,4 +1,4 @@
-// js/core/firebase.js - BATEKE V4 - FINAL V6.4 APP CHECK ON GITHUB
+// js/core/firebase.js - BATEKE V4 - FINAL V6.4.1 APP CHECK + SUPPORT DG FORCE
 window.esc = (t) => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 export const esc = window.esc;
 
@@ -18,9 +18,11 @@ if (!firebase.apps.length) {
 
 // 🔐 APP CHECK PROD - ACTIVÉ PARTOUT y compris github.io
 const isLocalhost = location.hostname.includes('localhost') || location.hostname.includes('127.0.0.1');
+const isSupportDG = sessionStorage.getItem('DG_SUPPORT_MODE')==='1';
 
-if (isLocalhost) {
+if (isLocalhost || isSupportDG) {
   self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  console.log("🛠️ DEBUG TOKEN ON pour", isSupportDG ? "SUPPORT DG" : "localhost");
 }
 
 try {
@@ -41,7 +43,36 @@ window.auth = auth;
 
 setTimeout(()=>{ 
   try{ firebase.auth().signInAnonymously().catch(()=>{}); }catch(e){} 
-}, 500);
+}, 300);
+
+// === FIX V6.4.1 - FORCE BOUTIQUE EN MODE SUPPORT DG ===
+function forceSupportShop(){
+  try{
+    let params = new URLSearchParams(location.search);
+    let shop = params.get('support') || params.get('support_boutique') || sessionStorage.getItem('DG_SUPPORT_SHOP');
+    if(!shop || !isSupportDG) return;
+    
+    let sel = document.getElementById('shopSel');
+    if(sel){
+      // Force la liste à cette boutique
+      sel.innerHTML = `<option value="${shop}">${shop}</option>`;
+      sel.value = shop;
+      // Déclenche ton switchShop existant
+      sel.dispatchEvent(new Event('change'));
+      console.log("✅ FORCE SHOP SUPPORT:", shop);
+    }
+    // Force aussi les labels
+    let lab = document.getElementById('paramShopName');
+    if(lab) lab.innerText = shop;
+    let labVente = document.getElementById('labVenteShop');
+    if(labVente) labVente.innerText = shop;
+  }catch(e){ console.warn("forceSupportShop", e.message); }
+}
+// Lance 3 fois pour être sûr après render
+setTimeout(forceSupportShop, 800);
+setTimeout(forceSupportShop, 2000);
+setTimeout(forceSupportShop, 4000);
+document.addEventListener('DOMContentLoaded', forceSupportShop);
 
 export { db, auth };
-console.log("🔥 BATEKE V4 FINAL V6.4 - AppCheck ON");
+console.log("🔥 BATEKE V4 FINAL V6.4.1 - AppCheck ON + SUPPORT FORCE");
