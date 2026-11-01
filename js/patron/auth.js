@@ -113,7 +113,7 @@ export async function loginPat(){
         }
         }catch(e){ console.warn("restore boutiques V7.6", e.message); }
              
-        }catch(e){ console.warn("restore boutiques", e.message); }
+        
         sessionStorage.setItem('BATEKE_PIN', pidFinal);
         sessionStorage.setItem('BATEKE_ROLE','patron');
         sessionStorage.setItem('BATEKE_BOUTIQUE', supportShopName);
