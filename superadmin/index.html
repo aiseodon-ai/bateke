@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN V8.3 PRO + PAIEMENTS</title><base href="/bateke/">
+<title>BATEKE - SUPERADMIN V8.4 NOTIF</title><base href="/bateke/">
 <style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:16px}
  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
@@ -15,12 +15,15 @@
  .modal-box{background:#171717;border:1px solid #333;border-radius:16px;padding:20px;max-width:520px;width:92%;max-height:85vh;overflow:auto}
  .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap} .tab{padding:8px 14px;border-radius:20px;cursor:pointer;background:#222;border:1px solid #333} .tab.active{background:#7c3aed;border-color:#7c3aed}
  .badge-notif{background:#ef4444;color:#fff;border-radius:10px;padding:2px 7px;font-size:10px;margin-left:5px;display:none}
+ .tab-notif{animation:blink 1s infinite} @keyframes blink{0%{background:#ef4444} 50%{background:#222} 100%{background:#ef4444}}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head><body>
-<h1>👑 BATEKE SUPERADMIN V8.3 PRO + PAIEMENTS</h1>
+<h1>👑 BATEKE SUPERADMIN V8.4 NOTIF 
+<button id="btnSound" class="btn-dark" style="font-size:11px;margin-left:10px" onclick="enableSound()">🔔 Activer son</button>
+</h1>
 
 <div class="grid">
  <div class="card"><div>Boutiques</div><div id="totalBoutiques" class="kpi">...</div></div>
@@ -32,7 +35,7 @@
 <div class="tabs">
   <div class="tab active" data-tab="clients" onclick="switchTab('clients',this)">👥 Clients</div>
   <div class="tab" data-tab="boutiques" onclick="switchTab('boutiques',this)">🏪 Boutiques / Abos</div>
-  <div class="tab" data-tab="paiements" onclick="switchTab('paiements',this)">💳 Paiements <span id="notifPaiement" class="badge-notif">0</span></div>
+  <div class="tab" data-tab="paiements" id="tabPaiement" onclick="switchTab('paiements',this)">💳 Paiements <span id="notifPaiement" class="badge-notif">0</span></div>
   <div class="tab" data-tab="create" onclick="switchTab('create',this)">➕ Nouveau Client</div>
   <button class="btn-b" style="margin-left:auto" onclick="scanGlobal()">🔄 Re-scanner</button>
 </div>
@@ -47,9 +50,9 @@
 </div>
 
 <div id="tab-paiements" style="display:none">
-  <h3>💳 Demandes de paiement en attente (Airtel / Mpesa)</h3>
+  <h3>💳 Demandes en attente (Airtel / Mpesa) - LIVE</h3>
   <div style="overflow:auto"><table><thead><tr><th>Boutique</th><th>TX ID / Réseau</th><th>Payeur</th><th>Montant</th><th>Action DG</th></tr></thead><tbody id="tablePaiements"><tr><td colspan=5 class="muted">Aucune demande</td></tr></tbody></table></div>
-  <small class="muted">Les paiements viennent de /abonnement/ - TX ID unique vérifié côté client</small>
+  <small class="muted">🔔 Son activé: tu entends un ding à chaque nouveau paiement, même en arrière-plan</small>
 </div>
 
 <div id="tab-create" style="display:none">
@@ -96,6 +99,29 @@ const firebaseConfig = {
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
 let G_SHOPS={}, G_PATRONS={}, G_CURRENT_PID=null;
+let G_LAST_PAY_COUNT=0, G_SOUND_ENABLED=false, G_PAY_LISTENER=null;
+
+function enableSound(){
+  G_SOUND_ENABLED=true;
+  document.getElementById('btnSound').innerText='🔊 Son activé';
+  document.getElementById('btnSound').style.background='#22c55e';
+  if('Notification' in window) Notification.requestPermission();
+  try{ new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{}); }catch(e){}
+  try{ navigator.vibrate([100]); }catch(e){}
+}
+
+function playNotif(boutique, tx){
+  if(!G_SOUND_ENABLED) return;
+  try{ let a=new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'); a.volume=1; a.play(); }catch(e){}
+  try{ navigator.vibrate([300,100,300,100,500]); }catch(e){}
+  if('Notification' in window && Notification.permission==='granted'){
+    new Notification('💳 Nouveau paiement BATEKE', {body:`${boutique} - TX ${tx} - 15.000 FC`, icon:'https://cdn-icons-png.flaticon.com/512/2331/2331941.png'});
+  }
+  // Clignotement tab
+  let tab=document.getElementById('tabPaiement');
+  tab.classList.add('tab-notif');
+  setTimeout(()=>tab.classList.remove('tab-notif'), 5000);
+}
 
 function switchTab(t, el){
   document.getElementById('tab-clients').style.display = t==='clients'?'block':'none';
@@ -105,6 +131,10 @@ function switchTab(t, el){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   if(el) el.classList.add('active');
   else document.querySelector(`[data-tab="${t}"]`)?.classList.add('active');
+  if(t==='paiements'){
+    let tab=document.getElementById('tabPaiement');
+    tab.classList.remove('tab-notif');
+  }
 }
 
 function toTime(v){ if(!v) return 0; if(typeof v==='number') return v; if(typeof v==='string' && /^\d{12,}$/.test(v)) return parseInt(v,10); let d=new Date(v).getTime(); return isNaN(d)?0:d; }
@@ -160,11 +190,10 @@ function scanGlobal(){
   });
   document.getElementById('tableAbo').innerHTML=htmlAbo||'<tr><td colspan=5>Aucune boutique</td></tr>';
 
-  // === PATCH PAIEMENTS UNIQUEMENT ===
-  let htmlPay=''; let countAttente=0;
+  let htmlPay=''; let countAttente=0; let newPayments=[];
   Object.entries(paiementsObj||{}).forEach(([key,p])=>{
     if(p.statut!=='en_attente') return;
-    countAttente++;
+    countAttente++; newPayments.push(p);
     htmlPay+=`<tr>
       <td><b>${p.boutique}</b><br><span class="muted">Patron ${p.patronId||''}</span></td>
       <td><b>${p.transactionId}</b><br><span class="muted">${p.reseau} → ${p.numeroDG||''}</span></td>
@@ -172,13 +201,25 @@ function scanGlobal(){
       <td>${p.montant||15000} FC</td>
       <td>
         <button class="btn-g" onclick="activerPaiement('${key}','${p.boutique}','${p.patronId||''}')">✅ Activer +30J</button>
-        <button class="btn-r" onclick="rejeterPaiement('${key}')">❌ Rejeter</button>
-        <a href="https://wa.me/${(p.phonePayer||'').replace(/[^0-9]/g,'')}?text=Bonjour%20votre%20paiement%20${p.transactionId}%20pour%20${p.boutique}%20est%20confirme%20et%20active%2030j" target="_blank"><button class="btn-b">WhatsApp</button></a>
+        <button class="btn-r" onclick="rejeterPaiement('${key}')">❌</button>
+        <a href="https://wa.me/${(p.phonePayer||'').replace(/[^0-9]/g,'')}?text=Bonjour%20votre%20paiement%20${p.transactionId}%20pour%20${p.boutique}%20est%20confirme" target="_blank"><button class="btn-b">WhatsApp</button></a>
       </td></tr>`;
   });
   document.getElementById('tablePaiements').innerHTML=htmlPay||'<tr><td colspan=5 class="muted">Aucune demande en attente</td></tr>';
   let notif=document.getElementById('notifPaiement');
   if(notif){ notif.innerText=countAttente; notif.style.display=countAttente>0?'inline-block':'none'; }
+  // SON si nouveau paiement
+  if(countAttente > G_LAST_PAY_COUNT && G_LAST_PAY_COUNT>=0){
+    if(G_LAST_PAY_COUNT>0 || countAttente===1){
+      let last=newPayments[newPayments.length-1];
+      if(last) playNotif(last.boutique, last.transactionId);
+    } else if(countAttente>0 && G_LAST_PAY_COUNT===0){
+      // premier chargement avec paiements en attente -> notif aussi
+      let last=newPayments[0];
+      if(last && G_SOUND_ENABLED) playNotif(last.boutique, last.transactionId);
+    }
+  }
+  G_LAST_PAY_COUNT=countAttente;
  }).catch(e=>{
    console.error(e);
    document.getElementById('tableClients').innerHTML=`<tr><td colspan=6 style="color:#ef4444">❌ Erreur: ${e.message}</td></tr>`;
@@ -218,7 +259,6 @@ function creerPatron(){
 function activer(b){ firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let fin=Date.now()+30*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=fin; up[`patrons/${pid}/boutiques/${b}/expire`]=fin; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='actif'; up[`shops/${b}/abonnements/expireISO`]=new Date(fin).toISOString(); firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
 function bloquer(b){ if(!confirm(`Bloquer ${b}?`)) return; firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let past=Date.now()-10*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=past; up[`patrons/${pid}/boutiques/${b}/expire`]=past; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='bloqué'; firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
 
-// === NOUVELLES FONCTIONS PAIEMENTS ===
 function activerPaiement(key,boutique,pid){
  if(!boutique) return alert('Boutique manquante');
  if(!confirm(`Activer ${boutique} +30J?\nTX ${key}\nVérifie bien Airtel/Mpesa avant!`)) return;
@@ -239,10 +279,27 @@ function activerPaiement(key,boutique,pid){
  firebase.database().ref().update(up).then(()=>{ alert(`✅ ${boutique} activée 30j`); scanGlobal(); });
 }
 function rejeterPaiement(key){
- if(!confirm('Rejeter ce paiement? Le client devra repayer.')) return;
+ if(!confirm('Rejeter ce paiement?')) return;
  firebase.database().ref(`paiements_abonnements/${key}`).update({statut:'rejete', rejeteLe:Date.now()}).then(()=>scanGlobal());
 }
 
-firebase.auth().signInAnonymously().then(()=>{ scanGlobal(); }).catch(e=>{ document.getElementById('tableClients').innerHTML=`<tr><td colspan=6 style="color:red">Auth failed: ${e.message}</td></tr>`; });
+firebase.auth().signInAnonymously().then(()=>{
+  scanGlobal();
+  // LIVE listener pour nouveaux paiements
+  try{
+    db.ref('paiements_abonnements').orderByChild('statut').equalTo('en_attente').on('child_added', snap=>{
+      let p=snap.val(); if(!p) return;
+      // Ne sonne que si c'est vraiment nouveau (pas au premier chargement)
+      if(G_LAST_PAY_COUNT>=0 && G_SOUND_ENABLED){
+        // petit délai pour éviter double son au chargement initial
+        setTimeout(()=>{ if(document.visibilityState!=='visible' || true) playNotif(p.boutique, p.transactionId); }, 500);
+      }
+      // refresh auto
+      setTimeout(()=>scanGlobal(), 1000);
+    });
+  }catch(e){}
+  // Auto-refresh toutes les 15s
+  setInterval(()=>scanGlobal(), 15000);
+}).catch(e=>{ document.getElementById('tableClients').innerHTML=`<tr><td colspan=6 style="color:red">Auth failed: ${e.message}</td></tr>`; });
 </script>
 </body></html>
