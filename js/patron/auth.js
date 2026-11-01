@@ -76,7 +76,7 @@ export async function loginPat(){
         
        // === FIX V7.5.1 - RESTAURE LES 4 BOUTIQUES DE 7832 ===
         // === FIX V7.6 - RESTAURE LES 4 BOUTIQUES + FORCE STOCK ===
-      try{
+       try{
         let sel = document.getElementById('shopSel');
         if(sel && patronData.boutiques){
           let boutiquesList = Object.keys(patronData.boutiques);
@@ -111,7 +111,7 @@ export async function loginPat(){
           setTimeout(forceLoad, 1000);
           setTimeout(forceLoad, 2500);
         }
-      }catch(e){ console.warn("restore boutiques V7.6", e.message); }
+        }catch(e){ console.warn("restore boutiques V7.6", e.message); }
              
         }catch(e){ console.warn("restore boutiques", e.message); }
         sessionStorage.setItem('BATEKE_PIN', pidFinal);
