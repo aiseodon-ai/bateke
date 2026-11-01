@@ -73,6 +73,22 @@ export async function loginPat(){
         STATE.CURRENT_VENDEUR = vendeurObj;
         window.CURRENT_VENDEUR = vendeurObj;
         if(STATE){ STATE.BOUTIQUE=supportShopName; STATE.SHOP=supportShopName; STATE.CURRENT_SHOP=supportShopName; }
+        
+       // === FIX V7.5.1 - RESTAURE LES 4 BOUTIQUES DE 7832 ===
+        try{
+          let sel = document.getElementById('shopSel');
+          if(sel && patronData.boutiques){
+            let boutiquesList = Object.keys(patronData.boutiques);
+            sel.innerHTML = boutiquesList.map(b=>`<option value="${b}">${b}</option>`).join('');
+            sel.value = supportShopName;
+            console.log("✅ 4 boutiques restaurées:", boutiquesList);
+            // Force le changement pour charger stock/ventes
+            setTimeout(()=>{ 
+              if(typeof window.switchShop === 'function') window.switchShop();
+              else sel.dispatchEvent(new Event('change'));
+            }, 800);
+          }
+        }catch(e){ console.warn("restore boutiques", e.message); }
         sessionStorage.setItem('BATEKE_PIN', pidFinal);
         sessionStorage.setItem('BATEKE_ROLE','patron');
         sessionStorage.setItem('BATEKE_BOUTIQUE', supportShopName);
