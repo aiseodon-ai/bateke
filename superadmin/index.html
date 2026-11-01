@@ -154,8 +154,15 @@ function switchTab(t, el){
 }
 function toTime(v){ if(!v) return 0; if(typeof v==='number') return v; if(typeof v==='string' && /^\d{12,}$/.test(v)) return parseInt(v,10); let d=new Date(v).getTime(); return isNaN(d)?0:d; }
 function trouverPatronDeShop(s, patrons){ for(let pid in patrons){ let p=patrons[pid]; if(p.boutiques && p.boutiques[s]) return pid; if((p.boutique||'').toLowerCase()===s.toLowerCase()) return pid; } return null; }
-function viewAsPatron(shop, pid){ if(!shop){ alert('Pas de boutique'); return; } sessionStorage.setItem('DG_SUPPORT_MODE','1'); sessionStorage.setItem('DG_SUPPORT_SHOP',shop); sessionStorage.setItem('DG_SUPPORT_PID',pid); window.open(`../?support=${encodeURIComponent(shop)}&pid=${encodeURIComponent(pid)}`, '_blank'); }
-
+function viewAsPatron(shop, pid){ 
+  if(!shop){ alert('Pas de boutique'); return; } 
+  sessionStorage.setItem('DG_SUPPORT_MODE','1'); 
+  sessionStorage.setItem('DG_SUPPORT_SHOP',shop); 
+  sessionStorage.setItem('DG_SUPPORT_PID',pid); 
+  // FIX: chemin absolu vers /bateke/ pour GitHub Pages
+  let url = `/bateke/?support=${encodeURIComponent(shop)}&pid=${encodeURIComponent(pid)}`;
+  window.open(url, '_blank'); 
+}
 function filterHist(){
   let q=(document.getElementById('searchHist').value||'').toLowerCase();
   let f=document.getElementById('filterStatut').value;
