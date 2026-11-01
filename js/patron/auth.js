@@ -75,44 +75,7 @@ export async function loginPat(){
         if(STATE){ STATE.BOUTIQUE=supportShopName; STATE.SHOP=supportShopName; STATE.CURRENT_SHOP=supportShopName; }
         
        // === FIX V7.5.1 - RESTAURE LES 4 BOUTIQUES DE 7832 ===
-        // === FIX V7.6 - RESTAURE LES 4 BOUTIQUES + FORCE STOCK ===
-       try{
-        let sel = document.getElementById('shopSel');
-        if(sel && patronData.boutiques){
-          let boutiquesList = Object.keys(patronData.boutiques);
-          // 1. Restaure le select
-          sel.innerHTML = boutiquesList.map(b=>`<option value="${b}" ${b===supportShopName?'selected':''}>${b}</option>`).join('');
-          sel.value = supportShopName;
-          localStorage.setItem('CURRENT_SHOP', supportShopName);
-          localStorage.setItem('BATEKE_BOUTIQUE', supportShopName);
-          if(window.STATE){ STATE.CURRENT_SHOP=supportShopName; STATE.BOUTIQUE=supportShopName; }
-          console.log("✅ 4 boutiques restaurées:", boutiquesList);
       
-          // 2. Attends que initApp + stock.js soient vraiment chargés, puis switch
-          const forceLoad = ()=>{
-            try{
-              if(typeof window.switchShop === 'function'){ 
-                window.switchShop(); 
-              } else {
-                sel.dispatchEvent(new Event('change'));
-              }
-              // 3. Force reload stock après 1s pour Intendance
-              setTimeout(()=>{
-                if(window.loadStock) window.loadStock();
-                if(window.loadData) window.loadData();
-                // Lis direct le stock Intendance pour debug
-                window.db.ref('shops/'+supportShopName+'/stock').once('value').then(s=>{
-                  console.log('📦 STOCK FINAL', supportShopName, ':', Object.keys(s.val()||{}).length, 'articles', s.val());
-                });
-              }, 1200);
-            }catch(e){ console.warn(e); }
-          };
-          // Lance 2 fois pour être sûr: une après initApp, une 2s après
-          setTimeout(forceLoad, 1000);
-          setTimeout(forceLoad, 2500);
-        }
-        }catch(e){ console.warn("restore boutiques V7.6", e.message); }
-             
         
         sessionStorage.setItem('BATEKE_PIN', pidFinal);
         sessionStorage.setItem('BATEKE_ROLE','patron');
