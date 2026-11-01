@@ -20,10 +20,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
- <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
-<script>
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // enlève ça en prod finale
-</script>
+
 </head><body>
 <h1>👑 BATEKE SUPERADMIN V8.5 
 <button id="btnSound" class="btn-dark" style="font-size:11px;margin-left:10px" onclick="enableSound()">🔔 Son</button>
@@ -112,10 +109,19 @@ const firebaseConfig = {
 };
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
-firebase.appCheck().activate(
-  new firebase.appCheck.ReCaptchaV3Provider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
-  true // autoRefresh
-);
+//firebase.appCheck().activate(
+ // new firebase.appCheck.ReCaptchaV3Provider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
+  //true // autoRefresh
+//);
+try {
+  firebase.appCheck().activate(
+    new firebase.appCheck.ReCaptchaV3Provider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
+    true
+  );
+  console.log('AppCheck OK');
+} catch(e){
+  console.warn('AppCheck désactivé pour superadmin DG, on continue sans:', e.message);
+}
  
 let G_SHOPS={}, G_PATRONS={}, G_CURRENT_PID=null, G_HIST=[];
 let G_LAST_PAY_COUNT=0, G_SOUND_ENABLED=false;
