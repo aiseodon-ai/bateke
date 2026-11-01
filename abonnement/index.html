@@ -13,6 +13,10 @@ input{width:100%;padding:14px;border-radius:12px;border:1px solid #333;backgroun
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
+<script>
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // enlève ça en prod finale
+</script>
 </head><body>
 <h1>🔒 Abonnement BATEKE</h1>
 <div class="card" style="border-color:#22c55e"><span class="badge">PRIX FIXE KINSHASA</span><div class="price">15.000 FC <span style="font-size:12px;color:#888">/ mois / <span id="shopLabel">boutique</span></span></div><div id="bloqueInfo" style="color:#ef4444;margin-top:8px;font-size:13px"></div></div>
@@ -51,6 +55,12 @@ input{width:100%;padding:14px;border-radius:12px;border:1px solid #333;backgroun
 <script>
 const firebaseConfig={apiKey:"AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
 if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+firebase.appCheck().activate(
+  new firebase.appCheck.ReCaptchaV3Provider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
+  true // autoRefresh
+);
+  
 firebase.auth().signInAnonymously();
 const db=firebase.database();
 let selected={reseau:'',numero:''};
