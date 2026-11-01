@@ -1,14 +1,13 @@
-// js/patron/auth.js - V7.5 REDIRECT ABO + PATCH PAIEMENT
+// js/patron/auth.js - V7.6 FIX SUPPORT FIREBASE + BOUTIQUES - STABLE NORMAL
 import { STATE } from '../core/state.js';
 import { setPresenceOnline, setPresenceOffline } from '../core/presence.js';
- 
+
 export async function loginPat(){
   let pinEl = document.getElementById('pinPat');
   let msgEl = document.getElementById('msgPat');
   let urlParams = new URLSearchParams(location.search);
   let supportShopParam = urlParams.get('support') || urlParams.get('support_boutique');
   let supportPidParam = urlParams.get('pid');
-
   let hasSupportUrl = !!supportShopParam;
   let isDgSupport = false;
   
@@ -43,11 +42,13 @@ export async function loginPat(){
     let waitFirebase = setInterval(async ()=>{
       tries++;
       if(!window.db || !window.firebase || !firebase.apps || firebase.apps.length===0){
-        if(tries>100){ clearInterval(waitFirebase); return; }
+        console.log(`⏳ Support attend Firebase ${tries}/100...`);
+        if(tries>100){ clearInterval(waitFirebase); if(msgEl){ msgEl.innerText='❌ Firebase jamais initialisé - recharge la page'; msgEl.style.color='red'; } return; }
         return;
       }
       clearInterval(waitFirebase);
-      try{ if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously(); }catch(e){}
+      console.log("✅ Firebase prêt pour support");
+      try{ if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously(); console.log("✅ Auth support:", firebase.auth().currentUser.uid); }catch(e){ console.warn("Auth anonyme support", e.message); }
       try{
         let patronData = null;
         if(supportPid){
@@ -74,8 +75,33 @@ export async function loginPat(){
         window.CURRENT_VENDEUR = vendeurObj;
         if(STATE){ STATE.BOUTIQUE=supportShopName; STATE.SHOP=supportShopName; STATE.CURRENT_SHOP=supportShopName; }
         
-       // === FIX V7.5.1 - RESTAURE LES 4 BOUTIQUES DE 7832 ===
-      
+        // === FIX V7.6 - RESTAURE LES 4 BOUTIQUES + FORCE CHARGEMENT ===
+        try{
+          let sel = document.getElementById('shopSel');
+          if(sel && patronData.boutiques){
+            let boutiquesList = Object.keys(patronData.boutiques);
+            sel.innerHTML = boutiquesList.map(b=>`<option value="${b}" ${b===supportShopName?'selected':''}>${b}</option>`).join('');
+            sel.value = supportShopName;
+            localStorage.setItem('CURRENT_SHOP', supportShopName);
+            localStorage.setItem('BATEKE_BOUTIQUE', supportShopName);
+            console.log("✅ 4 boutiques restaurées V7.6:", boutiquesList);
+            const forceLoad = ()=>{
+              try{
+                if(typeof window.switchShop === 'function') window.switchShop();
+                else sel.dispatchEvent(new Event('change'));
+                setTimeout(()=>{
+                  if(window.loadStock) window.loadStock();
+                  if(window.loadData) window.loadData();
+                  window.db.ref('shops/'+supportShopName+'/stock').once('value').then(s=>{
+                    console.log('📦 STOCK FINAL', supportShopName, Object.keys(s.val()||{}).length, 'articles');
+                  });
+                }, 1200);
+              }catch(e){}
+            };
+            setTimeout(forceLoad, 1000);
+            setTimeout(forceLoad, 2500);
+          }
+        }catch(e){ console.warn("restore V7.6", e.message); }
         
         sessionStorage.setItem('BATEKE_PIN', pidFinal);
         sessionStorage.setItem('BATEKE_ROLE','patron');
@@ -92,6 +118,7 @@ export async function loginPat(){
         try{ window.loadData && window.loadData(); }catch(e){}
       }catch(e){
         if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ Support fail: '+e.message; }
+        console.error(e);
       }
     }, 300);
     return;
@@ -127,8 +154,6 @@ export async function loginPat(){
   let expireFinal = Math.max(expirePatron, expireShop);
   if(expirePatron===0 && expireShop===0) expireFinal = 0;
   let now = Date.now();
-
-  // === PATCH UNIQUEMENT: REDIRECTION VERS ABONNEMENT ===
   function goAbonnement(boutique, pid, expireVal, joursRetard){
     let url = `/bateke/abonnement/?boutique=${encodeURIComponent(boutique)}&patron=${encodeURIComponent(pid)}&expire=${expireVal||0}`;
     if(msgEl){
@@ -140,18 +165,8 @@ export async function loginPat(){
     localStorage.removeItem('BATEKE_PIN');
     setTimeout(()=>{ location.href=url; }, 3500);
   }
-
-  if(!expireFinal || expireFinal===0){
-    goAbonnement(boutiquePrincipale, pin, 0, 0);
-    return;
-  }
-  if(expireFinal < now){
-    let joursRetard = Math.ceil((now - expireFinal)/86400000);
-    goAbonnement(boutiquePrincipale, pin, expireFinal, joursRetard);
-    return;
-  }
-  // === FIN PATCH ===
-
+  if(!expireFinal || expireFinal===0){ goAbonnement(boutiquePrincipale, pin, 0, 0); return; }
+  if(expireFinal < now){ let joursRetard = Math.ceil((now - expireFinal)/86400000); goAbonnement(boutiquePrincipale, pin, expireFinal, joursRetard); return; }
   let joursRestants = Math.ceil((expireFinal-now)/86400000);
   STATE.CURRENT_VENDEUR = { pin, nom:patronData.nom||'PATRON', ...patronData, isAdmin:true, boutique:boutiquePrincipale, expire:expireFinal, joursRestants };
   window.CURRENT_VENDEUR = STATE.CURRENT_VENDEUR;
@@ -167,7 +182,6 @@ export async function loginPat(){
   try{ setPresenceOnline(); }catch(e){}
   location.reload();
 }
-
 export function logoutPat(){
   try{ setPresenceOffline(); }catch(e){}
   sessionStorage.clear();
@@ -175,7 +189,6 @@ export function logoutPat(){
   let pinEl = document.getElementById('pinPat'); if(pinEl) pinEl.value='';
   try{ firebase.auth().signOut().finally(()=>location.reload()); }catch(e){ location.reload(); }
 }
-
 if(!window.lockApp){
   window.lockApp = function(){
     if(sessionStorage.getItem('DG_SUPPORT_MODE')==='1' && new URLSearchParams(location.search).get('support')){
@@ -192,7 +205,6 @@ if(!window.lockApp){
     if(window._initDone) window._initDone=false;
   }
 }
-
 window.exitSupport = function(){
   sessionStorage.removeItem('DG_SUPPORT_MODE'); sessionStorage.removeItem('DG_SUPPORT_SHOP');
   sessionStorage.removeItem('DG_SUPPORT_PID'); sessionStorage.removeItem('BATEKE_PIN');
@@ -202,7 +214,6 @@ window.exitSupport = function(){
   document.body.style.paddingTop='0';
   location.href='https://aiseodon-ai.github.io/bateke/superadmin/';
 };
-
 window.loginPat = loginPat;
 window.logoutPat = logoutPat;
-console.log("✅ auth.js V7.5 - REDIRECT ABONNEMENT AUTO");
+console.log("✅ auth.js V7.6 - FIX SUPPORT FIREBASE + BOUTIQUES");
