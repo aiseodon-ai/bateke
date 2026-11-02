@@ -151,6 +151,15 @@ function updateBadgeAbo(expireTime, boutiqueNom){
 }
 
 async function checkAbonnement(boutiqueNom){
+        // ATTEND que core/firebase.js ait initialisé
+        let tries=0;
+        while((!window.firebase || !firebase.apps || !firebase.apps.length || !window.db) && tries<80){
+          await new Promise(r=>setTimeout(r, 300));
+          tries++;
+        }
+        if(!window.db){ return; } // skip si vraiment pas prêt
+        // ... reste identique
+      }
   try{
     if(!boutiqueNom) boutiqueNom = document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_SHOP') || localStorage.getItem('patron_shop') || sessionStorage.getItem('BATEKE_BOUTIQUE') || 'Menkao2';
     if(!boutiqueNom || boutiqueNom==='ALL') boutiqueNom='Menkao2';
