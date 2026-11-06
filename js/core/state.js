@@ -1,5 +1,11 @@
 // state.js - V4.9.27 - FIX PANIER + SYNC
-const SAVED_SHOP = localStorage.getItem('patron_shop') || "Menkao1";
+//const SAVED_SHOP = localStorage.getItem('patron_shop') || "Menkao1";
+const SAVED_SHOP = localStorage.getItem('patron_shop') 
+  || sessionStorage.getItem('DG_SUPPORT_SHOP')
+  || localStorage.getItem('BATEKE_BOUTIQUE') 
+  || localStorage.getItem('CURRENT_SHOP')
+  || localStorage.getItem('patron_shop') 
+  || "Menkao1";
 const SAVED_PANIER = JSON.parse(localStorage.getItem('panier_achat_'+SAVED_SHOP) || '[]');
 
 export const STATE = {
