@@ -268,4 +268,17 @@ window.switchShop = function(){
   window.addEventListener('load', showSupportBanner);
 })();
 </script>
+
+<script>
+// POPUP CGU V2 - première connexion
+(function(){
+  if(!localStorage.getItem('BATEKE_CGU_ACCEPTED')){
+    setTimeout(()=>{
+      if(confirm("📜 Nouvelle CGU V2 - Promo 10.000 FC / mois. Veux-tu lire et accepter les conditions?")){
+        location.href='/bateke/cgu.html';
+      }
+    }, 1500);
+  }
+})();
+</script>  
 </body></html>
