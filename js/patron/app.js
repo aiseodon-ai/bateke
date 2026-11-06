@@ -172,6 +172,16 @@ window.initShops = function(){
   }
   if(window._realInitShops) return window._realInitShops();
 }
+// FIX V8.2 - Si URL support, force loginPat auto
+window.addEventListener('DOMContentLoaded', ()=>{
+  setTimeout(()=>{
+    let p = new URLSearchParams(location.search);
+    if(p.get('support') && window.loginPat){
+      console.log("🚀 Auto loginPat support");
+      window.loginPat();
+    }
+  }, 800);
+});
 
 window.addEventListener('DOMContentLoaded', secureInit);
 window.secureInit = secureInit;
