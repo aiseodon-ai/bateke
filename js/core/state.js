@@ -65,4 +65,14 @@ window.STATE = STATE; // expose STATE global
 window.setShop = STATE.setShop; // pour que boutiques.js puisse l'appeler même sans import
 
 // Fix export SHOP qui était une copie figée
-export function getShop(){ return STATE.SHOP; }
+export function getShop(){ return STATE.SHOP; };
+
+// FIX SUPPORT DG - force sync si mode support
+try{
+  let dgShop = sessionStorage.getItem('DG_SUPPORT_SHOP');
+  if(dgShop && sessionStorage.getItem('DG_SUPPORT_MODE')==='1'){
+    STATE.SHOP = dgShop;
+    window.SHOP = dgShop;
+    console.log("🛠️ STATE forcé support:", dgShop);
+  }
+}catch(e){}
