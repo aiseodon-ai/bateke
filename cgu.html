@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>CGU - BATEKE SAAS</title>
+<style>body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:20px;max-width:800px;margin:auto;line-height:1.6}.card{background:#171717;border:1px solid #262626;border-radius:16px;padding:20px;margin-top:16px}h1{color:#22c55e}.badge{background:#22c55e;color:#000;padding:4px 10px;border-radius:12px;font-weight:bold}button{background:#22c55e;color:#000;border:0;padding:12px 20px;border-radius:10px;font-weight:bold;cursor:pointer;width:100%}</style></head><body>
+<h1>📜 CGU BATEKE SAAS <span class="badge">V2 - PROMO 10.000 FC</span></h1><p class="muted">Version 2.0 - 06/11/2026 - Offre de lancement</p>
+
+<div class="card"><h3>1. Objet</h3><p>BATEKE est une solution SAAS de gestion de boutiques (stock, ventes, compta, caisse, dettes, CRM) accessible sur aiseodon-ai.github.io/bateke.</p></div>
+
+<div class="card"><h3>2. Définitions</h3><p><b>Patron:</b> Propriétaire du compte.<br><b>Vendeur:</b> Employé créé par le Patron.<br><b>Éditeur:</b> Équipe BATEKE, support technique uniquement sur autorisation du Patron.</p></div>
+
+<div class="card" style="border:2px solid #22c55e"><h3>3. Abonnement & Tarifs PROMO</h3><p>Le service est facturé <b>10.000 FC par boutique pour 30 jours</b> en offre promotionnelle de lancement.</p><p>Tarif normal: 15.000 FC. Le prix promotionnel peut évoluer et est affiché sur la page d'abonnement. Le prix en vigueur au jour du paiement s'applique.</p><p>Paiement via Mobile Money (Airtel Money, M-Pesa, Orange Money). Activation sous 24h après vérification.</p></div>
+
+<div class="card"><h3>4. Facturation & Suspension</h3><p>À J-3: Alerte orange. À J-0: Blocage automatique de la boutique . Aucune suppression de données. Déblocage immédiat après paiement validé. Après 90 jours sans paiement, archivage possible.</p></div>
+
+<div class="card"><h3>5. Mode Support</h3><p>Sur demande du Patron via WhatsApp, l'Éditeur peut accéder en mode assistance temporaire via lien sécurisé. Accès tracé, en lecture seule sauf accord. Le Patron peut quitter le mode à tout moment.</p></div>
+
+<div class="card"><h3>6. Données & Confidentialité</h3><p>Les données restent la propriété exclusive du Patron. Stockage sécurisé Firebase (Google). L'Éditeur ne vend, ne partage jamais les données. Export Excel disponible à tout moment. Conformité loi RDC sur la protection des données.</p></div>
+
+<div class="card"><h3>7. Responsabilités</h3><p>Éditeur: disponibilité 99% hors maintenance. Non responsable des erreurs de saisie, coupure internet ou partage de PIN par le Patron.<br>Patron: responsable de la confidentialité de ses PINs. Toute opération avec un PIN est réputée valide.</p></div>
+
+<div class="card"><h3>8. Résiliation</h3><p>Arrêt libre par non-renouvellement. Pas de remboursement prorata.</p></div>
+
+<div class="card"><h3>9. Droit applicable</h3><p>Droit de la RDC. Tribunaux de Kinshasa compétents. Support: via page superadmin.</p></div>
+
+<div class="card" style="text-align:center"><label><input type="checkbox" id="checkCGU"> J'ai lu et j'accepte les CGU V2 - 10.000 FC</label><br><br><button onclick="accepterCGU()">✅ ACCEPTER ET CONTINUER</button><p id="msgCGU" style="color:#22c55e"></p></div>
+
+<script>
+function accepterCGU(){
+  if(!document.getElementById('checkCGU').checked){ alert('Coche la case'); return; }
+  localStorage.setItem('BATEKE_CGU_ACCEPTED','V2-10000');
+  localStorage.setItem('BATEKE_CGU_DATE', Date.now());
+  document.getElementById('msgCGU').innerText='✅ CGU acceptées - Redirection...';
+  setTimeout(()=>{ location.href='/bateke/'; }, 1000);
+}
+</script></body></html>
