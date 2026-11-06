@@ -20,18 +20,16 @@
 
 <div class="card"><h3>9. Droit applicable</h3><p>Droit de la RDC. Tribunaux de Kinshasa compétents. Support: via page superadmin.</p></div>
 
-<div class="card" style="text-align:center"><label><input type="checkbox" id="checkCGU"> J'ai lu et j'accepte les CGU V2 - 10.000 FC</label><br><br><button onclick="accepterCGU()">✅ ACCEPTER ET CONTINUER</button><p id="msgCGU" style="color:#22c55e"></p></div>
+<div class="card" style="text-align:center"><label><input type="checkbox" id="checkCGU"> J'ai lu et j'accepte les CGU V2 - 10.000 FC</label><br><br><button onclick="accepterCGU()">✅ ACCEPTER ET ALLER AU LOGIN</button><p id="msgCGU" style="color:#22c55e"></p></div>
 
 <script>
 function accepterCGU(){
-  if(!document.getElementById('checkCGU').checked){ alert('Coche la case'); return; }
+  if(!document.getElementById('checkCGU').checked){ alert('Coche la case CGU'); return; }
   localStorage.setItem('BATEKE_CGU_ACCEPTED','V2-10000');
   localStorage.setItem('BATEKE_CGU_DATE', Date.now());
-  let shop = localStorage.getItem('patron_shop') || localStorage.getItem('BATEKE_BOUTIQUE') || '';
-  document.getElementById('msgCGU').innerText='✅ CGU acceptées - Vers abonnement...';
+  document.getElementById('msgCGU').innerText='✅ CGU acceptées - Retour login...';
   setTimeout(()=>{
-    if(shop) location.href='/bateke/abonnement/?boutique='+encodeURIComponent(shop);
-    else location.href='/bateke/abonnement/';
+    location.href='/bateke/'; // ← RETOUR LOGIN et non abonnement
   }, 800);
 }
 </script></body></html>
