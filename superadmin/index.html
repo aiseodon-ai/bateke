@@ -156,10 +156,18 @@ function toTime(v){ if(!v) return 0; if(typeof v==='number') return v; if(typeof
 function trouverPatronDeShop(s, patrons){ for(let pid in patrons){ let p=patrons[pid]; if(p.boutiques && p.boutiques[s]) return pid; if((p.boutique||'').toLowerCase()===s.toLowerCase()) return pid; } return null; }
 function viewAsPatron(shop, pid){ 
   if(!shop){ alert('Pas de boutique'); return; } 
+  // FIX: on synchronise TOUTES les clés que state.js et app.js lisent
+  localStorage.setItem('patron_shop', shop);
+  localStorage.setItem('BATEKE_BOUTIQUE', shop);
+  localStorage.setItem('CURRENT_SHOP', shop);
+  localStorage.setItem('BATEKE_LAST_PIN', pid);
+  localStorage.setItem('patron_pin', pid);
+  localStorage.setItem('patron_nom', 'DG SUPPORT');
   sessionStorage.setItem('DG_SUPPORT_MODE','1'); 
   sessionStorage.setItem('DG_SUPPORT_SHOP',shop); 
-  sessionStorage.setItem('DG_SUPPORT_PID',pid); 
-  // FIX: chemin absolu vers /bateke/ pour GitHub Pages
+  sessionStorage.setItem('DG_SUPPORT_PID',pid);
+  sessionStorage.setItem('BATEKE_PIN', pid);
+  sessionStorage.setItem('BATEKE_ROLE','patron');
   let url = `/bateke/?support=${encodeURIComponent(shop)}&pid=${encodeURIComponent(pid)}`;
   window.open(url, '_blank'); 
 }
