@@ -27,7 +27,11 @@ function accepterCGU(){
   if(!document.getElementById('checkCGU').checked){ alert('Coche la case'); return; }
   localStorage.setItem('BATEKE_CGU_ACCEPTED','V2-10000');
   localStorage.setItem('BATEKE_CGU_DATE', Date.now());
-  document.getElementById('msgCGU').innerText='✅ CGU acceptées - Redirection...';
-  setTimeout(()=>{ location.href='/bateke/'; }, 1000);
+  let shop = localStorage.getItem('patron_shop') || localStorage.getItem('BATEKE_BOUTIQUE') || '';
+  document.getElementById('msgCGU').innerText='✅ CGU acceptées - Vers abonnement...';
+  setTimeout(()=>{
+    if(shop) location.href='/bateke/abonnement/?boutique='+encodeURIComponent(shop);
+    else location.href='/bateke/abonnement/';
+  }, 800);
 }
 </script></body></html>
