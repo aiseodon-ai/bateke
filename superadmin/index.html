@@ -31,6 +31,7 @@
  <div class="card"><div>Patrons</div><div id="totalPatrons" class="kpi">...</div></div>
  <div class="card"><div>Actifs / Bloqués</div><div id="abos" class="kpi">...</div><div id="abosDetail" class="muted"></div></div>
  <div class="card"><div>Revenus validés (mois)</div><div id="revenus" class="kpi ok">...</div><div class="muted" id="revenusDetail"></div></div>
+ <div class="card"><div>Prix Abonnement</div><div class="kpi" style="font-size:20px"><input id="inputPrixAbo" type="number" value="10000" style="width:100px"> FC</div><button class="btn-g" onclick="savePrixAbo()">💾 Sauver Prix</button><div id="msgPrix" class="muted"></div></div>
 </div>
 
 <div class="card">
@@ -304,4 +305,20 @@ firebase.auth().signInAnonymously().then(()=>{
   setInterval(()=>scanGlobal(),20000);
 });
 </script>
+ <script>
+function loadPrixAbo(){
+  firebase.database().ref('config_global/prix_abonnement').once('value').then(s=>{
+    if(s.exists()) document.getElementById('inputPrixAbo').value = s.val();
+  });
+}
+function savePrixAbo(){
+  let v = parseInt(document.getElementById('inputPrixAbo').value)||10000;
+  firebase.database().ref('config_global/prix_abonnement').set(v).then(()=>{
+    document.getElementById('msgPrix').innerText='✅ Prix mis à '+v+' FC';
+    scanGlobal();
+  });
+}
+setTimeout(loadPrixAbo, 1000);
+</script>
+
 </body></html>
