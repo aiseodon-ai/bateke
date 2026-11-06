@@ -12,18 +12,28 @@ table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:6px;borde
   
 <div id="loginPat" style="position:fixed;inset:0;background:#0b0f14f2;z-index:9999;display:flex;align-items:center;justify-content:center">
 <script>
-// FIX SUPPORT DG - cache le PIN immédiatement avant que les modules chargent
+// FIX SUPPORT DG V8.2 - AUTO LOGIN via URL (pas sessionStorage)
 (function(){
   let p = new URLSearchParams(location.search);
   let shop = p.get('support') || p.get('support_boutique');
-  let pid = p.get('pid');
-  if(shop && sessionStorage.getItem('DG_SUPPORT_MODE')==='1'){
+  let pid = p.get('pid') || '7832';
+  if(shop){
+    console.log('🛠️ SUPPORT V8.2 détecté URL:', shop, pid);
+    // On utilise localStorage car il est partagé entre onglets, pas sessionStorage
+    localStorage.setItem('patron_shop', shop);
+    localStorage.setItem('BATEKE_BOUTIQUE', shop);
+    localStorage.setItem('CURRENT_SHOP', shop);
+    localStorage.setItem('BATEKE_LAST_PIN', pid);
+    // On met le PIN directement en sessionStorage DANS ce nouvel onglet
+    sessionStorage.setItem('BATEKE_PIN', pid);
+    sessionStorage.setItem('BATEKE_ROLE', 'patron');
+    sessionStorage.setItem('DG_SUPPORT_MODE','1');
+    sessionStorage.setItem('DG_SUPPORT_SHOP', shop);
+    sessionStorage.setItem('DG_SUPPORT_PID', pid);
+    sessionStorage.setItem('pin', pid);
+    // Cache le login
     let login = document.getElementById('loginPat');
-    if(login){
-      login.style.display='none';
-      login.style.visibility='hidden';
-    }
-    console.log('SUPPORT DG: PIN caché immédiatement pour', shop);
+    if(login){ login.style.display='none'; login.style.visibility='hidden'; }
   }
 })();
 </script>
