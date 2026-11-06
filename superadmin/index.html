@@ -163,11 +163,7 @@ function viewAsPatron(shop, pid){
   localStorage.setItem('BATEKE_LAST_PIN', pid);
   localStorage.setItem('patron_pin', pid);
   localStorage.setItem('patron_nom', 'DG SUPPORT');
-  sessionStorage.setItem('DG_SUPPORT_MODE','1'); 
-  sessionStorage.setItem('DG_SUPPORT_SHOP',shop); 
-  sessionStorage.setItem('DG_SUPPORT_PID',pid);
-  sessionStorage.setItem('BATEKE_PIN', pid);
-  sessionStorage.setItem('BATEKE_ROLE','patron');
+  
   let url = `/bateke/?support=${encodeURIComponent(shop)}&pid=${encodeURIComponent(pid)}`;
   window.open(url, '_blank'); 
 }
