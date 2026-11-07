@@ -1,5 +1,7 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN V9 SUPPORT CONSENTI</title><base href="/bateke/"><style>
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BATEKE - SUPERADMIN V8.5 HISTORIQUE + V9 SUPPORT</title><base href="/bateke/">
+<style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:16px}
  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
  .card{background:#171717;border:1px solid #262626;border-radius:16px;padding:18px;margin-top:14px}
@@ -19,7 +21,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head><body>
-<h1>👑 BATEKE SUPERADMIN V9 <button id="btnSound" class="btn-dark" style="font-size:11px;margin-left:10px" onclick="enableSound()">🔔 Son</button></h1>
+<h1>👑 BATEKE SUPERADMIN V8.5 + V9 SUPPORT
+<button id="btnSound" class="btn-dark" style="font-size:11px;margin-left:10px" onclick="enableSound()">🔔 Son</button>
+</h1>
+
 <div class="grid">
  <div class="card"><div>Boutiques</div><div id="totalBoutiques" class="kpi">...</div></div>
  <div class="card"><div>Patrons</div><div id="totalPatrons" class="kpi">...</div></div>
@@ -41,40 +46,126 @@
 
 <div id="tab-clients">
   <input id="searchClient" placeholder="🔍 Chercher nom, téléphone, boutique, PIN..." oninput="scanGlobal()" style="margin-bottom:10px">
-  <div style="overflow:auto"><table><thead><tr><th>Client</th><th>Contact</th><th>Boutiques</th><th>PINs</th><th>Statut</th><th>Actions DG</th></tr></thead><tbody id="tableClients"></tbody></table></div>
+  <div style="overflow:auto"><table><thead><tr><th>Client</th><th>Contact</th><th>Boutiques</th><th>PINs</th><th>Statut</th><th>Actions DG</th></tr></thead><tbody id="tableClients"><tr><td colspan=6 class="muted">Chargement...</td></tr></tbody></table></div>
 </div>
-<div id="tab-boutiques" style="display:none"><div style="overflow:auto"><table><thead><tr><th>Boutique</th><th>Patron</th><th>Expire</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tableAbo"></tbody></table></div></div>
-<div id="tab-paiements" style="display:none"><h3>💳 En attente - LIVE</h3><div style="overflow:auto"><table><thead><tr><th>Boutique</th><th>TX ID / Réseau</th><th>Payeur</th><th>Montant</th><th>Action DG</th></tr></thead><tbody id="tablePaiements"></tbody></table></div></div>
+
+<div id="tab-boutiques" style="display:none">
+  <div style="overflow:auto"><table><thead><tr><th>Boutique</th><th>Patron</th><th>Expire</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tableAbo"></tbody></table></div>
+</div>
+
+<div id="tab-paiements" style="display:none">
+  <h3>💳 En attente - LIVE</h3>
+  <div style="overflow:auto"><table><thead><tr><th>Boutique</th><th>TX ID / Réseau</th><th>Payeur</th><th>Montant</th><th>Action DG</th></tr></thead><tbody id="tablePaiements"></tbody></table></div>
+</div>
+
 <div id="tab-support" style="display:none">
   <h3>🛡️ Support Consenti - LIVE</h3>
-  <p class="muted">Patron doit autoriser. Tu vois sa présence. Il peut te kicker.</p>
+  <p class="muted">Patron doit autoriser. Tu vois sa présence. Il peut te kicker. Logs dans logs_support/</p>
   <div style="overflow:auto"><table><thead><tr><th>Boutique</th><th>Demande</th><th>Autorisation</th><th>Action</th></tr></thead><tbody id="tableSupport"></tbody></table></div>
   <h4 style="margin-top:20px">📜 Logs Support</h4>
   <div style="overflow:auto"><table><thead><tr><th>Date</th><th>Boutique</th><th>Action</th><th>Par</th></tr></thead><tbody id="tableLogsSupport"></tbody></table></div>
 </div>
-<div id="tab-historique" style="display:none"><h3>📜 Historique paiements</h3><div style="display:flex;gap:8px;margin-bottom:8px"><input id="searchHist" placeholder="🔍 Filtrer boutique, TX, téléphone..." oninput="filterHist()" style="flex:1"><select id="filterStatut" onchange="filterHist()" style="width:130px"><option value="">Tous</option><option value="valide">✅ Validés</option><option value="rejete">❌ Rejetés</option></select></div><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Boutique</th><th>TX ID</th><th>Payeur</th><th>Montant</th><th>Statut / DG</th></tr></thead><tbody id="tableHist"></tbody></table></div></div>
-<div id="tab-create" style="display:none"><h3>➕ Nouveau Client</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input id="newPatronId" placeholder="ID PIN (ex: 1234)" type="number"><input id="newPatronPin" placeholder="PIN connexion (vide = même que ID)" type="number"><input id="newPatronNom" placeholder="Nom complet *"><input id="newPatronPhone" placeholder="Téléphone WhatsApp *"><input id="newPatronEmail" placeholder="Email (optionnel)"><input id="newBoutiqueNom" placeholder="Nom 1ère boutique *"></div><input id="newPatronAdresse" placeholder="Adresse / Commune" style="margin-top:8px"><button class="btn-g" style="width:100%;margin-top:10px;padding:14px" onclick="creerPatron()">✅ CRÉER CLIENT BLOQUÉ</button><div id="msgCreate" class="muted"></div></div>
+
+<div id="tab-historique" style="display:none">
+  <h3>📜 Historique des paiements (archive)</h3>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <input id="searchHist" placeholder="🔍 Filtrer boutique, TX, téléphone..." oninput="filterHist()" style="flex:1">
+    <select id="filterStatut" onchange="filterHist()" style="width:130px"><option value="">Tous</option><option value="valide">✅ Validés</option><option value="rejete">❌ Rejetés</option></select>
+  </div>
+  <div style="overflow:auto"><table><thead><tr><th>Date</th><th>Boutique</th><th>TX ID</th><th>Payeur</th><th>Montant</th><th>Statut / DG</th></tr></thead><tbody id="tableHist"></tbody></table></div>
 </div>
 
-<div id="modalClient" class="modal" onclick="if(event.target==this)closeModal()"><div class="modal-box"><h2 id="modalTitle">Fiche Client</h2><div id="modalBody"></div><div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn-b" onclick="editClient()">✏️ Editer</button><button class="btn-r" onclick="supprimerClient()">🗑️ Supprimer</button><button class="btn-dark" onclick="closeModal()">Fermer</button></div></div></div>
+<div id="tab-create" style="display:none">
+  <h3>➕ Nouveau Client SAAS</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <input id="newPatronId" placeholder="ID PIN (ex: 1234)" type="number">
+    <input id="newPatronPin" placeholder="PIN connexion (vide = même que ID)" type="number">
+    <input id="newPatronNom" placeholder="Nom complet *">
+    <input id="newPatronPhone" placeholder="Téléphone WhatsApp *">
+    <input id="newPatronEmail" placeholder="Email (optionnel)">
+    <input id="newBoutiqueNom" placeholder="Nom 1ère boutique *">
+  </div>
+  <input id="newPatronAdresse" placeholder="Adresse / Commune" style="margin-top:8px">
+  <button class="btn-g" style="width:100%;margin-top:10px;padding:14px" onclick="creerPatron()">✅ CRÉER CLIENT BLOQUÉ</button>
+  <div id="msgCreate" class="muted" style="margin-top:8px"></div>
+</div>
+</div>
+
+<div id="modalClient" class="modal" onclick="if(event.target==this)closeModal()">
+  <div class="modal-box">
+    <h2 id="modalTitle">Fiche Client</h2>
+    <div id="modalBody"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn-b" onclick="editClient()">✏️ Editer</button>
+      <button class="btn-r" onclick="supprimerClient()">🗑️ Supprimer</button>
+      <button class="btn-dark" onclick="closeModal()">Fermer</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const CODE_DG = "BATEKE2026";
 if(prompt("🔑 Code DG:") !== CODE_DG){ location.href='/bateke/'; throw new Error("x"); }
-const firebaseConfig = {apiKey:"AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",authDomain:"bateke-v4.firebaseapp.com",databaseURL:"https://bateke-v4-default-rtdb.firebaseio.com",projectId:"bateke-v4",storageBucket:"bateke-v4.firebasestorage.app",messagingSenderId:"321333206282",appId:"1:321333206282:web:6d1603446be3d195de6ef3"};
-if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-try { firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'), true);} catch(e){console.warn(e.message);}
-let G_SHOPS={}, G_PATRONS={}, G_CURRENT_PID=null, G_HIST=[], G_SUPPORT_AUTH={}, G_SUPPORT_REQ={};
-let G_LAST_PAY_COUNT=0, G_SOUND_ENABLED=false;
-function enableSound(){G_SOUND_ENABLED=true;document.getElementById('btnSound').innerText='🔊 Son activé';document.getElementById('btnSound').style.background='#22c55e';if('Notification' in window) Notification.requestPermission();try{new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{});}catch(e){}}
-function playNotif(b,t){if(!G_SOUND_ENABLED) return;try{let a=new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');a.volume=1;a.play();}catch(e){}try{navigator.vibrate([300,100,300,100,500]);}catch(e){}if('Notification' in window&&Notification.permission==='granted'){new Notification('💳 Nouveau paiement BATEKE',{body:`${b} - TX ${t}`});}let tab=document.getElementById('tabPaiement');tab.classList.add('tab-notif');setTimeout(()=>tab.classList.remove('tab-notif'),5000);}
-function switchTab(t,el){document.getElementById('tab-clients').style.display=t==='clients'?'block':'none';document.getElementById('tab-boutiques').style.display=t==='boutiques'?'block':'none';document.getElementById('tab-paiements').style.display=t==='paiements'?'block':'none';document.getElementById('tab-support').style.display=t==='support'?'block':'none';document.getElementById('tab-historique').style.display=t==='historique'?'block':'none';document.getElementById('tab-create').style.display=t==='create'?'block':'none';document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');else document.querySelector(`[data-tab="${t}"]`)?.classList.add('active');if(t==='paiements')document.getElementById('tabPaiement').classList.remove('tab-notif');}
-function toTime(v){if(!v)return 0;if(typeof v==='number')return v;if(typeof v==='string'&&/^\d{12,}$/.test(v))return parseInt(v,10);let d=new Date(v).getTime();return isNaN(d)?0:d;}
-function trouverPatronDeShop(s, patrons){for(let pid in patrons){let p=patrons[pid];if(p.boutiques&&p.boutiques[s])return pid;if((p.boutique||'').toLowerCase()===s.toLowerCase())return pid;}return null;}
 
-// === V9 SUPPORT CONSENTI ===
+const firebaseConfig = {
+  apiKey: "AIzaSyBOD42Ibg7tGVafz44cwCyI0CUjgAn5MNY",
+  authDomain: "bateke-v4.firebaseapp.com",
+  databaseURL: "https://bateke-v4-default-rtdb.firebaseio.com",
+  projectId: "bateke-v4",
+  storageBucket: "bateke-v4.firebasestorage.app",
+  messagingSenderId: "321333206282",
+  appId: "1:321333206282:web:6d1603446be3d195de6ef3"
+};
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+try {
+  firebase.appCheck().activate(
+    new firebase.appCheck.ReCaptchaV3Provider('6Lf_U_QtAAAAAHpf_J8KwWnKBPAFQUBSYO41tx5o'),
+    true
+  );
+  console.log('AppCheck OK');
+} catch(e){
+  console.warn('AppCheck désactivé pour superadmin DG, on continue sans:', e.message);
+}
+ 
+let G_SHOPS={}, G_PATRONS={}, G_CURRENT_PID=null, G_HIST=[];
+let G_LAST_PAY_COUNT=0, G_SOUND_ENABLED=false;
+// V9 ADD
+let G_SUPPORT_AUTH={}, G_SUPPORT_REQ={}, G_LOGS_SUPPORT={};
+
+function enableSound(){
+  G_SOUND_ENABLED=true;
+  document.getElementById('btnSound').innerText='🔊 Son activé';
+  document.getElementById('btnSound').style.background='#22c55e';
+  if('Notification' in window) Notification.requestPermission();
+  try{ new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{}); }catch(e){}
+}
+function playNotif(boutique, tx){
+  if(!G_SOUND_ENABLED) return;
+  try{ let a=new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'); a.volume=1; a.play(); }catch(e){}
+  try{ navigator.vibrate([300,100,300,100,500]); }catch(e){}
+  if('Notification' in window && Notification.permission==='granted'){
+    new Notification('💳 Nouveau paiement BATEKE', {body:`${boutique} - TX ${tx}`});
+  }
+  let tab=document.getElementById('tabPaiement'); tab.classList.add('tab-notif'); setTimeout(()=>tab.classList.remove('tab-notif'), 5000);
+}
+function switchTab(t, el){
+  document.getElementById('tab-clients').style.display = t==='clients'?'block':'none';
+  document.getElementById('tab-boutiques').style.display = t==='boutiques'?'block':'none';
+  document.getElementById('tab-paiements').style.display = t==='paiements'?'block':'none';
+  document.getElementById('tab-support').style.display = t==='support'?'block':'none';
+  document.getElementById('tab-historique').style.display = t==='historique'?'block':'none';
+  document.getElementById('tab-create').style.display = t==='create'?'block':'none';
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  if(el) el.classList.add('active'); else document.querySelector(`[data-tab="${t}"]`)?.classList.add('active');
+  if(t==='paiements') document.getElementById('tabPaiement').classList.remove('tab-notif');
+}
+function toTime(v){ if(!v) return 0; if(typeof v==='number') return v; if(typeof v==='string' && /^\d{12,}$/.test(v)) return parseInt(v,10); let d=new Date(v).getTime(); return isNaN(d)?0:d; }
+function trouverPatronDeShop(s, patrons){ for(let pid in patrons){ let p=patrons[pid]; if(p.boutiques && p.boutiques[s]) return pid; if((p.boutique||'').toLowerCase()===s.toLowerCase()) return pid; } return null; }
+
+// V9 ADD - SUPPORT CONSENTI
 function demanderSupport(shop, pid){
- if(!shop){alert('Pas de boutique');return;}
+ if(!shop){ alert('Pas de boutique'); return; }
  let motif = prompt(`Motif support pour ${shop}:`,'Assistance technique');
  if(motif===null) return;
  firebase.database().ref(`support_requests/${shop}`).push({patronId:pid,boutique:shop,status:'pending',date:Date.now(),demandePar:'DG',motif:motif,expireDemande:Date.now()+86400000}).then(()=>{
@@ -83,18 +174,24 @@ function demanderSupport(shop, pid){
    scanGlobal();
  });
 }
-function viewAsPatron(shop, pid){
- if(!shop){alert('Pas de boutique');return;}
- firebase.database().ref(`support_authorizations/${shop}/active`).once('value').then(snap=>{
-   let auth = snap.val();
-   if(!auth || !auth.authorized || toTime(auth.jusqua) < Date.now()){
-     if(confirm(`⛔ Accès non autorisé pour ${shop}.\nPatron n'a pas encore autorisé.\n\nVoulez-vous envoyer une demande d'accès?`)){ demanderSupport(shop,pid); switchTab('support'); }
-     return;
-   }
-   localStorage.setItem('patron_shop', shop); localStorage.setItem('BATEKE_BOUTIQUE', shop); localStorage.setItem('CURRENT_SHOP', shop); localStorage.setItem('BATEKE_LAST_PIN', pid); localStorage.setItem('patron_pin', pid); localStorage.setItem('patron_nom', 'DG SUPPORT');
-   let url = `/bateke/?support=${encodeURIComponent(shop)}&pid=${encodeURIComponent(pid)}&token=${encodeURIComponent(auth.token||'')}`;
-   window.open(url, '_blank');
- });
+function viewAsPatron(shop, pid){ 
+  if(!shop){ alert('Pas de boutique'); return; } 
+  // V9: vérifie autorisation d'abord
+  firebase.database().ref(`support_authorizations/${shop}/active`).once('value').then(snap=>{
+    let auth = snap.val();
+    if(!auth || !auth.authorized || toTime(auth.jusqua) < Date.now()){
+      if(confirm(`⛔ Accès non autorisé pour ${shop}.\nPatron n'a pas encore autorisé.\n\nEnvoyer demande d'accès?`)){ demanderSupport(shop,pid); switchTab('support', document.querySelector('[data-tab="support"]')); }
+      return;
+    }
+    localStorage.setItem('patron_shop', shop);
+    localStorage.setItem('BATEKE_BOUTIQUE', shop);
+    localStorage.setItem('CURRENT_SHOP', shop);
+    localStorage.setItem('BATEKE_LAST_PIN', pid);
+    localStorage.setItem('patron_pin', pid);
+    localStorage.setItem('patron_nom', 'DG SUPPORT');
+    let url = `/bateke/?support=${encodeURIComponent(shop)}&pid=${encodeURIComponent(pid)}&token=${encodeURIComponent(auth.token||'')}`;
+    window.open(url, '_blank'); 
+  });
 }
 function quitterSupportForce(shop){
  if(!confirm(`Forcer fin support ${shop}?`)) return;
@@ -103,60 +200,177 @@ function quitterSupportForce(shop){
    scanGlobal();
  });
 }
-function filterHist(){let q=(document.getElementById('searchHist').value||'').toLowerCase();let f=document.getElementById('filterStatut').value;let html='';G_HIST.filter(p=>{if(f&&p.statut!==f)return false;let s=`${p.boutique||''} ${p.transactionId||''} ${p.phonePayer||''} ${p.patronId||''}`.toLowerCase();return !q||s.includes(q);}).slice(0,100).forEach(p=>{html+=`<tr><td><span class="muted">${p.valideLe?new Date(p.valideLe).toLocaleString():p.date?new Date(p.date).toLocaleString():''}</span></td><td><b>${p.boutique}</b><br><span class="muted">${p.patronId||''}</span></td><td><b>${p.transactionId}</b><br><span class="muted">${p.reseau||''}</span></td><td>${p.phonePayer}</td><td>${p.montant||15000} FC</td><td>${p.statut==='valide'?'<span class="ok">✅ Validé</span>':'<span class="bad">❌ Rejeté</span>'}<br><span class="muted">par ${p.validePar||'DG'}</span></td></tr>`;});document.getElementById('tableHist').innerHTML=html||'<tr><td colspan=6 class="muted">Aucun historique</td></tr>';}
+
+function filterHist(){
+  let q=(document.getElementById('searchHist').value||'').toLowerCase();
+  let f=document.getElementById('filterStatut').value;
+  let html='';
+  G_HIST.filter(p=>{
+    if(f && p.statut!==f) return false;
+    let s=`${p.boutique||''} ${p.transactionId||''} ${p.phonePayer||''} ${p.patronId||''}`.toLowerCase();
+    return !q || s.includes(q);
+  }).slice(0,100).forEach(p=>{
+    html+=`<tr>
+      <td><span class="muted">${p.valideLe?new Date(p.valideLe).toLocaleString():p.date?new Date(p.date).toLocaleString():''}</span><br><small class="muted">${p.date?new Date(p.date).toLocaleDateString():''}</small></td>
+      <td><b>${p.boutique}</b><br><span class="muted">${p.patronId||''}</span></td>
+      <td><b>${p.transactionId}</b><br><span class="muted">${p.reseau||''}</span></td>
+      <td>${p.phonePayer}<br><span class="muted">${p.phonePayer?`<a href="https://wa.me/${p.phonePayer.replace(/[^0-9]/g,'')}" style="color:#25D366">WhatsApp</a>`:''}</span></td>
+      <td>${p.montant||15000} FC</td>
+      <td>${p.statut==='valide'?'<span class="ok">✅ Validé</span>':'<span class="bad">❌ Rejeté</span>'}<br><span class="muted">par ${p.validePar||'DG'}</span></td>
+    </tr>`;
+  });
+  document.getElementById('tableHist').innerHTML=html||'<tr><td colspan=6 class="muted">Aucun historique</td></tr>';
+}
 
 function scanGlobal(){
  const q=(document.getElementById('searchClient')?.value||'').toLowerCase();
  const db=firebase.database();
- Promise.all([db.ref('shops').once('value').then(s=>s.val()||{}),db.ref('patrons').once('value').then(s=>s.val()||{}),db.ref('paiements_abonnements').once('value').then(s=>s.val()||{}),db.ref('historique_paiements').orderByChild('valideLe').limitToLast(100).once('value').then(s=>s.val()||{}),db.ref('support_requests').once('value').then(s=>s.val()||{}),db.ref('support_authorizations').once('value').then(s=>s.val()||{}),db.ref('logs_support').limitToLast(100).once('value').then(s=>s.val()||{})]).then(([shopsObj, patronsObj, paiementsObj, histObj, supportReqObj, supportAuthObj, logsSupportObj])=>{
-  G_SHOPS=shopsObj;G_PATRONS=patronsObj;G_SUPPORT_AUTH=supportAuthObj;G_SUPPORT_REQ=supportReqObj;
+ Promise.all([
+   db.ref('shops').once('value').then(s=>s.val()||{}),
+   db.ref('patrons').once('value').then(s=>s.val()||{}),
+   db.ref('paiements_abonnements').once('value').then(s=>s.val()||{}),
+   db.ref('historique_paiements').orderByChild('valideLe').limitToLast(100).once('value').then(s=>s.val()||{}),
+   db.ref('support_requests').once('value').then(s=>s.val()||{}),
+   db.ref('support_authorizations').once('value').then(s=>s.val()||{}),
+   db.ref('logs_support').limitToLast(100).once('value').then(s=>s.val()||{})
+ ]).then(([shopsObj, patronsObj, paiementsObj, histObj, supportReqObj, supportAuthObj, logsSupObj])=>{
+  G_SHOPS=shopsObj; G_PATRONS=patronsObj; G_SUPPORT_REQ=supportReqObj; G_SUPPORT_AUTH=supportAuthObj; G_LOGS_SUPPORT=logsSupObj;
   let shopNames=Object.keys(G_SHOPS).filter(k=>!['shops','Mbata','Itendance'].includes(k));
-  let actifs=0,bloques=0;shopNames.forEach(n=>{let shop=G_SHOPS[n]||{};let exp=toTime(shop.abonnements?.expire);if(exp&&exp>Date.now())actifs++;else bloques++;});
-  document.getElementById('totalBoutiques').innerText=shopNames.length;document.getElementById('totalPatrons').innerText=Object.keys(G_PATRONS).length;document.getElementById('abos').innerText=`${actifs} / ${bloques}`;document.getElementById('abosDetail').innerText=`Actifs:${actifs} Bloqués:${bloques}`;
-  let histArr=Object.values(histObj||{});let month=new Date().getMonth();let year=new Date().getFullYear();let rev=0;histArr.forEach(p=>{if(p.statut==='valide'){let d=new Date(p.valideLe||p.date);if(d.getMonth()===month&&d.getFullYear()===year)rev+=Number(p.montant||15000);}});document.getElementById('revenus').innerText=rev.toLocaleString()+' FC';document.getElementById('revenusDetail').innerText=`${histArr.filter(p=>p.statut==='valide'&&new Date(p.valideLe||p.date).getMonth()===month).length} paiements ce mois`;
-  let htmlClients='';Object.entries(G_PATRONS).forEach(([pid,p])=>{let boutiques=p.boutiques?Object.keys(p.boutiques):(p.boutique?[p.boutique]:[]);let searchStr=`${pid} ${p.nom||''} ${p.phone||''} ${p.email||''} ${boutiques.join(' ')}`.toLowerCase();if(q&&!searchStr.includes(q))return;let hasActif=boutiques.some(b=>{let exp=toTime(p.boutiques?.[b]?.expire||G_SHOPS[b]?.abonnements?.expire);return exp>Date.now();});let statut=hasActif?'<span class="ok">ACTIF</span>':'<span class="bad">BLOQUÉ</span>';let authBoutique=boutiques[0]?G_SUPPORT_AUTH[boutiques[0]]?.active:null;let badgeAuth=authBoutique&&authBoutique.authorized&&toTime(authBoutique.jusqua)>Date.now()?'<span style="background:#22c55e;padding:2px 6px;border-radius:10px;font-size:9px">AUTORISÉ</span>':'';htmlClients+=`<tr><td><b>${p.nom||'—'}</b><br><span class="muted">ID:${pid} - PIN:${p.pin||pid}</span> ${badgeAuth}</td><td>${p.phone?`<a href="https://wa.me/${p.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366">📱 ${p.phone}</a><br>`:''}${p.email||''}</td><td>${boutiques.map(b=>`<span class="muted">${b}</span>`).join('<br>')||'—'}</td><td><span style="background:#7c3aed;padding:3px 8px;border-radius:10px;font-size:11px">👑 ${p.pin||pid}</span></td><td>${statut}</td><td><button class="btn-b" onclick="openClient('${pid}')">Fiche</button><button class="btn-o" onclick="demanderSupport('${boutiques[0]||''}','${pid}')">🔐 Demander</button><button class="btn-dark" onclick="viewAsPatron('${boutiques[0]||''}','${pid}')">👁️ Entrer</button></td></tr>`;});
-  document.getElementById('tableClients').innerHTML=htmlClients||'<tr><td colspan=6 class="muted">Aucun client</td></tr>';
-  let htmlAbo='';shopNames.forEach(name=>{let shop=G_SHOPS[name]||{};let pid=shop.patronId||trouverPatronDeShop(name,G_PATRONS)||'—';let exp=toTime(shop.abonnements?.expire);let jours=exp?Math.ceil((exp-Date.now())/86400000):-999;let statut=!exp?'<span class="bad">JAMAIS</span>':jours<0?`<span class="bad">BLOQUÉ ${jours}j</span>`:`<span class="ok">ACTIF ${jours}j</span>`;let aff=exp?new Date(exp).toLocaleDateString():'—';htmlAbo+=`<tr><td><b>${name}</b></td><td>${pid}</td><td>${aff}</td><td>${statut}</td><td><button class="btn-g" onclick="activer('${name}')">+30J</button> <button class="btn-r" onclick="bloquer('${name}')">BLOQUER</button></td></tr>`;});
-  document.getElementById('tableAbo').innerHTML=htmlAbo||'<tr><td colspan=5>Aucune</td></tr>';
-  let htmlPay='';let countAttente=0;let newPayments=[];Object.entries(paiementsObj||{}).forEach(([key,p])=>{if(p.statut!=='en_attente')return;countAttente++;newPayments.push(p);htmlPay+=`<tr><td><b>${p.boutique}</b><br><span class="muted">${p.patronId||''}</span></td><td><b>${p.transactionId}</b><br><span class="muted">${p.reseau}</span></td><td><a href="https://wa.me/${(p.phonePayer||'').replace(/[^0-9]/g,'')}" style="color:#25D366">📱 ${p.phonePayer}</a><br><span class="muted">${p.date?new Date(p.date).toLocaleString():''}</span></td><td>${p.montant||15000} FC</td><td><button class="btn-g" onclick="activerPaiement('${key}','${p.boutique}','${p.patronId||''}')">✅ Activer +30J</button><button class="btn-r" onclick="rejeterPaiement('${key}')">❌</button></td></tr>`;});
-  document.getElementById('tablePaiements').innerHTML=htmlPay||'<tr><td colspan=5 class="muted">Aucune demande</td></tr>';let notif=document.getElementById('notifPaiement');if(notif){notif.innerText=countAttente;notif.style.display=countAttente>0?'inline-block':'none';}if(countAttente>G_LAST_PAY_COUNT&&G_LAST_PAY_COUNT>=0&&G_SOUND_ENABLED&&newPayments.length){let last=newPayments[newPayments.length-1];playNotif(last.boutique,last.transactionId);}G_LAST_PAY_COUNT=countAttente;
-  G_HIST=Object.entries(histObj||{}).map(([k,v])=>({key:k,...v})).sort((a,b)=>(b.valideLe||b.date||0)-(a.valideLe||a.date||0));filterHist();
+  let actifs=0, bloques=0;
+  shopNames.forEach(n=>{
+   let shop=G_SHOPS[n]||{};
+   let exp=toTime(shop.abonnements?.expire); if(exp && exp>Date.now()) actifs++; else bloques++;
+  });
+  document.getElementById('totalBoutiques').innerText=shopNames.length;
+  document.getElementById('totalPatrons').innerText=Object.keys(G_PATRONS).length;
+  document.getElementById('abos').innerText=`${actifs} / ${bloques}`;
+  document.getElementById('abosDetail').innerText=`Actifs:${actifs} Bloqués:${bloques}`;
 
-  // SUPPORT TAB
-  let htmlSup='';let activeCount=0;
+  let histArr=Object.values(histObj||{}); let month=new Date().getMonth(); let year=new Date().getFullYear(); let rev=0;
+  histArr.forEach(p=>{ if(p.statut==='valide'){ let d=new Date(p.valideLe||p.date); if(d.getMonth()===month && d.getFullYear()===year) rev+=Number(p.montant||15000); } });
+  document.getElementById('revenus').innerText=rev.toLocaleString()+' FC';
+  document.getElementById('revenusDetail').innerText=`${histArr.filter(p=>p.statut==='valide' && new Date(p.valideLe||p.date).getMonth()===month).length} paiements ce mois`;
+
+  let htmlClients='';
+  Object.entries(G_PATRONS).forEach(([pid,p])=>{
+   let boutiques=p.boutiques?Object.keys(p.boutiques):(p.boutique?[p.boutique]:[]);
+   let searchStr=`${pid} ${p.nom||''} ${p.phone||''} ${p.email||''} ${boutiques.join(' ')}`.toLowerCase();
+   if(q && !searchStr.includes(q)) return;
+   let hasActif=boutiques.some(b=>{ let exp=toTime(p.boutiques?.[b]?.expire||G_SHOPS[b]?.abonnements?.expire); return exp>Date.now(); });
+   let statut= hasActif?'<span class="ok">ACTIF</span>':'<span class="bad">BLOQUÉ</span>';
+   let authBoutique=boutiques[0]?G_SUPPORT_AUTH[boutiques[0]]?.active:null;
+   let badgeAuth=authBoutique&&authBoutique.authorized&&toTime(authBoutique.jusqua)>Date.now()?'<span style="background:#22c55e;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:5px">AUTORISÉ</span>':'';
+   htmlClients+=`<tr>
+    <td><b>${p.nom||'—'}</b><br><span class="muted">ID:${pid} - PIN:${p.pin||pid}</span> ${badgeAuth}</td>
+    <td>${p.phone?`<a href="https://wa.me/${p.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366">📱 ${p.phone}</a><br>`:''}${p.email||''}<br><span class="muted">${p.adresse||''}</span></td>
+    <td>${boutiques.map(b=>`<span class="muted">${b}</span>`).join('<br>')||'—'}</td>
+    <td><span style="background:#7c3aed;padding:3px 8px;border-radius:10px;font-size:11px">👑 ${p.pin||pid}</span></td>
+    <td>${statut}</td>
+    <td><button class="btn-b" onclick="openClient('${pid}')">Fiche</button><button class="btn-o" onclick="demanderSupport('${boutiques[0]||''}','${pid}')">🔐 Demander</button><button class="btn-dark" onclick="viewAsPatron('${boutiques[0]||''}','${pid}')">👁️ Entrer</button><button class="btn-o" onclick="resetPin('${pid}')">🔑</button><button class="btn-r" onclick="supprimerClient('${pid}')">🗑️</button></td></tr>`;
+  });
+  document.getElementById('tableClients').innerHTML=htmlClients||'<tr><td colspan=6 class="muted">Aucun client</td></tr>';
+
+  let htmlAbo=''; shopNames.forEach(name=>{ let shop=G_SHOPS[name]||{}; let pid=shop.patronId||trouverPatronDeShop(name,G_PATRONS)||'—'; let exp=toTime(shop.abonnements?.expire); let jours=exp?Math.ceil((exp-Date.now())/86400000):-999; let statut=!exp?'<span class="bad">JAMAIS</span>':jours<0?`<span class="bad">BLOQUÉ ${jours}j</span>`:`<span class="ok">ACTIF ${jours}j</span>`; let aff=exp?new Date(exp).toLocaleDateString():'—'; htmlAbo+=`<tr><td><b>${name}</b></td><td>${pid}</td><td>${aff}</td><td>${statut}</td><td><button class="btn-g" onclick="activer('${name}')">+30J</button> <button class="btn-r" onclick="bloquer('${name}')">BLOQUER</button></td></tr>`; });
+  document.getElementById('tableAbo').innerHTML=htmlAbo||'<tr><td colspan=5>Aucune</td></tr>';
+
+  let htmlPay=''; let countAttente=0; let newPayments=[];
+  Object.entries(paiementsObj||{}).forEach(([key,p])=>{
+    if(p.statut!=='en_attente') return; countAttente++; newPayments.push(p);
+    htmlPay+=`<tr><td><b>${p.boutique}</b><br><span class="muted">${p.patronId||''}</span></td><td><b>${p.transactionId}</b><br><span class="muted">${p.reseau}</span></td><td><a href="https://wa.me/${(p.phonePayer||'').replace(/[^0-9]/g,'')}" style="color:#25D366">📱 ${p.phonePayer}</a><br><span class="muted">${p.date?new Date(p.date).toLocaleString():''}</span></td><td>${p.montant||15000} FC</td><td><button class="btn-g" onclick="activerPaiement('${key}','${p.boutique}','${p.patronId||''}')">✅ Activer +30J</button><button class="btn-r" onclick="rejeterPaiement('${key}')">❌</button></td></tr>`;
+  });
+  document.getElementById('tablePaiements').innerHTML=htmlPay||'<tr><td colspan=5 class="muted">Aucune demande</td></tr>';
+  let notif=document.getElementById('notifPaiement'); if(notif){ notif.innerText=countAttente; notif.style.display=countAttente>0?'inline-block':'none'; }
+  if(countAttente > G_LAST_PAY_COUNT && G_LAST_PAY_COUNT>=0 && G_SOUND_ENABLED && newPayments.length){ let last=newPayments[newPayments.length-1]; playNotif(last.boutique, last.transactionId); }
+  G_LAST_PAY_COUNT=countAttente;
+
+  G_HIST=Object.entries(histObj||{}).map(([k,v])=>({key:k,...v})).sort((a,b)=>(b.valideLe||b.date||0)-(a.valideLe||a.date||0));
+  filterHist();
+
+  // V9 SUPPORT TAB RENDER
+  let htmlSup=''; let activeCount=0;
   Object.entries(supportReqObj||{}).forEach(([shop, reqs])=>{
     Object.entries(reqs||{}).forEach(([rid, r])=>{
       let auth = supportAuthObj[shop]?.active;
       let authTxt = auth && auth.authorized && toTime(auth.jusqua)>Date.now() ? `<span class="ok">✅ Autorisé jusqu'à ${new Date(toTime(auth.jusqua)).toLocaleTimeString()} par ${auth.autorisePar||''}</span>` : '<span class="warn">⏳ En attente patron</span>';
-      if(auth && auth.authorized) activeCount++;
+      if(auth && auth.authorized && toTime(auth.jusqua)>Date.now()) activeCount++;
       htmlSup+=`<tr><td><b>${shop}</b><br><span class="muted">${r.patronId||''}</span></td><td>${new Date(r.date).toLocaleString()}<br><span class="muted">${r.motif||''}</span><br><span class="${r.status==='pending'?'warn':'ok'}">${r.status}</span></td><td>${authTxt}</td><td><button class="btn-b" onclick="viewAsPatron('${shop}','${r.patronId||''}')">👁️ Entrer</button><button class="btn-r" onclick="quitterSupportForce('${shop}')">✖️ Fin</button></td></tr>`;
     });
   });
-  Object.entries(supportAuthObj||{}).forEach(([shop, data])=>{
-    if(!supportReqObj[shop] && data.active){
-      let auth=data.active; if(auth.authorized && toTime(auth.jusqua)>Date.now()){activeCount++; htmlSup+=`<tr><td><b>${shop}</b></td><td><span class="muted">Accès direct autorisé</span></td><td><span class="ok">✅ Autorisé jusqu'à ${new Date(toTime(auth.jusqua)).toLocaleTimeString()} par ${auth.autorisePar||''}</span></td><td><button class="btn-b" onclick="viewAsPatron('${shop}','')">👁️ Entrer</button><button class="btn-r" onclick="quitterSupportForce('${shop}')">✖️ Fin</button></td></tr>`;}
-    }
-  });
   document.getElementById('tableSupport').innerHTML=htmlSup||'<tr><td colspan=4 class="muted">Aucune demande support</td></tr>';
-  let notifSup=document.getElementById('notifSupport');if(notifSup){notifSup.innerText=activeCount;notifSup.style.display=activeCount>0?'inline-block':'none';}
+  let notifSup=document.getElementById('notifSupport'); if(notifSup){ notifSup.innerText=activeCount; notifSup.style.display=activeCount>0?'inline-block':'none'; }
 
-  let htmlLogsSup='';Object.entries(logsSupportObj||{}).forEach(([shop, logs])=>{Object.entries(logs||{}).forEach(([lid, l])=>{htmlLogsSup+=`<tr><td>${new Date(l.date).toLocaleString()}</td><td>${shop}</td><td>${l.action} ${l.motif?'- '+l.motif:''} ${l.duree? '('+l.duree+'min)':''}</td><td>${l.par||''}</td></tr>`;});});
+  let htmlLogsSup=''; Object.entries(logsSupObj||{}).forEach(([shop, logs])=>{ Object.entries(logs||{}).forEach(([lid, l])=>{ htmlLogsSup+=`<tr><td>${new Date(l.date).toLocaleString()}</td><td>${shop}</td><td>${l.action} ${l.motif?'- '+l.motif:''} ${l.duree?'('+l.duree+'min)':''}</td><td>${l.par||''}</td></tr>`; }); });
   document.getElementById('tableLogsSupport').innerHTML=htmlLogsSup||'<tr><td colspan=4 class="muted">Aucun log</td></tr>';
- }).catch(e=>{console.error(e);});
+
+ }).catch(e=>{ console.error(e); });
 }
-function openClient(pid){G_CURRENT_PID=pid;let p=G_PATRONS[pid];let boutiques=p.boutiques?Object.keys(p.boutiques):(p.boutique?[p.boutique]:[]);document.getElementById('modalTitle').innerText=`${p.nom||pid} - ${pid}`;document.getElementById('modalBody').innerHTML=`<p><b>ID:</b> ${pid}<br><b>Nom:</b> ${p.nom||''}<br><b>Tél:</b> ${p.phone||''}<br><b>Boutiques:</b> ${boutiques.join(', ')}</p>`;document.getElementById('modalClient').style.display='flex';}
-function closeModal(){document.getElementById('modalClient').style.display='none';}
-function editClient(){let p=G_PATRONS[G_CURRENT_PID];let nom=prompt('Nom:',p.nom||'');if(nom===null)return;firebase.database().ref(`patrons/${G_CURRENT_PID}`).update({nom}).then(()=>{alert('✅');closeModal();scanGlobal();});}
-function supprimerClient(pidArg){let pid=pidArg||G_CURRENT_PID;if(!confirm(`Supprimer ${pid}?`))return;if(!confirm('Dernière confirmation'))return;firebase.database().ref(`patrons/${pid}`).remove().then(()=>{alert('✅ Supprimé');closeModal();scanGlobal();});}
-function resetPin(pid){let p=G_PATRONS[pid];let newPin=prompt(`Nouveau PIN pour ${pid}:`,p.pin||pid);if(!newPin)return;firebase.database().ref(`patrons/${pid}/pin`).set(newPin).then(()=>{alert('✅');scanGlobal();});}
-function creerPatron(){let pinId=document.getElementById('newPatronId').value.trim();let nom=document.getElementById('newPatronNom').value.trim();let boutique=document.getElementById('newBoutiqueNom').value.trim().replace(/[^a-zA-Z0-9]/g,'');let pinConn=document.getElementById('newPatronPin').value.trim()||pinId;let phone=document.getElementById('newPatronPhone').value.trim();if(!pinId||!nom||!boutique||!phone){alert('Requis');return;}let u={};u[`patrons/${pinId}/pin`]=pinConn;u[`patrons/${pinId}/nom`]=nom;u[`patrons/${pinId}/phone`]=phone;u[`patrons/${pinId}/boutique`]=boutique;u[`patrons/${pinId}/created`]=Date.now();u[`patrons/${pinId}/boutiques/${boutique}/statut`]='bloqué';u[`patrons/${pinId}/boutiques/${boutique}/expire`]=0;u[`shops/${boutique}/patronId`]=pinId;u[`shops/${boutique}/abonnements/expire`]=0;firebase.database().ref().update(u).then(()=>{alert('✅ Créé bloqué');scanGlobal();switchTab('clients');});}
-function activer(b){firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832';let fin=Date.now()+30*86400000;let up={};up[`shops/${b}/abonnements/expire`]=fin;up[`patrons/${pid}/boutiques/${b}/expire`]=fin;up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='actif';up[`shops/${b}/abonnements/expireISO`]=new Date(fin).toISOString();firebase.database().ref().update(up).then(()=>scanGlobal());});}
-function bloquer(b){if(!confirm(`Bloquer ${b}?`))return;firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832';let past=Date.now()-10*86400000;let up={};up[`shops/${b}/abonnements/expire`]=past;up[`patrons/${pid}/boutiques/${b}/expire`]=past;up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='bloqué';firebase.database().ref().update(up).then(()=>scanGlobal());});}
-function activerPaiement(key,boutique,pid){if(!confirm(`Activer ${boutique} +30J?\nVérifie Airtel/Mpesa!`))return;let pidFinal=pid||trouverPatronDeShop(boutique,G_PATRONS)||'7832';if(!pidFinal||pidFinal==='—')pidFinal='7832';let fin=Date.now()+30*86400000;firebase.database().ref('paiements_abonnements/'+key).once('value').then(s=>{let p=s.val()||{boutique, transactionId:key, patronId:pidFinal, montant:15000};let archive={...p, statut:'valide', validePar:'DG', valideLe:Date.now(), expire:fin, expireISO:new Date(fin).toISOString()};let up={};up[`shops/${boutique}/abonnements/expire`]=fin;up[`shops/${boutique}/abonnements/expireISO`]=archive.expireISO;up[`shops/${boutique}/abonnements/statut`]='actif';up[`patrons/${pidFinal}/boutiques/${boutique}/expire`]=fin;up[`patrons/${pidFinal}/boutiques/${boutique}/expireISO`]=archive.expireISO;up[`patrons/${pidFinal}/boutiques/${boutique}/statut`]='actif';up[`paiements_abonnements/${key}/statut`]='valide';up[`paiements_abonnements/${key}/validePar`]='DG';up[`paiements_abonnements/${key}/valideLe`]=Date.now();up[`historique_paiements/${key}`]=archive;up[`abonnements_demandes/${boutique}`]=null;firebase.database().ref().update(up).then(()=>{alert(`✅ ${boutique} activée + archivée`);scanGlobal();});});}
-function rejeterPaiement(key){if(!confirm('Rejeter ce paiement?'))return;firebase.database().ref('paiements_abonnements/'+key).once('value').then(s=>{let p=s.val()||{};let archive={...p, statut:'rejete', validePar:'DG', valideLe:Date.now()};let up={};up[`paiements_abonnements/${key}/statut`]='rejete';up[`paiements_abonnements/${key}/valideLe`]=Date.now();up[`historique_paiements/${key}`]=archive;up[`abonnements_demandes/${p.boutique||''}`]=null;firebase.database().ref().update(up).then(()=>scanGlobal());});}
-function loadPrixAbo(){firebase.database().ref('config_global/prix_abonnement').once('value').then(s=>{if(s.exists())document.getElementById('inputPrixAbo').value=s.val();});}
-function savePrixAbo(){let v=parseInt(document.getElementById('inputPrixAbo').value)||10000;firebase.database().ref('config_global/prix_abonnement').set(v).then(()=>{document.getElementById('msgPrix').innerText='✅ Prix mis à '+v+' FC';scanGlobal();});}
-setTimeout(loadPrixAbo,1000);
-firebase.auth().signInAnonymously().then(()=>{scanGlobal();try{firebase.database().ref('paiements_abonnements').orderByChild('statut').equalTo('en_attente').on('child_added', ()=>setTimeout(()=>scanGlobal(),1000));}catch(e){}setInterval(()=>scanGlobal(),20000);});
+
+function openClient(pid){ G_CURRENT_PID=pid; let p=G_PATRONS[pid]; let boutiques=p.boutiques?Object.keys(p.boutiques):(p.boutique?[p.boutique]:[]); document.getElementById('modalTitle').innerText=`${p.nom||pid} - ${pid}`; document.getElementById('modalBody').innerHTML=`<p><b>ID:</b> ${pid}<br><b>Nom:</b> ${p.nom||''}<br><b>Tél:</b> ${p.phone||''}<br><b>Boutiques:</b> ${boutiques.join(', ')}</p>`; document.getElementById('modalClient').style.display='flex'; }
+function closeModal(){ document.getElementById('modalClient').style.display='none'; }
+function editClient(){ let p=G_PATRONS[G_CURRENT_PID]; let nom=prompt('Nom:',p.nom||''); if(nom===null) return; firebase.database().ref(`patrons/${G_CURRENT_PID}`).update({nom}).then(()=>{ alert('✅'); closeModal(); scanGlobal(); }); }
+function supprimerClient(pidArg){ let pid=pidArg||G_CURRENT_PID; if(!confirm(`Supprimer ${pid}?`)) return; if(!confirm('Dernière confirmation')) return; firebase.database().ref(`patrons/${pid}`).remove().then(()=>{ alert('✅ Supprimé'); closeModal(); scanGlobal(); }); }
+function resetPin(pid){ let p=G_PATRONS[pid]; let newPin=prompt(`Nouveau PIN pour ${pid}:`,p.pin||pid); if(!newPin) return; firebase.database().ref(`patrons/${pid}/pin`).set(newPin).then(()=>{ alert('✅'); scanGlobal(); }); }
+function creerPatron(){ let pinId=document.getElementById('newPatronId').value.trim(); let nom=document.getElementById('newPatronNom').value.trim(); let boutique=document.getElementById('newBoutiqueNom').value.trim().replace(/[^a-zA-Z0-9]/g,''); let pinConn=document.getElementById('newPatronPin').value.trim()||pinId; let phone=document.getElementById('newPatronPhone').value.trim(); if(!pinId||!nom||!boutique||!phone){ alert('Requis'); return; } let u={}; u[`patrons/${pinId}/pin`]=pinConn; u[`patrons/${pinId}/nom`]=nom; u[`patrons/${pinId}/phone`]=phone; u[`patrons/${pinId}/boutique`]=boutique; u[`patrons/${pinId}/created`]=Date.now(); u[`patrons/${pinId}/boutiques/${boutique}/statut`]='bloqué'; u[`patrons/${pinId}/boutiques/${boutique}/expire`]=0; u[`shops/${boutique}/patronId`]=pinId; u[`shops/${boutique}/abonnements/expire`]=0; firebase.database().ref().update(u).then(()=>{ alert('✅ Créé bloqué'); scanGlobal(); switchTab('clients'); }); }
+function activer(b){ firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let fin=Date.now()+30*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=fin; up[`patrons/${pid}/boutiques/${b}/expire`]=fin; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='actif'; up[`shops/${b}/abonnements/expireISO`]=new Date(fin).toISOString(); firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
+function bloquer(b){ if(!confirm(`Bloquer ${b}?`)) return; firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let past=Date.now()-10*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=past; up[`patrons/${pid}/boutiques/${b}/expire`]=past; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='bloqué'; firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
+
+function activerPaiement(key,boutique,pid){
+ if(!confirm(`Activer ${boutique} +30J?\nVérifie Airtel/Mpesa!`)) return;
+ let pidFinal=pid||trouverPatronDeShop(boutique,G_PATRONS)||'7832';
+ if(!pidFinal || pidFinal==='—') pidFinal='7832';
+ let fin=Date.now()+30*86400000;
+ firebase.database().ref('paiements_abonnements/'+key).once('value').then(s=>{
+  let p=s.val()||{boutique, transactionId:key, patronId:pidFinal, montant:15000};
+  let archive={...p, statut:'valide', validePar:'DG', valideLe:Date.now(), expire:fin, expireISO:new Date(fin).toISOString()};
+  let up={};
+  up[`shops/${boutique}/abonnements/expire`]=fin;
+  up[`shops/${boutique}/abonnements/expireISO`]=archive.expireISO;
+  up[`shops/${boutique}/abonnements/statut`]='actif';
+  up[`patrons/${pidFinal}/boutiques/${boutique}/expire`]=fin;
+  up[`patrons/${pidFinal}/boutiques/${boutique}/expireISO`]=archive.expireISO;
+  up[`patrons/${pidFinal}/boutiques/${boutique}/statut`]='actif';
+  up[`paiements_abonnements/${key}/statut`]='valide';
+  up[`paiements_abonnements/${key}/validePar`]='DG';
+  up[`paiements_abonnements/${key}/valideLe`]=Date.now();
+  up[`historique_paiements/${key}`]=archive;
+  up[`abonnements_demandes/${boutique}`]=null;
+  firebase.database().ref().update(up).then(()=>{ alert(`✅ ${boutique} activée + archivée`); scanGlobal(); });
+ });
+}
+function rejeterPaiement(key){
+ if(!confirm('Rejeter ce paiement?')) return;
+ firebase.database().ref('paiements_abonnements/'+key).once('value').then(s=>{
+  let p=s.val()||{};
+  let archive={...p, statut:'rejete', validePar:'DG', valideLe:Date.now()};
+  let up={};
+  up[`paiements_abonnements/${key}/statut`]='rejete';
+  up[`paiements_abonnements/${key}/valideLe`]=Date.now();
+  up[`historique_paiements/${key}`]=archive;
+  up[`abonnements_demandes/${p.boutique||''}`]=null;
+  firebase.database().ref().update(up).then(()=>scanGlobal());
+ });
+}
+
+firebase.auth().signInAnonymously().then(()=>{
+  scanGlobal();
+  try{ firebase.database().ref('paiements_abonnements').orderByChild('statut').equalTo('en_attente').on('child_added', ()=>setTimeout(()=>scanGlobal(),1000)); }catch(e){}
+  setInterval(()=>scanGlobal(),20000);
+});
 </script>
+ <script>
+function loadPrixAbo(){
+  firebase.database().ref('config_global/prix_abonnement').once('value').then(s=>{
+    if(s.exists()) document.getElementById('inputPrixAbo').value = s.val();
+  });
+}
+function savePrixAbo(){
+  let v = parseInt(document.getElementById('inputPrixAbo').value)||10000;
+  firebase.database().ref('config_global/prix_abonnement').set(v).then(()=>{
+    document.getElementById('msgPrix').innerText='✅ Prix mis à '+v+' FC';
+    scanGlobal();
+  });
+}
+setTimeout(loadPrixAbo, 1000);
+</script>
+
 </body></html>
