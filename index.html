@@ -1,47 +1,58 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V6.2 - SAAS FIX PARAMETRES</title><link rel="manifest" href="./manifest-patron.json">
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Patron V6.2 - SAAS FIX PARAMETRES + SUPPORT V9</title><link rel="manifest" href="./manifest-patron.json">
 <link rel="stylesheet" href="css/patron.css">
 <link rel="stylesheet" href="css/main.css">
 <link rel="icon" href="data:,">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>/* FIX manquant V6.1 - repris de ton monolithe */
-body{margin:0;font-family:Arial;background:#f0f2f5}header{background:#111;color:#fff;padding:10px;text-align:center;position:sticky;top:0;z-index:30}.grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:8px}.card{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.1);margin-bottom:8px}.kpi{font-size:16px;font-weight:bold;color:#0b5e2f}.red{color:red}.orange{color:#f59e0b}.tabs{display:flex;background:#fff;position:sticky;top:105px;z-index:20;overflow-x:auto;border-bottom:2px solid #eee}.tabs button{flex:1;min-width:75px;padding:10px;border:none;background:#fff;font-weight:bold;cursor:pointer;font-size:11px}.tabs button.active{border-bottom:3px solid #0b5e2f;color:#0b5e2f;background:#f0fdf4}.sec{display:none;padding:8px}.sec.active{display:block}.valCard{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0}.comptaGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.achatCard{background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b}.tauxGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#e0f2fe;padding:10px;border-radius:10px;border:2px solid #0ea5e9}.badge{display:inline-block;background:#22c55e;color:#000;padding:2px 8px;border-radius:12px;font-size:10px}.logoPreview{width:80px;height:80px;object-fit:contain;border:1px dashed #ccc;border-radius:8px}
+<style>body{margin:0;font-family:Arial;background:#f0f2f5}header{background:#111;color:#fff;padding:10px;text-align:center;position:sticky;top:0;z-index:30}.grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:8px}.card{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.1);margin-bottom:8px}.kpi{font-size:16px;font-weight:bold;color:#0b5e2f}.red{color:red}.orange{color:#f59e0b}.tabs{display:flex;background:#fff;position:sticky;top:105px;z-index:20;overflow-x:auto;border-bottom:2px solid #eee}.tabs button{flex:1;min-width:75px;padding:10px;border:none;background:#fff;font-weight:bold;cursor:pointer;font-size:11px}.tabs button.active{border-bottom:3px solid #0b5e2f;color:#0b5e2f;background:#f0fdf4}.sec{display:none;padding:8px}.sec.active{display:block}.valCard{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0}.comptaGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.achatCard{background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b}.tauxGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#e0f2fe;padding:10px;border-radius:10px;border:2px solid #0ea5e9}.badge{display:inline-block;background:#22c55e;color:#000;padding:2px 8px;border-radius:12px;font-size:10px}.logoPreview{width:80px;height:80px;object-fit:contain;border:1px dashed #ccc;border-radius:8px}
 table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:6px;border:1px solid #ddd;text-align:left}th{background:#1e293b;color:#fff}tr:nth-child(even){background:#f8fafc}input,select,textarea{padding:8px;border-radius:6px;border:1px solid #ccc;width:100%;margin:3px 0;box-sizing:border-box}.btn{padding:8px 12px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;margin:2px;font-size:11px}.btn-g{background:#0b5e2f;color:#fff}.btn-y{background:#facc15}.btn-b{background:#0ea5e9;color:#fff}.btn-r{background:#ef4444;color:#fff}.btn-super{background:#7c3aed;color:#fff}
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:99;align-items:center;justify-content:center}.modal.active{display:flex}.modalBox{background:#fff;padding:20px;border-radius:12px;width:90%;max-width:500px}
 </style>
 </head><body>
-  
+
+<!-- 🛡️ SUPPORT CONSENTI V9 - NE PAS SUPPRIMER - BANDEAUX PATRON -->
+<div id="supportRequestBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#f59e0b;color:#000;padding:14px;text-align:center;z-index:1000000;font-weight:bold;font-family:Inter,system-ui;box-shadow:0 4px 20px rgba(0,0,0,.5)">
+  <div>🛠️ <span id="supportReqText">DG demande accès support</span></div>
+  <div style="margin-top:8px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+    <button onclick="autoriserSupport(30)" style="background:#22c55e;color:#fff;border:0;padding:10px 18px;border-radius:10px;font-weight:900;cursor:pointer">✅ Autoriser 30min</button>
+    <button onclick="autoriserSupport(60)" style="background:#22c55e;color:#fff;border:0;padding:10px 18px;border-radius:10px;font-weight:900;cursor:pointer">✅ 1h</button>
+    <button onclick="refuserSupport()" style="background:#ef4444;color:#fff;border:0;padding:10px 18px;border-radius:10px;font-weight:900;cursor:pointer">❌ Refuser</button>
+  </div>
+</div>
+<div id="supportActiveBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:10px;text-align:center;z-index:999999;font-weight:bold;font-family:Inter,system-ui;">
+  🔴 DG EN INTERVENTION sur <b id="supportActiveShop"></b> depuis <span id="supportActiveTime"></span>
+  <button onclick="quitterSupport()" style="background:#fff;color:#ef4444;border:0;padding:6px 14px;border-radius:12px;cursor:pointer;font-weight:900;margin-left:12px">✖️ Quitter Support</button>
+</div>
+
 <div id="loginPat" style="position:fixed;inset:0;background:#0b0f14f2;z-index:9999;display:flex;align-items:center;justify-content:center">
 <script>
-// FIX SUPPORT DG V8.2 - AUTO LOGIN via URL (pas sessionStorage)
+// FIX SUPPORT DG V8.2 - AUTO LOGIN via URL (gardé stable)
 (function(){
   let p = new URLSearchParams(location.search);
   let shop = p.get('support') || p.get('support_boutique');
   let pid = p.get('pid') || '7832';
+  let tokenUrl = p.get('token') || '';
   if(shop){
     console.log('🛠️ SUPPORT V8.2 détecté URL:', shop, pid);
-    // On utilise localStorage car il est partagé entre onglets, pas sessionStorage
     localStorage.setItem('patron_shop', shop);
     localStorage.setItem('BATEKE_BOUTIQUE', shop);
     localStorage.setItem('CURRENT_SHOP', shop);
     localStorage.setItem('BATEKE_LAST_PIN', pid);
-    // On met le PIN directement en sessionStorage DANS ce nouvel onglet
     sessionStorage.setItem('BATEKE_PIN', pid);
     sessionStorage.setItem('BATEKE_ROLE', 'patron');
     sessionStorage.setItem('DG_SUPPORT_MODE','1');
     sessionStorage.setItem('DG_SUPPORT_SHOP', shop);
     sessionStorage.setItem('DG_SUPPORT_PID', pid);
+    if(tokenUrl) sessionStorage.setItem('DG_SUPPORT_TOKEN', tokenUrl);
     sessionStorage.setItem('pin', pid);
-    // Cache le login
     let login = document.getElementById('loginPat');
     if(login){ login.style.display='none'; login.style.visibility='hidden'; }
   }
 })();
 </script>
-  
   <div style="background:#fff;padding:25px;border-radius:16px;max-width:430px;width:90%;text-align:center;box-shadow:0 20px 60px #0005">
-    <h3>👑 PATRON V6.2</h3><p style="font-size:11px;color:#0b5e2f;font-weight:bold">SAAS - PIN SECURE</p>
+    <h3>👑 PATRON V6.2</h3><p style="font-size:11px;color:#0b5e2f;font-weight:bold">SAAS - PIN SECURE + V9 SUPPORT</p>
     <div id="modePin"><input id="pinPat" type="password" placeholder="••••" style="text-align:center;font-size:22px;letter-spacing:4px;font-weight:bold;border:2px solid #0b5e2f;width:100%;padding:12px;border-radius:10px;box-sizing:border-box"><button class="btn btn-g" style="width:100%;margin-top:12px;font-size:18px;padding:14px;background:#0b5e2f;color:#fff;border-radius:10px;border:0;font-weight:bold;cursor:pointer" onclick="loginPat()">✅ ENTRER</button></div>
-    <p id="msgPat" style="color:red;font-weight:bold;margin-top:12px;min-height:18px"></p><p id="authStatus" style="color:#22c55e;font-size:11px">V6.2 - PIN ONLY - auth.js V7.0</p>
+    <p id="msgPat" style="color:red;font-weight:bold;margin-top:12px;min-height:18px"></p><p id="authStatus" style="color:#22c55e;font-size:11px">V6.2 + V9 SUPPORT CONSENTI</p>
   </div>
 </div>
 
@@ -51,206 +62,39 @@ table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:6px;borde
 
 <div class="tabs"><button id="btn-ventes" class="active" onclick="switchTab('ventes')">🔴 Ventes</button><button id="btn-stock" onclick="switchTab('stock')">📦 Stock</button><button id="btn-achat" onclick="switchTab('achat')">🛒 Achat</button><button id="btn-compta" onclick="switchTab('compta')">💼 Compta</button><button id="btn-rapport" onclick="switchTab('rapport')">📊 Rapport</button><button id="btn-crm" onclick="switchTab('crm')">👥 CRM</button><button id="btn-dettes" onclick="switchTab('dettes')">💳 Dettes</button><button id="btn-caisse" onclick="switchTab('caisse')">💰 Caisse</button><button id="btn-vendeurs" onclick="switchTab('vendeurs')">🔐 Vendeurs</button><button id="btn-boutiques" onclick="switchTab('boutiques')">🏪 Boutiques</button><button id="btn-parametres" onclick="switchTab('parametres')">⚙️ Parametre</button></div>
 
-<!-- VENTES - STOCK - ACHAT inchangés, je remets le reste complet -->
 <div id="ventes" class="sec active"><div class="card"><h4>🔴 Ventes - <span id="labVenteShop"></span></h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Vendeur</th><th>CODE</th><th>Désignation</th><th>Qté</th><th>Total</th><th>Payé</th><th>Reste</th><th>Client</th><th>Mode</th><th>Action</th></tr></thead><tbody id="ventesList"></tbody></table></div></div></div>
-
 <div id="stock" class="sec"><div class="card"><div style="display:flex;justify-content:space-between;flex-wrap:wrap"><h4>📦 Stock Éditable - V4.9.25</h4><div><button class="btn btn-y" onclick="pdfStockTotal()">PDF Stock</button><button class="btn btn-r" onclick="pdfRequisition()">Réquisition</button></div></div><div class="valCard"><div style="background:#0b5e2f;color:#fff;padding:12px;border-radius:12px;text-align:center"><div style="font-size:10px">💰 VALEUR VENTE</div><b id="valStockFC">0 FC</b><small id="valStockFCDetail" style="display:block">0 pcs</small></div><div style="background:#0ea5e9;color:#fff;padding:12px;border-radius:12px;text-align:center"><div style="font-size:10px">💵 VALEUR $</div><b id="valStockUSD">0 $</b><small id="valStockUSDDetail">Taux</small></div><div style="background:linear-gradient(135deg,#facc15,#eab308);color:#000;padding:12px;border-radius:12px;text-align:center"><div style="font-size:10px;font-weight:bold">🏦 ACHAT + BÉNÉF</div><b id="valStockPA">0 FC</b><br><b id="valStockBenef">0 FC</b></div></div><input id="searchS" placeholder="CODE ou Nom" oninput="renderStock()"><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation ✏️</th><th>Qté ✏️</th><th>Seuil ✏️</th><th>PV ✏️</th><th>PA ✏️</th><th>Bénéf</th><th>Statut</th><th>Action</th></tr></thead><tbody id="stockT"></tbody></table></div></div></div>
-
 <div id="achat" class="sec"><div class="card achatCard"><h3>🛒 ACHAT</h3><div style="display:grid;grid-template-columns:1fr 100px 120px;gap:6px;margin-top:8px"><input id="searchAchat" placeholder="CODE..." oninput="renderAchatStock()"><select id="filtreAchat"><option value="tous">Tous</option><option value="manque">Manque</option><option value="rupture">Rupture</option></select><button class="btn btn-r" onclick="viderPanierAchat()">🗑️ Vider</button></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-y" onclick="ajouterManquesAuto()">➕ Auto manques</button><button class="btn btn-b" onclick="pdfRequisitionAchat()">📄 PDF</button><button class="btn btn-g" onclick="validerAchatDB()">✅ Valider</button><button class="btn btn-g" onclick="exportExcelAchat()">📊 Excel</button><span style="background:#111;color:#22c55e;padding:6px 12px;border-radius:20px">Total: <span id="totalAchat">0 FC</span></span></div></div><div class="card"><h4>Articles</h4><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation</th><th>Stock</th><th>Seuil</th><th>Manque</th><th>PA</th><th>Qté achat</th><th>Total</th><th>Action</th></tr></thead><tbody id="achatStockT"></tbody></table></div></div><div class="card" style="border:2px solid #f59e0b"><h4>🧾 Panier</h4><div style="overflow:auto"><table><thead><tr><th>Code</th><th>Désignation</th><th>Stock</th><th>Qté</th><th>PA</th><th>Total PA</th><th>Suppr</th></tr></thead><tbody id="panierAchatT"></tbody></table></div><div style="margin-top:10px;background:#111;color:#fff;padding:12px;border-radius:12px;display:flex;justify-content:space-between"><div><b>NB: <span id="nbAchat">0</span></b></div><div style="text-align:right"><b style="font-size:18px;color:#facc15">Total: <span id="totalAchat2">0 FC</span></b><br><small id="totalAchatUSD">0 $</small></div></div></div></div>
-
 <div id="compta" class="sec"><div class="card" style="background:#111;color:#22c55e;border:3px solid #22c55e"><h3>💼 COMPTA V4.9.10 EXACT</h3></div><div class="card"><div class="comptaGrid"><div><label>Base</label><input id="cBase" type="number" value="50000"></div><div><label>Com %</label><input id="cCom" type="number" value="10"></div><div><label>Loyer</label><input id="cLoyer" type="number" value="100000"></div><div><label>Fixes</label><input id="cAutresFixe" type="number" value="0"></div><div><label>Emprunt</label><input id="cEmprunt" type="number" value="0"></div><div><label>Prime %</label><input id="cPrime" type="number" value="25"></div><div><label>Patron %</label><input id="cPatron" type="number" value="45"></div><div><label>Dev %</label><input id="cDev" type="number" value="30"></div></div><button class="btn btn-g" onclick="saveComptaParams()">💾 Sauver</button><small id="comptaParamStatus"></small></div><div class="card"><div style="display:grid;grid-template-columns:1fr 1fr 120px;gap:6px"><input type="date" id="cDu"><input type="date" id="cAu"><button class="btn btn-b" onclick="calcCompta()">🔍 CALCULER</button></div><div style="display:flex;gap:5px;margin-top:6px"><button class="btn btn-y" onclick="setPeriode('mois')">Ce mois</button><button class="btn btn-y" onclick="setPeriode('moisPasse')">Mois passé</button><button class="btn btn-y" onclick="setPeriode('aujourdhui')">Auj</button><button class="btn btn-b" onclick="pdfCompta()">📄 PDF</button></div></div><div id="comptaResult"></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div class="card" style="border-left:5px solid #22c55e;background:#111;color:#fff"><h4>📅 Point Journalier</h4><div id="pointJournalier"></div></div><div class="card" style="border-left:5px solid #0ea5e9"><h4>💧 Trésorerie</h4><div id="tresorerieBox"></div></div><div class="card" style="border-left:5px solid #f59e0b"><h4>⚠️ Seuil Rentabilité</h4><div id="seuilBox"></div></div></div><div class="card"><h4>📊 Compte Résultat</h4><div id="compteResultat"></div></div></div>
-
-<div id="rapport" class="sec"><div class="card"><h4>📊 Rapport V4.9.14 - RESTAURÉ COMPLET V4.9.10</h4>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-<label>Du</label><input type="date" id="du">
-<label>Au</label><input type="date" id="au">
-<label>Type rapport - 17 types de ton monolithe</label>
-<select id="typeRapport" onchange="onTypeChange()" style="grid-column:span 2">
-<option value="synthese_avec_benef">⭐ SYNTHESE VENTES AVEC BENEFICE + STOCK ACTUEL (CA + Bénéf + Stock)</option>
-<option value="synthese_sans_benef">⭐ SYNTHESE VENTES SANS BENEFICE + STOCK ACTUEL (CA + Qté + Stock)</option>
-<option value="synthese_achats">🛒 SYNTHESE DES ACHATS / ENTREES + STOCK ACTUEL (NOUVEAU)</option>
-<option value="synthese">⭐ SYNTHESE GENERALE - V4.9.14 STABLE</option>
-<option value="synthese_ventes_vendeur">⭐ VENTES VENDEUR DETAIL + STOCK</option>
-<option value="synthese_ventes_patron">⭐ VENTES PATRON TOUTES BOUTIQUES</option>
-<option value="synthese_entrees">⭐ ENTREES STOCK DETAIL</option>
-<option value="synthese_depenses">⭐ DEPENSES - V4.9.10</option>
-<option value="synthese_caisse">⭐ CAISSE DETAIL</option>
-<option value="ca_periode">📅 CA PAR JOUR</option>
-<option value="vente_article">📦 VENTE PAR ARTICLE + STOCK ACTUEL</option>
-<option value="entree_article">📥 ENTREE PAR ARTICLE + STOCK</option>
-<option value="top">🏆 TOP 20 + STOCK ACTUEL</option>
-<option value="invendu">💤 INVENDUS + STOCK</option>
-<option value="depense_type">💸 DEPENSE PAR TYPE</option>
-<option value="ca_client">👤 CA PAR CLIENT</option>
-<option value="dettes">💳 DETTES - V4.9.14</option>
-</select>
-<div id="filtreExtra" style="grid-column:span 2"></div>
-</div>
-<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-<button class="btn btn-g" onclick="genRapport()">🔍 Générer Rapport V4.9.14</button>
-<button class="btn btn-y" onclick="pdfRapportOnly()">📄 PDF Rapport</button>
-<button class="btn btn-b" onclick="exportExcelRapport()">📊 Excel Rapport</button>
-<button class="btn btn-super" onclick="pdfCompta()">💼 PDF Compta V4.9.10</button>
-</div>
-<div id="rapportC" style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:8px;overflow:auto;min-height:120px;margin-top:8px;white-space:pre-wrap">Clique Générer - V4.9.14 intacte</div>
-<canvas id="chartRapport" style="max-height:400px;margin-top:10px"></canvas>
-<div style="margin-top:8px;font-size:10px;color:#64748b;background:#f8fafc;padding:8px;border-radius:8px">
-<b>Légende V4.9.25:</b> Tous les rapports incluent STOCK ACTUEL pour ordi commun. SYNTHESE ACHATS = nouveau V4.9.10. CA_PAR_JOUR = graphique Chart.js.
-</div>
-</div></div>
-
+<div id="rapport" class="sec"><div class="card"><h4>📊 Rapport V4.9.14 - RESTAURÉ COMPLET V4.9.10</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><label>Du</label><input type="date" id="du"><label>Au</label><input type="date" id="au"><label>Type rapport - 17 types de ton monolithe</label><select id="typeRapport" onchange="onTypeChange()" style="grid-column:span 2"><option value="synthese_avec_benef">⭐ SYNTHESE VENTES AVEC BENEFICE + STOCK ACTUEL</option><option value="synthese_sans_benef">⭐ SYNTHESE VENTES SANS BENEFICE + STOCK ACTUEL</option><option value="synthese_achats">🛒 SYNTHESE DES ACHATS / ENTREES + STOCK ACTUEL</option><option value="synthese">⭐ SYNTHESE GENERALE</option><option value="synthese_ventes_vendeur">⭐ VENTES VENDEUR DETAIL + STOCK</option><option value="synthese_ventes_patron">⭐ VENTES PATRON TOUTES BOUTIQUES</option><option value="synthese_entrees">⭐ ENTREES STOCK DETAIL</option><option value="synthese_depenses">⭐ DEPENSES</option><option value="synthese_caisse">⭐ CAISSE DETAIL</option><option value="ca_periode">📅 CA PAR JOUR</option><option value="vente_article">📦 VENTE PAR ARTICLE + STOCK ACTUEL</option><option value="entree_article">📥 ENTREE PAR ARTICLE + STOCK</option><option value="top">🏆 TOP 20 + STOCK ACTUEL</option><option value="invendu">💤 INVENDUS + STOCK</option><option value="depense_type">💸 DEPENSE PAR TYPE</option><option value="ca_client">👤 CA PAR CLIENT</option><option value="dettes">💳 DETTES</option></select><div id="filtreExtra" style="grid-column:span 2"></div></div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-g" onclick="genRapport()">🔍 Générer</button><button class="btn btn-y" onclick="pdfRapportOnly()">📄 PDF</button><button class="btn btn-b" onclick="exportExcelRapport()">📊 Excel</button><button class="btn btn-super" onclick="pdfCompta()">💼 PDF Compta</button></div><div id="rapportC" style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:8px;overflow:auto;min-height:120px;margin-top:8px;white-space:pre-wrap">Clique Générer</div><canvas id="chartRapport" style="max-height:400px;margin-top:10px"></canvas></div></div>
 <div id="crm" class="sec"><div class="card"><h4>👥 CRM</h4><input id="searchCli" placeholder="Nom ou Tel" oninput="renderCRM()"><div style="overflow:auto"><table><thead><tr><th>Nom</th><th>Tél</th><th>Nb</th><th>Total</th><th>Dette</th><th>Dernière</th></tr></thead><tbody id="crmList"></tbody></table></div></div></div>
 <div id="dettes" class="sec"><div class="card"><h4>💳 Dettes</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Tél</th><th>Boutique</th><th>Vendeur</th><th>Total</th><th>Payé</th><th>Reste</th></tr></thead><tbody id="dettesList"></tbody></table></div></div></div>
 <div id="caisse" class="sec"><div class="card"><h4>💰 Caisse</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Type</th><th>Motif</th><th>Montant</th><th>Action</th></tr></thead><tbody id="caisseList"></tbody></table></div></div></div>
 <div id="vendeurs" class="sec"><div class="card" style="border:3px solid #7c3aed;background:#f5f3ff"><h4>🔐 Vendeurs - <span id="labVendShop"></span></h4><div style="display:grid;grid-template-columns:1fr 80px 110px;gap:5px"><input id="vNom" placeholder="Nom"><input id="vPin" type="number" placeholder="PIN"><button class="btn btn-super" onclick="createVendeur()">+ Créer</button></div><div style="overflow:auto;margin-top:8px"><table><thead><tr><th>PIN</th><th>Nom</th><th>Statut</th><th>Action</th></tr></thead><tbody id="vendeursT"></tbody></table></div></div></div>
-
-<div id="boutiques" class="sec"><div class="card"><h4>🏪 Boutiques</h4><div style="display:grid;grid-template-columns:1fr 130px;gap:6px"><input id="newShop" placeholder="Ex: Limete"><button class="btn btn-g" onclick="createShop()">+ CRÉER</button></div><div id="listShops" style="margin-top:10px"></div></div><div class="card"><h4>🔗 Liens Vendeurs - Ordi commun</h4><div id="allLinks"></div><div style="margin-top:10px"><p id="lienVendeur" style="background:#f1f5f9;padding:10px;word-break:break-all;border-radius:8px"></p><button class="btn btn-b" onclick="copyLien()">Copier Lien</button></div></div></div>
-
-<!-- PARAMETRES COMPLET - RESTAURÉ DE TON MONOLITHE V4.9.25 -->
-<div id="parametres" class="sec"><div class="card"><h4>⚙️ Paramètres - <span id="paramShopName"></span> - V4.9.25 RESTAURÉ</h4>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-    <div><label>Nom boutique / ETS</label><input id="confNom"><label>Slogan</label><input id="confSlogan"><label>Adresse</label><input id="confAdresse"><label>Tél</label><input id="confTel"><label>Email</label><input id="confEmail"><label>RCCM</label><input id="confRccm"></div>
-    <div><label>Devise affichage</label><select id="confDevise"><option value="FC">FC</option><option value="USD">USD</option><option value="$">$</option></select><label>Devise base</label><select id="confDeviseBase"><option value="FC">FC</option><option value="USD">USD</option></select><div class="tauxGrid"><div><label>Taux USD</label><input id="confTauxUSD" type="number" value="2850"><label>Taux EUR</label><input id="confTauxEUR" type="number"></div><div><label>Taux XAF</label><input id="confTauxXAF" type="number"><label>Taux XOF</label><input id="confTauxXOF" type="number"></div></div><label>Logo</label><input type="file" id="confLogoFile" accept="image/*"><img id="logoPreview" class="logoPreview"><div style="margin-top:8px"><label>Pied Facture</label><textarea id="confPiedFacture" rows="2">Merci pour votre confiance!</textarea><label>Pied Devis</label><textarea id="confPiedDevis" rows="2">Devis valable 7 jours.</textarea></div></div>
-  </div>
-  <div style="margin-top:10px;display:flex;gap:6px"><button class="btn btn-g" onclick="saveConfig()">💾 Sauver Config</button><button class="btn btn-y" onclick="loadConfig()">🔄 Recharger</button><button class="btn btn-b" onclick="dupliquerConfig()">Dupliquer vers autre boutique</button><small id="configStatus" style="margin-left:10px;color:#0b5e2f;font-weight:bold"></small></div>
-</div>
-
-<div class="card" style="border:2px solid #0ea5e9"><h4>🖨️ Imprimante - H22 / T58 / RawBT - V8.1</h4>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-    <div><label>Type imprimante</label><select id="confImpType"><option value="pdf">PDF - Navigateur</option><option value="bluetooth">PC - Bluetooth Direct</option><option value="rawbt">Android - RawBT (Tecno/Infinix)</option></select><label>Nom BT</label><input id="confImpNom" placeholder="T58_AFC6"><label>Largeur papier</label><select id="confImpLargeur"><option value="58mm">58mm - Petite</option><option value="80mm">80mm - Large</option></select></div>
-    <div><label>Logo sur ticket</label><select id="confImpLogo"><option value="oui">Oui - Avec logo</option><option value="non">Non</option></select><label>Nb copies</label><input id="confImpCopies" type="number" value="1"><div id="printerStatus" style="margin-top:10px;padding:10px;background:#f0fdf4;border-radius:8px;border:1px solid #0b5e2f;font-size:11px">Détection...</div></div>
-    <div><div id="apercuFacture" style="background:#fff;border:1px dashed #ccc;padding:8px;border-radius:8px;min-height:120px">Aperçu ticket...</div></div>
-  </div>
-  <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-b" onclick="connecterImprimanteUniverselle()">📡 CONNECTER IMPRIMANTE</button><button class="btn btn-g" onclick="testTicketUniversel()">🧾 TEST TICKET</button><button class="btn btn-y" onclick="saveConfig()">💾 Sauver Imprimante</button></div>
-</div>
-</div>
+<div id="boutiques" class="sec"><div class="card"><h4>🏪 Boutiques</h4><div style="display:grid;grid-template-columns:1fr 130px;gap:6px"><input id="newShop" placeholder="Ex: Limete"><button class="btn btn-g" onclick="createShop()">+ CRÉER</button></div><div id="listShops" style="margin-top:10px"></div></div><div class="card"><h4>🔗 Liens Vendeurs</h4><div id="allLinks"></div><div style="margin-top:10px"><p id="lienVendeur" style="background:#f1f5f9;padding:10px;word-break:break-all;border-radius:8px"></p><button class="btn btn-b" onclick="copyLien()">Copier Lien</button></div></div></div>
+<div id="parametres" class="sec"><div class="card"><h4>⚙️ Paramètres - <span id="paramShopName"></span> - V4.9.25</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><label>Nom boutique / ETS</label><input id="confNom"><label>Slogan</label><input id="confSlogan"><label>Adresse</label><input id="confAdresse"><label>Tél</label><input id="confTel"><label>Email</label><input id="confEmail"><label>RCCM</label><input id="confRccm"></div><div><label>Devise affichage</label><select id="confDevise"><option value="FC">FC</option><option value="USD">USD</option><option value="$">$</option></select><label>Devise base</label><select id="confDeviseBase"><option value="FC">FC</option><option value="USD">USD</option></select><div class="tauxGrid"><div><label>Taux USD</label><input id="confTauxUSD" type="number" value="2850"><label>Taux EUR</label><input id="confTauxEUR" type="number"></div><div><label>Taux XAF</label><input id="confTauxXAF" type="number"><label>Taux XOF</label><input id="confTauxXOF" type="number"></div></div><label>Logo</label><input type="file" id="confLogoFile" accept="image/*"><img id="logoPreview" class="logoPreview"><div style="margin-top:8px"><label>Pied Facture</label><textarea id="confPiedFacture" rows="2">Merci pour votre confiance!</textarea><label>Pied Devis</label><textarea id="confPiedDevis" rows="2">Devis valable 7 jours.</textarea></div></div></div><div style="margin-top:10px;display:flex;gap:6px"><button class="btn btn-g" onclick="saveConfig()">💾 Sauver Config</button><button class="btn btn-y" onclick="loadConfig()">🔄 Recharger</button><button class="btn btn-b" onclick="dupliquerConfig()">Dupliquer vers autre boutique</button><small id="configStatus" style="margin-left:10px;color:#0b5e2f;font-weight:bold"></small></div></div><div class="card" style="border:2px solid #0ea5e9"><h4>🖨️ Imprimante - H22 / T58 / RawBT - V8.1</h4><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div><label>Type imprimante</label><select id="confImpType"><option value="pdf">PDF - Navigateur</option><option value="bluetooth">PC - Bluetooth Direct</option><option value="rawbt">Android - RawBT</option></select><label>Nom BT</label><input id="confImpNom" placeholder="T58_AFC6"><label>Largeur papier</label><select id="confImpLargeur"><option value="58mm">58mm - Petite</option><option value="80mm">80mm - Large</option></select></div><div><label>Logo sur ticket</label><select id="confImpLogo"><option value="oui">Oui</option><option value="non">Non</option></select><label>Nb copies</label><input id="confImpCopies" type="number" value="1"><div id="printerStatus" style="margin-top:10px;padding:10px;background:#f0fdf4;border-radius:8px;border:1px solid #0b5e2f;font-size:11px">Détection...</div></div><div><div id="apercuFacture" style="background:#fff;border:1px dashed #ccc;padding:8px;border-radius:8px;min-height:120px">Aperçu ticket...</div></div></div><div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-b" onclick="connecterImprimanteUniverselle()">📡 CONNECTER</button><button class="btn btn-g" onclick="testTicketUniversel()">🧾 TEST</button><button class="btn btn-y" onclick="saveConfig()">💾 Sauver</button></div></div></div>
 
 <div id="modalArt" class="modal"><div class="modalBox"><h3>Nouvel Article</h3><input id="newCode" placeholder="CODE"><input id="newDes" placeholder="Désignation"><input id="newPV" type="number" placeholder="PV"><input id="newPA" type="number" placeholder="PA"><input id="newQte" type="number" placeholder="Qté"><input id="newSeuil" type="number" value="3"><label><input type="checkbox" id="newActif" checked> Actif</label><div style="display:flex;gap:5px;margin-top:10px"><button class="btn btn-g" onclick="saveNewArt()">Créer</button><button class="btn" onclick="closeModal('modalArt')">Annuler</button></div></div></div>
 
 <script>
-function toTimeBateke(v){ 
-  if(!v) return 0; 
-  if(typeof v==='number') return v>1000000000000 ? v : v*1000;
-  if(typeof v==='object' && v.expire) return toTimeBateke(v.expire);
-  if(typeof v==='string'){ 
-    if(/^\d{10,13}$/.test(v)) { let n=parseInt(v,10); return n<1000000000000? n*1000 : n; }
-    let t=new Date(v).getTime(); return isNaN(t)?0:t; 
-  } 
-  return 0; 
-}
-
-function updateBadgeAbo(expireTime, boutiqueNom){
-  const badge=document.getElementById('badgeAbo'); if(!badge) return;
-  if(!expireTime || expireTime===0){ 
-    badge.innerHTML='🔴 JAMAIS PAYÉ - '+boutiqueNom; 
-    badge.style.background='#ef4444'; badge.style.color='#fff'; return; 
-  }
-  let jours=Math.ceil((expireTime-Date.now())/86400000);
-  if(jours>3){ badge.innerHTML=`✅ Actif jusqu'au ${new Date(expireTime).toLocaleDateString()} (${jours}j) - ${boutiqueNom}`; badge.style.background='#22c55e'; badge.style.color='#fff'; }
-  else if(jours>0){ badge.innerHTML=`🟠 Expire dans ${jours}j - ${boutiqueNom}`; badge.style.background='#f59e0b'; badge.style.color='#000'; }
-  else { badge.innerHTML=`🔴 Bloqué depuis ${Math.abs(jours)}j - ${boutiqueNom}`; badge.style.background='#ef4444'; badge.style.color='#fff'; }
-}
-
-async function checkAbonnement(boutiqueNom){
-  try{
-    // === FIX V6.4 - ATTEND QUE core/firebase.js AIT FINI ===
-    let tries=0;
-    while((!window.firebase || !firebase.apps || !firebase.apps.length || !window.db) && tries<100){
-      await new Promise(r=>setTimeout(r, 200));
-      tries++;
-    }
-    if(!window.db){
-      console.warn("checkAbo: Firebase pas prêt après 20s, skip");
-      return;
-    }
-
-    if(!boutiqueNom) boutiqueNom = document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || 'Menkao2';
-    if(!boutiqueNom || boutiqueNom==='ALL') boutiqueNom='Menkao2';
-    console.log("🔍 Vérif abo pour:", boutiqueNom);
-
-    // Utilise window.db qui vient de core/firebase.js - PAS firebase.database()
-    const db = window.db;
-
-    // Attend auth anonyme déjà lancé par core/firebase.js
-    let wa=0;
-    while(!firebase.auth().currentUser && wa<20){ await new Promise(r=>setTimeout(r,200)); wa++; }
-
-    let expireFinal = 0;
-    let paths = [
-      'shops/'+boutiqueNom+'/abonnements/expire',
-      'shops/'+boutiqueNom+'/abonnement/expire',
-      'shops/'+boutiqueNom+'/abonnements',
-      'shops/'+boutiqueNom+'/abonnement',
-      'shops/'+boutiqueNom+'/expire'
-    ];
-    for(let p of paths){
-      try{
-        let snap = await db.ref(p).once('value');
-        let val = snap.val();
-        if(val){ let t = toTimeBateke(val); if(t>expireFinal) expireFinal=t; }
-      }catch(e){}
-    }
-
-    try{
-      let pAll = await db.ref('patrons').once('value');
-      pAll.forEach(child=>{
-        try{
-          let v=child.val()||{};
-          if(v.boutique && v.boutique.toLowerCase()===boutiqueNom.toLowerCase()){
-            let t = Math.max(toTimeBateke(v.expire), toTimeBateke(v.abonnement), toTimeBateke(v.abonnements));
-            if(t>expireFinal) expireFinal=t;
-          }
-          if(v.boutiques && v.boutiques[boutiqueNom]){
-            let t = toTimeBateke(v.boutiques[boutiqueNom]);
-            if(t>expireFinal) expireFinal=t;
-          }
-        }catch(e){}
-      });
-    }catch(e){}
-
-    console.log("✅ Expire final:", expireFinal, "pour", boutiqueNom);
-    updateBadgeAbo(expireFinal, boutiqueNom);
-
-  }catch(e){
-    console.error("❌ checkAbonnement error", e);
-    let badge=document.getElementById('badgeAbo');
-    if(badge){ badge.innerHTML='⚠️ Erreur abo - '+e.message; badge.style.background='#ef4444'; }
-  }
-}
-
-function initBadgeAbo(){
-  if(!window.db || !firebase.apps.length){
-    setTimeout(initBadgeAbo, 500);
-    return;
-  }
-  let shop = document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || 'Menkao2';
-  checkAbonnement(shop);
-  setInterval(()=>{ let s = document.getElementById('shopSel')?.value; if(s) checkAbonnement(s); }, 30000);
-}
-
-setTimeout(initBadgeAbo, 1000);
-if(typeof firebase!=='undefined'){
-  try{ firebase.auth().onAuthStateChanged(()=>{ setTimeout(initBadgeAbo, 800); }); }catch(e){}
-}
-
-let oldSwitchShop = window.switchShop;
-window.switchShop = function(){
-  if(oldSwitchShop) oldSwitchShop.apply(this, arguments);
-  let s = document.getElementById('shopSel')?.value;
-  if(s) checkAbonnement(s);
-};
+function toTimeBateke(v){if(!v)return 0;if(typeof v==='number')return v>1000000000000?v:v*1000;if(typeof v==='object'&&v.expire)return toTimeBateke(v.expire);if(typeof v==='string'){if(/^\d{10,13}$/.test(v)){let n=parseInt(v,10);return n<1000000000000?n*1000:n;}let t=new Date(v).getTime();return isNaN(t)?0:t;}return 0;}
+function updateBadgeAbo(expireTime, boutiqueNom){const badge=document.getElementById('badgeAbo');if(!badge)return;if(!expireTime||expireTime===0){badge.innerHTML='🔴 JAMAIS PAYÉ - '+boutiqueNom;badge.style.background='#ef4444';badge.style.color='#fff';return;}let jours=Math.ceil((expireTime-Date.now())/86400000);if(jours>3){badge.innerHTML=`✅ Actif jusqu'au ${new Date(expireTime).toLocaleDateString()} (${jours}j) - ${boutiqueNom}`;badge.style.background='#22c55e';badge.style.color='#fff';}else if(jours>0){badge.innerHTML=`🟠 Expire dans ${jours}j - ${boutiqueNom}`;badge.style.background='#f59e0b';badge.style.color='#000';}else{badge.innerHTML=`🔴 Bloqué depuis ${Math.abs(jours)}j - ${boutiqueNom}`;badge.style.background='#ef4444';badge.style.color='#fff';}}
+async function checkAbonnement(boutiqueNom){try{let tries=0;while((!window.firebase||!firebase.apps||!firebase.apps.length||!window.db)&&tries<100){await new Promise(r=>setTimeout(r,200));tries++;}if(!window.db){console.warn("checkAbo: Firebase pas prêt");return;}if(!boutiqueNom)boutiqueNom=document.getElementById('shopSel')?.value||localStorage.getItem('BATEKE_BOUTIQUE')||'Menkao2';if(!boutiqueNom||boutiqueNom==='ALL')boutiqueNom='Menkao2';const db=window.db;let wa=0;while(!firebase.auth().currentUser&&wa<20){await new Promise(r=>setTimeout(r,200));wa++;}let expireFinal=0;let paths=['shops/'+boutiqueNom+'/abonnements/expire','shops/'+boutiqueNom+'/abonnement/expire','shops/'+boutiqueNom+'/abonnements','shops/'+boutiqueNom+'/abonnement','shops/'+boutiqueNom+'/expire'];for(let p of paths){try{let snap=await db.ref(p).once('value');let val=snap.val();if(val){let t=toTimeBateke(val);if(t>expireFinal)expireFinal=t;}}catch(e){}}try{let pAll=await db.ref('patrons').once('value');pAll.forEach(child=>{try{let v=child.val()||{};if(v.boutique&&v.boutique.toLowerCase()===boutiqueNom.toLowerCase()){let t=Math.max(toTimeBateke(v.expire),toTimeBateke(v.abonnement),toTimeBateke(v.abonnements));if(t>expireFinal)expireFinal=t;}if(v.boutiques&&v.boutiques[boutiqueNom]){let t=toTimeBateke(v.boutiques[boutiqueNom]);if(t>expireFinal)expireFinal=t;}}catch(e){}});}catch(e){}updateBadgeAbo(expireFinal,boutiqueNom);}catch(e){console.error("checkAbo error",e);let badge=document.getElementById('badgeAbo');if(badge){badge.innerHTML='⚠️ Erreur abo';badge.style.background='#ef4444';}}}
+function initBadgeAbo(){if(!window.db||!firebase.apps.length){setTimeout(initBadgeAbo,500);return;}let shop=document.getElementById('shopSel')?.value||localStorage.getItem('BATEKE_BOUTIQUE')||'Menkao2';checkAbonnement(shop);setInterval(()=>{let s=document.getElementById('shopSel')?.value;if(s)checkAbonnement(s);},30000);}
+setTimeout(initBadgeAbo,1000);if(typeof firebase!=='undefined'){try{firebase.auth().onAuthStateChanged(()=>{setTimeout(initBadgeAbo,800);});}catch(e){}}
+let oldSwitchShopBadge=window.switchShop;window.switchShop=function(){if(oldSwitchShopBadge)oldSwitchShopBadge.apply(this,arguments);let s=document.getElementById('shopSel')?.value;if(s)checkAbonnement(s);};
 </script>
 
 <script type="module" src="js/patron/app.js?v=6.2-fix-parametres-20261028"></script>
+
 <script>
-// 🔴 BANDEAU SUPPORT DG - FIX V7.3 - TOUJOURS VISIBLE
+// 🔴 BANDEAU SUPPORT DG FIX V7.3 - GARDÉ STABLE
 (function(){
   function showSupportBanner(){
     let params = new URLSearchParams(location.search);
     let shop = params.get('support') || params.get('support_boutique') || sessionStorage.getItem('DG_SUPPORT_SHOP');
     let pid = params.get('pid') || sessionStorage.getItem('DG_SUPPORT_PID');
     let isSupport = sessionStorage.getItem('DG_SUPPORT_MODE')==='1' && shop;
-    
     if(isSupport && !document.getElementById('dgSupportBanner')){
       let b = document.createElement('div');
       b.id='dgSupportBanner';
@@ -258,26 +102,101 @@ window.switchShop = function(){
       b.style.cssText='position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:10px;text-align:center;z-index:999999;font-weight:bold;font-family:Inter,system-ui;box-shadow:0 4px 12px rgba(0,0,0,.4)';
       document.body.prepend(b);
       document.body.style.paddingTop='44px';
-      console.log('🔴 Bandeau support affiché pour', shop, pid);
     }
   }
-  // Lance 3 fois pour être sûr après tous les reloads V6.2
-  setTimeout(showSupportBanner, 500);
-  setTimeout(showSupportBanner, 1500);
-  setTimeout(showSupportBanner, 3000);
-  window.addEventListener('load', showSupportBanner);
+  setTimeout(showSupportBanner,500);setTimeout(showSupportBanner,1500);setTimeout(showSupportBanner,3000);window.addEventListener('load',showSupportBanner);
 })();
 </script>
 
 <script>
-// POPUP CGU V2 - première connexion
+// 🛡️ SUPPORT CONSENTI V9 - LOGIQUE PATRON - NOUVEAU MAIS N'ECRASE RIEN
+let G_SUPPORT_REQ_ID = null;
+let G_SUPPORT_SHOP_LISTEN = null;
+function initSupportConsenti(){
+  if(!window.db){setTimeout(initSupportConsenti,800);return;}
+  let shop = document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || localStorage.getItem('patron_shop') || '';
+  if(!shop||shop==='ALL'){setTimeout(initSupportConsenti,1500);return;}
+  if(G_SUPPORT_SHOP_LISTEN===shop) return;
+  G_SUPPORT_SHOP_LISTEN=shop;
+  window.db.ref('support_requests/'+shop).on('value', snap=>{
+    let hasPending=false; let lastReq=null; let lastId=null;
+    snap.forEach(child=>{let v=child.val(); if(v.status==='pending' && v.date > Date.now()-86400000){hasPending=true; lastReq=v; lastId=child.key;}});
+    let banner=document.getElementById('supportRequestBanner');
+    if(hasPending && !sessionStorage.getItem('DG_SUPPORT_MODE')){
+      G_SUPPORT_REQ_ID=lastId;
+      document.getElementById('supportReqText').innerText=`🛠️ DG demande accès à ${shop} - Motif: ${lastReq.motif||'Assistance'}`;
+      banner.style.display='block'; document.body.style.paddingTop='90px';
+      try{navigator.vibrate([200,100,200]);}catch(e){}
+    } else {
+      if(!document.getElementById('supportActiveBanner').style.display || document.getElementById('supportActiveBanner').style.display==='none'){
+        banner.style.display='none';
+      }
+    }
+  });
+  window.db.ref('support_authorizations/'+shop+'/active').on('value', snap=>{
+    let auth=snap.val();
+    let activeBanner=document.getElementById('supportActiveBanner');
+    if(auth && auth.authorized && auth.jusqua > Date.now()){
+      if(!sessionStorage.getItem('DG_SUPPORT_MODE')){
+        document.getElementById('supportActiveShop').innerText=shop;
+        document.getElementById('supportActiveTime').innerText=new Date(auth.date).toLocaleTimeString();
+        activeBanner.style.display='block'; document.body.style.paddingTop='44px';
+        document.getElementById('supportRequestBanner').style.display='none';
+      }
+    } else {
+      activeBanner.style.display='none';
+      if(sessionStorage.getItem('DG_SUPPORT_MODE')==='1' && auth===null){
+        // patron a kické
+      }
+    }
+  });
+}
+function autoriserSupport(minutes){
+  let shop=document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || '';
+  if(!shop) return alert('Pas de boutique');
+  let token=Math.random().toString(36).substring(2,12).toUpperCase();
+  let jusque=Date.now()+minutes*60000;
+  let pinPatron=localStorage.getItem('BATEKE_LAST_PIN') || sessionStorage.getItem('BATEKE_PIN') || 'PATRON';
+  window.db.ref('support_authorizations/'+shop+'/active').set({authorized:true,autorisePar:pinPatron,date:Date.now(),jusqua:jusque,token:token,duree:minutes}).then(()=>{
+    if(G_SUPPORT_REQ_ID) window.db.ref('support_requests/'+shop+'/'+G_SUPPORT_REQ_ID+'/status').set('autorise');
+    window.db.ref('logs_support/'+shop).push({date:Date.now(),action:'autorise',par:pinPatron,duree:minutes,token:token});
+    document.getElementById('supportRequestBanner').style.display='none';
+    alert(`✅ Accès autorisé ${minutes}min pour DG`);
+  });
+}
+function refuserSupport(){
+  let shop=document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || '';
+  let pinPatron=localStorage.getItem('BATEKE_LAST_PIN') || 'PATRON';
+  if(G_SUPPORT_REQ_ID) window.db.ref('support_requests/'+shop+'/'+G_SUPPORT_REQ_ID+'/status').set('refuse');
+  window.db.ref('logs_support/'+shop).push({date:Date.now(),action:'refuse',par:pinPatron});
+  document.getElementById('supportRequestBanner').style.display='none';
+  document.body.style.paddingTop='0';
+}
+function quitterSupport(){
+  if(!confirm("Kicker DG du support? Il sera déconnecté immédiatement.")) return;
+  let shop=document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || '';
+  let pinPatron=localStorage.getItem('BATEKE_LAST_PIN') || 'PATRON';
+  window.db.ref('support_authorizations/'+shop+'/active').remove().then(()=>{
+    window.db.ref('logs_support/'+shop).push({date:Date.now(),action:'revoque',par:pinPatron});
+    document.getElementById('supportActiveBanner').style.display='none';
+    document.body.style.paddingTop='0';
+  });
+}
+setTimeout(initSupportConsenti,1500);
+// Hook sans écraser switchShop original (déjà hooké par badge)
+let oldSwitchShopV9 = window.switchShop;
+window.switchShop = function(){ if(oldSwitchShopV9) oldSwitchShopV9.apply(this, arguments); setTimeout(initSupportConsenti, 800); };
+</script>
+
+<script>
+// POPUP CGU V2
 (function(){
   if(!localStorage.getItem('BATEKE_CGU_ACCEPTED')){
     setTimeout(()=>{
       if(confirm("📜 Nouvelle CGU V2 - Promo 10.000 FC / mois. Veux-tu lire et accepter les conditions?")){
         location.href='/bateke/cgu.html';
       }
-    }, 1500);
+    },1500);
   }
 })();
 </script>  
