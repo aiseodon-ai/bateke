@@ -1,4 +1,4 @@
-// js/patron/auth.js - V8.0 FIX CAUSE RACINE SUPPORT + V10.3 PIN SECURE SEARCH
+// js/patron/auth.js - V8.0 FIX CAUSE RACINE SUPPORT + V10.4 SINGLE PIN SECURE
 import { STATE } from '../core/state.js';
 import { setPresenceOnline, setPresenceOffline } from '../core/presence.js';
 
@@ -12,7 +12,7 @@ export async function loginPat(){
   let supportPidParam = urlParams.get('pid');
   let hasSupportUrl = !!supportShopParam;
 
-  // === MODE SUPPORT DG - FIX RATIONNEL - GARDÉ STABLE ===
+  // === MODE SUPPORT DG - FIX RATIONNEL - GARDÉ STABLE V8.0 ===
   if(hasSupportUrl){
     let supportShopName = supportShopParam || sessionStorage.getItem('DG_SUPPORT_SHOP') || 'Intendance';
     let supportPid = supportPidParam || sessionStorage.getItem('DG_SUPPORT_PID') || '7832';
@@ -96,7 +96,7 @@ export async function loginPat(){
     return;
   }
   
-  // === MODE NORMAL - V10.3 PATCH SECURE ===
+  // === MODE NORMAL - V10.4 SINGLE PIN - FIX DOUBLE ACCÈS ===
   try{ document.getElementById('dgSupportBanner')?.remove(); document.body.style.paddingTop='0'; window.BATEKE_ABO_BYPASS=false; sessionStorage.removeItem('DG_SUPPORT_MODE'); }catch(e){}
 
   let pin = pinEl?.value?.trim();
@@ -105,14 +105,20 @@ export async function loginPat(){
   try{ if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously(); }catch(e){}
   
   let patronData = null;
-  let patronIdFound = pin;
+  let patronIdFound = null;
 
   try{
-    // 1. Direct ID
-    let snap = await window.db.ref('patrons/'+pin).once('value');
-    if(snap.exists()){ patronData = snap.val(); patronIdFound = pin; }
+    // V10.4: ON NE CHERCHE PLUS PAR ID DIRECT - FIN DU 8888 qui marche
+    // Seule porte: pin et pinHash
+
+    // 1. V10 - Recherche par pinHash (cas normal patron a déjà changé)
+    let h = hashPinV10(pin);
+    let snapByHash = await window.db.ref('patrons').orderByChild('pinHash').equalTo(h).once('value');
+    if(snapByHash.exists()){
+      snapByHash.forEach(child=>{ patronData = child.val(); patronIdFound = child.key; });
+    }
     
-    // 2. V10 - Recherche par pin == 3575 (ton cas 8888)
+    // 2. V10 - Recherche par pin == 3575 (temp)
     if(!patronData){
       let snapByPin = await window.db.ref('patrons').orderByChild('pin').equalTo(pin).once('value');
       if(snapByPin.exists()){
@@ -120,14 +126,6 @@ export async function loginPat(){
       }
     }
     
-    // 3. V10 - Recherche par pinHash
-    if(!patronData){
-      let h = hashPinV10(pin);
-      let snapByHash = await window.db.ref('patrons').orderByChild('pinHash').equalTo(h).once('value');
-      if(snapByHash.exists()){
-        snapByHash.forEach(child=>{ patronData = child.val(); patronIdFound = child.key; });
-      }
-    }
   }catch(e){ 
     if(e.message && e.message.includes('Permission denied')){
       if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ Active Auth Anonyme + index pin/pinHash'; } return;
@@ -135,6 +133,12 @@ export async function loginPat(){
   }
   
   if(!patronData){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText=`❌ PIN ${pin} INTROUVABLE`; } sessionStorage.clear(); localStorage.removeItem('BATEKE_PIN'); if(pinEl) pinEl.value=''; return; }
+
+  // Vérif expiration temp PIN
+  if(patronData.mustChangePin && patronData.tempPinExpire && Date.now() > patronData.tempPinExpire){
+    if(msgEl){ msgEl.style.color='red'; msgEl.innerText=`⏳ PIN temporaire expiré. Demande à DG de régénérer.`; } return;
+  }
+
   if(patronData.actif===false){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ PIN bloqué - Abonnement expiré'; } return; }
   
   let boutiquePrincipale = patronData.boutique || Object.keys(patronData.boutiques||{})[0];
@@ -162,14 +166,11 @@ export async function loginPat(){
     setTimeout(()=>{ location.href=url; }, 3500);
   }
 
-  // V10.3: Si mustChangePin, on laisse passer même si bloqué, pour qu'il change son PIN puis paye
   if(patronData.mustChangePin === true){
-    // On logue mais on force le modal via session
     sessionStorage.setItem('BATEKE_MUST_CHANGE_PIN','1');
   }
 
   if(!expireFinal || expireFinal===0){
-    // Si c'est un PIN temporaire V10, on ne bloque pas tout de suite, on laisse changer PIN
     if(patronData.mustChangePin === true){
       // laisse passer vers modal
     } else {
@@ -236,4 +237,4 @@ window.exitSupport = function(){
 
 window.loginPat = loginPat;
 window.logoutPat = logoutPat;
-console.log("✅ auth.js V8.0 + V10.3 PIN SECURE");
+console.log("✅ auth.js V8.0 + V10.4 SINGLE PIN SECURE");
