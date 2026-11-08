@@ -286,38 +286,40 @@ function resetPin(pid){
  });
 }
 
-// V10 SECURE CREATION
+// V10.1 SECURE CREATION - ID = PIN temporaire pour login
 function creerPatron(){
- let pinId=document.getElementById('newPatronId').value.trim();
+ let pinIdInput=document.getElementById('newPatronId').value.trim();
  let nom=document.getElementById('newPatronNom').value.trim();
  let boutique=document.getElementById('newBoutiqueNom').value.trim().replace(/[^a-zA-Z0-9]/g,'');
  let phone=document.getElementById('newPatronPhone').value.trim();
  let email=document.getElementById('newPatronEmail')?.value.trim()||'';
- if(!pinId||!nom||!boutique||!phone){ alert('Requis: ID, Nom, Boutique, Téléphone'); return; }
- let tempPin = genTempPin();
+ if(!nom||!boutique||!phone){ alert('Requis: Nom, Boutique, Téléphone'); return; }
+ 
+ let tempPin = genTempPin(); // 9515
+ let finalId = pinIdInput || tempPin; // Si tu laisses ID vide, ID = 9515
+
  let u={};
- u[`patrons/${pinId}/pin`] = tempPin; // temporaire 10min pour première connexion
- u[`patrons/${pinId}/pinHash`] = hashPin(tempPin);
- u[`patrons/${pinId}/mustChangePin`] = true;
- u[`patrons/${pinId}/tempPinExpire`] = Date.now()+10*60000;
- u[`patrons/${pinId}/nom`] = nom;
- u[`patrons/${pinId}/phone`] = phone;
- u[`patrons/${pinId}/email`] = email;
- u[`patrons/${pinId}/boutique`] = boutique;
- u[`patrons/${pinId}/created`] = Date.now();
- u[`patrons/${pinId}/createdBy`] = 'DG';
- u[`patrons/${pinId}/boutiques/${boutique}/statut`] = 'bloqué';
- u[`patrons/${pinId}/boutiques/${boutique}/expire`] = 0;
- u[`shops/${boutique}/patronId`] = pinId;
+ u[`patrons/${finalId}/pin`] = tempPin;
+ u[`patrons/${finalId}/pinHash`] = hashPin(tempPin);
+ u[`patrons/${finalId}/mustChangePin`] = true;
+ u[`patrons/${finalId}/tempPinExpire`] = Date.now()+30*60000; // 30min au lieu de 10
+ u[`patrons/${finalId}/nom`] = nom;
+ u[`patrons/${finalId}/phone`] = phone;
+ u[`patrons/${finalId}/email`] = email;
+ u[`patrons/${finalId}/boutique`] = boutique;
+ u[`patrons/${finalId}/created`] = Date.now();
+ u[`patrons/${finalId}/createdBy`] = 'DG';
+ u[`patrons/${finalId}/boutiques/${boutique}/statut`] = 'bloqué';
+ u[`patrons/${finalId}/boutiques/${boutique}/expire`] = 0;
+ u[`shops/${boutique}/patronId`] = finalId;
  u[`shops/${boutique}/abonnements/expire`] = 0;
  firebase.database().ref().update(u).then(()=>{
-   document.getElementById('msgCreate').innerHTML=`<span class="ok">✅ Créé</span><br><b style="font-size:20px;background:#f59e0b;color:#000;padding:6px 12px;border-radius:10px">PIN TEMP: ${tempPin}</b><br><span class="warn">Communique ce PIN 1 fois au patron. Il devra le changer immédiatement. Valable 10min.</span><br><a href="https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=Bienvenue%20BATEKE%20${boutique}%20PIN%20temporaire:%20${tempPin}%20Change-le%20vite" target="_blank" style="color:#25D366">📱 Envoyer WhatsApp</a>`;
-   alert(`✅ Client ${nom} créé.\n\nPIN TEMPORAIRE: ${tempPin}\n\nÀ communiquer UNE SEULE FOIS.\nLe patron devra le changer à la première connexion.\n\nLe PIN ne sera plus visible après.`);
+   document.getElementById('msgCreate').innerHTML=`<span class="ok">✅ Créé</span><br><b style="font-size:20px;background:#f59e0b;color:#000;padding:6px 12px;border-radius:10px">PIN TEMP: ${tempPin} (ID: ${finalId})</b><br><span class="warn">Communique ce PIN 1 fois. Il devra le changer.</span><br><a href="https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=Bienvenue%20BATEKE%20${boutique}%20PIN%20temporaire:%20${tempPin}%20ID:%20${finalId}%20Change-le%20vite" target="_blank" style="color:#25D366">📱 Envoyer WhatsApp</a>`;
+   alert(`✅ Client ${nom} créé.\n\nID: ${finalId}\nPIN TEMPORAIRE: ${tempPin}\n\nPatron se connecte avec ${tempPin}`);
    scanGlobal();
    switchTab('clients', document.querySelector('[data-tab="clients"]'));
  });
 }
-
 function activer(b){ firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let fin=Date.now()+30*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=fin; up[`patrons/${pid}/boutiques/${b}/expire`]=fin; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='actif'; up[`shops/${b}/abonnements/expireISO`]=new Date(fin).toISOString(); firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
 function bloquer(b){ if(!confirm(`Bloquer ${b}?`)) return; firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let past=Date.now()-10*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=past; up[`patrons/${pid}/boutiques/${b}/expire`]=past; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='bloqué'; firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
 function activerPaiement(key,boutique,pid){
