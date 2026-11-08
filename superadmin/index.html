@@ -258,15 +258,29 @@ function scanGlobal(){
    if(q && !searchStr.includes(q)) return;
    let hasActif=boutiques.some(b=>{ let exp=toTime(p.boutiques?.[b]?.expire||G_SHOPS[b]?.abonnements?.expire); return exp>Date.now(); });
    let statut= hasActif?'<span class="ok">ACTIF</span>':'<span class="bad">BLOQUÉ</span>';
-   let authBoutique=boutiques[0]?G_SUPPORT_AUTH[boutiques[0]]?.active:null;
-   let badgeAuth=authBoutique&&authBoutique.authorized&&toTime(authBoutique.jusqua)>Date.now()?'<span style="background:#22c55e;padding:2px 6px;border-radius:10px;font-size:9px;margin-left:5px">AUTORISÉ</span>':'';
+   
+   // V9.2 FIX MULTI-BOUTIQUE - un bouton par boutique
+   let actionsBoutiques = boutiques.map(b=>{
+     let authBoutique=G_SUPPORT_AUTH[b]?.active;
+     let isAuth = authBoutique && authBoutique.authorized && toTime(authBoutique.jusqua)>Date.now();
+     let badge = isAuth ? `<span style="background:#22c55e;padding:1px 5px;border-radius:10px;font-size:8px">✓</span>` : '';
+     return `<div style="display:flex;align-items:center;gap:4px;margin:3px 0;background:#1e1e1e;padding:3px 6px;border-radius:8px;border:1px solid #333">
+       <span style="min-width:70px;font-size:11px"><b>${b}</b> ${badge}</span>
+       <button class="btn-o" style="padding:4px 8px;font-size:10px" onclick="demanderSupport('${b}','${pid}')">🔐 Demander</button>
+       <button class="btn-dark" style="padding:4px 8px;font-size:10px" onclick="viewAsPatron('${b}','${pid}')">👁️ Entrer</button>
+     </div>`;
+   }).join('') || '<span class="muted">—</span>';
+
    htmlClients+=`<tr>
-    <td><b>${p.nom||'—'}</b><br><span class="muted">ID:${pid} - PIN:${p.pin||pid}</span> ${badgeAuth}</td>
+    <td><b>${p.nom||'—'}</b><br><span class="muted">ID:${pid} - PIN:${p.pin||pid}</span></td>
     <td>${p.phone?`<a href="https://wa.me/${p.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366">📱 ${p.phone}</a><br>`:''}${p.email||''}<br><span class="muted">${p.adresse||''}</span></td>
     <td>${boutiques.map(b=>`<span class="muted">${b}</span>`).join('<br>')||'—'}</td>
     <td><span style="background:#7c3aed;padding:3px 8px;border-radius:10px;font-size:11px">👑 ${p.pin||pid}</span></td>
     <td>${statut}</td>
-    <td><button class="btn-b" onclick="openClient('${pid}')">Fiche</button><button class="btn-o" onclick="demanderSupport('${boutiques[0]||''}','${pid}')">🔐 Demander</button><button class="btn-dark" onclick="viewAsPatron('${boutiques[0]||''}','${pid}')">👁️ Entrer</button><button class="btn-o" onclick="resetPin('${pid}')">🔑</button><button class="btn-r" onclick="supprimerClient('${pid}')">🗑️</button></td></tr>`;
+    <td>
+      <div style="display:flex;gap:4px;margin-bottom:6px"><button class="btn-b" onclick="openClient('${pid}')">Fiche</button><button class="btn-o" onclick="resetPin('${pid}')">🔑</button><button class="btn-r" onclick="supprimerClient('${pid}')">🗑️</button></div>
+      <div style="max-height:120px;overflow:auto">${actionsBoutiques}</div>
+    </td></tr>`;
   });
   document.getElementById('tableClients').innerHTML=htmlClients||'<tr><td colspan=6 class="muted">Aucun client</td></tr>';
 
