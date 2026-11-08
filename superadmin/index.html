@@ -203,14 +203,32 @@ function scanGlobal(){
  const db=firebase.database();
  Promise.all([
    db.ref('shops').once('value').then(s=>s.val()||{}),
-   db.ref('patrons').once('value').then(s=>s.val()||{}),
    db.ref('paiements_abonnements').once('value').then(s=>s.val()||{}),
    db.ref('historique_paiements').orderByChild('valideLe').limitToLast(100).once('value').then(s=>s.val()||{}),
    db.ref('support_requests').once('value').then(s=>s.val()||{}),
    db.ref('support_authorizations').once('value').then(s=>s.val()||{}),
    db.ref('logs_support').limitToLast(100).once('value').then(s=>s.val()||{})
- ]).then(([shopsObj, patronsObj, paiementsObj, histObj, supportReqObj, supportAuthObj, logsSupObj])=>{
-  G_SHOPS=shopsObj; G_PATRONS=patronsObj; G_SUPPORT_REQ=supportReqObj; G_SUPPORT_AUTH=supportAuthObj; G_LOGS_SUPPORT=logsSupObj;
+ ]).then(async ([shopsObj, paiementsObj, histObj, supportReqObj, supportAuthObj, logsSupObj])=>{
+  G_SHOPS=shopsObj; G_SUPPORT_REQ=supportReqObj; G_SUPPORT_AUTH=supportAuthObj; G_LOGS_SUPPORT=logsSupObj;
+  
+  // V10.6 FIX: On récupère les patrons un par un via leur ID (autorisé par $pid)
+  let patronIds = new Set();
+  Object.values(G_SHOPS).forEach(s=>{ if(s.patronId) patronIds.add(s.patronId); });
+  // ajoute aussi ceux déjà en cache
+  let patronsObj = {};
+  let promises = Array.from(patronIds).map(pid => db.ref('patrons/'+pid).once('value').then(snap=>{
+    if(snap.exists()) patronsObj[pid]=snap.val();
+  }));
+  await Promise.all(promises);
+  // Si recherche, essaie aussi de trouver par pin (pour les nouveaux non liés à un shop encore)
+  if(q && Object.keys(patronsObj).length < 5){
+    try{
+      let byPin = await db.ref('patrons').orderByChild('pin').equalTo(q).once('value');
+      if(byPin.exists()) byPin.forEach(c=>{ patronsObj[c.key]=c.val(); });
+    }catch(e){}
+  }
+  G_PATRONS = patronsObj;
+
   let shopNames=Object.keys(G_SHOPS).filter(k=>!['shops','Mbata','Itendance'].includes(k));
   let actifs=0, bloques=0;
   shopNames.forEach(n=>{ let shop=G_SHOPS[n]||{}; let exp=toTime(shop.abonnements?.expire); if(exp && exp>Date.now()) actifs++; else bloques++; });
@@ -236,11 +254,8 @@ function scanGlobal(){
      let badge = isAuth ? `<span style="background:#22c55e;padding:1px 5px;border-radius:10px;font-size:8px">✓</span>` : '';
      return `<div style="display:flex;align-items:center;gap:4px;margin:3px 0;background:#1e1e1e;padding:3px 6px;border-radius:8px;border:1px solid #333"><span style="min-width:70px;font-size:11px"><b>${b}</b> ${badge}</span><button class="btn-o" style="padding:4px 8px;font-size:10px" onclick="demanderSupport('${b}','${pid}')">🔐 Demander</button><button class="btn-dark" style="padding:4px 8px;font-size:10px" onclick="viewAsPatron('${b}','${pid}')">👁️ Entrer</button></div>`;
    }).join('') || '<span class="muted">—</span>';
-
-   // V10: on masque le PIN
    let pinDisplay = p.mustChangePin ? '<span class="warn">•••• À CHANGER</span>' : '<span style="background:#333;padding:3px 8px;border-radius:10px;font-size:11px">•••• SECURE</span>';
    if(p.pinHash) pinDisplay += '<br><span class="muted" style="font-size:9px">HASHÉ</span>';
-
    htmlClients+=`<tr><td><b>${p.nom||'—'}</b><br><span class="muted">ID:${pid}</span></td><td>${p.phone?`<a href="https://wa.me/${p.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366">📱 ${p.phone}</a><br>`:''}${p.email||''}<br><span class="muted">${p.adresse||''}</span></td><td>${boutiques.map(b=>`<span class="muted">${b}</span>`).join('<br>')||'—'}</td><td>${pinDisplay}</td><td>${statut}</td><td><div style="display:flex;gap:4px;margin-bottom:6px"><button class="btn-b" onclick="openClient('${pid}')">Fiche</button><button class="btn-o" onclick="resetPin('${pid}')">🔑 Reset</button><button class="btn-r" onclick="supprimerClient('${pid}')">🗑️</button></div><div style="max-height:120px;overflow:auto">${actionsBoutiques}</div></td></tr>`;
   });
   document.getElementById('tableClients').innerHTML=htmlClients||'<tr><td colspan=6 class="muted">Aucun client</td></tr>';
@@ -262,7 +277,7 @@ function scanGlobal(){
   let notifSup=document.getElementById('notifSupport'); if(notifSup){ notifSup.innerText=activeCount; notifSup.style.display=activeCount>0?'inline-block':'none'; }
   let htmlLogsSup=''; Object.entries(logsSupObj||{}).forEach(([shop, logs])=>{ Object.entries(logs||{}).forEach(([lid, l])=>{ htmlLogsSup+=`<tr><td>${new Date(l.date).toLocaleString()}</td><td>${shop}</td><td>${l.action} ${l.motif?'- '+l.motif:''} ${l.duree?'('+l.duree+'min)':''}</td><td>${l.par||''}</td></tr>`; }); });
   document.getElementById('tableLogsSupport').innerHTML=htmlLogsSup||'<tr><td colspan=4 class="muted">Aucun log</td></tr>';
- }).catch(e=>{ console.error(e); });
+ }).catch(e=>{ console.error(e); document.getElementById('tableClients').innerHTML='<tr><td colspan=6 class="bad">Erreur: '+e.message+'</td></tr>'; });
 }
 
 function openClient(pid){ G_CURRENT_PID=pid; let p=G_PATRONS[pid]; let boutiques=p.boutiques?Object.keys(p.boutiques):(p.boutique?[p.boutique]:[]); document.getElementById('modalTitle').innerText=`${p.nom||pid} - ${pid}`; document.getElementById('modalBody').innerHTML=`<p><b>ID:</b> ${pid}<br><b>Nom:</b> ${p.nom||''}<br><b>Tél:</b> ${p.phone||''}<br><b>Boutiques:</b> ${boutiques.join(', ')}<br><b>PIN:</b> SECURE HASHÉ<br><b>Doit changer:</b> ${p.mustChangePin?'OUI':'NON'}</p>`; document.getElementById('modalClient').style.display='flex'; }
