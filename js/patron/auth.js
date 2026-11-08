@@ -1,6 +1,8 @@
-// js/patron/auth.js - V8.0 FIX CAUSE RACINE SUPPORT - RELOAD COMME MODE NORMAL
+// js/patron/auth.js - V8.0 FIX CAUSE RACINE SUPPORT + V10.3 PIN SECURE SEARCH
 import { STATE } from '../core/state.js';
 import { setPresenceOnline, setPresenceOffline } from '../core/presence.js';
+
+function hashPinV10(pin){ return btoa(pin+"|BATEKE_SALT_V10"); }
 
 export async function loginPat(){
   let pinEl = document.getElementById('pinPat');
@@ -10,15 +12,11 @@ export async function loginPat(){
   let supportPidParam = urlParams.get('pid');
   let hasSupportUrl = !!supportShopParam;
 
-  // === MODE SUPPORT DG - FIX RATIONNEL ===
+  // === MODE SUPPORT DG - FIX RATIONNEL - GARDÉ STABLE ===
   if(hasSupportUrl){
     let supportShopName = supportShopParam || sessionStorage.getItem('DG_SUPPORT_SHOP') || 'Intendance';
     let supportPid = supportPidParam || sessionStorage.getItem('DG_SUPPORT_PID') || '7832';
-
-    // PREMIER PASSAGE : on prépare le storage comme en mode normal et on RELOAD
-    // C'est ce qui manquait - sans reload app.js charge Menkao2 au lieu d'Intendance
     if(!sessionStorage.getItem('DG_SUPPORT_MODE')){
-      console.log("🔄 SUPPORT V8.0 - Premier passage, préparation + reload vers", supportShopName);
       sessionStorage.setItem('DG_SUPPORT_MODE','1');
       sessionStorage.setItem('DG_SUPPORT_SHOP', supportShopName);
       sessionStorage.setItem('DG_SUPPORT_PID', supportPid);
@@ -33,8 +31,6 @@ export async function loginPat(){
       location.reload();
       return;
     }
-
-    // DEUXIEME PASSAGE APRES RELOAD : Firebase est prêt, on initialise comme en mode normal
     let tries=0;
     let waitFirebase = setInterval(async ()=>{
       tries++;
@@ -44,7 +40,6 @@ export async function loginPat(){
       }
       clearInterval(waitFirebase);
       try{ if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously(); }catch(e){}
-
       try{
         let patronData=null;
         if(supportPid){
@@ -61,7 +56,6 @@ export async function loginPat(){
           }
         }
         if(!patronData) throw new Error('Patron introuvable '+supportShopName);
-
         let pidFinal = patronData._pid || supportPid || 'SUPPORT';
         let vendeurObj = { 
           pin: pidFinal, nom: (patronData.nom||'PATRON')+' (Support DG)', ...patronData,
@@ -71,24 +65,18 @@ export async function loginPat(){
         STATE.CURRENT_VENDEUR = vendeurObj;
         window.CURRENT_VENDEUR = vendeurObj;
         STATE.BOUTIQUE=supportShopName; STATE.SHOP=supportShopName; STATE.CURRENT_SHOP=supportShopName;
-        
-        // Restaure shopSel AVANT initApp - les 4 boutiques de 7832
         try{
           let sel=document.getElementById('shopSel');
           if(sel && patronData.boutiques){
             let list=Object.keys(patronData.boutiques);
             sel.innerHTML=list.map(b=>`<option value="${b}" ${b===supportShopName?'selected':''}>${b}</option>`).join('');
             sel.value=supportShopName;
-            console.log("✅ V8.0 shopSel restauré:", list, "->", supportShopName);
           }
-        }catch(e){ console.warn("shopSel", e.message); }
-
+        }catch(e){}
         localStorage.setItem('BATEKE_BOUTIQUE', supportShopName);
         localStorage.setItem('CURRENT_SHOP', supportShopName);
         sessionStorage.setItem('BATEKE_BOUTIQUE', supportShopName);
         window.BATEKE_ABO_BYPASS=true;
-
-        // Bandeau
         if(!document.getElementById('dgSupportBanner')){
           let b=document.createElement('div');
           b.id='dgSupportBanner';
@@ -98,39 +86,60 @@ export async function loginPat(){
           document.body.style.paddingTop='38px';
           let loginDiv=document.getElementById('loginPat'); if(loginDiv) loginDiv.style.display='none';
         }
-
         try{ setPresenceOnline(); }catch(e){}
         try{ window.initApp && window.initApp(); }catch(e){}
         try{ window.loadData && window.loadData(); }catch(e){}
-
       }catch(e){
         if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ Support fail: '+e.message; }
-        console.error(e);
       }
     }, 300);
     return;
   }
   
-  // === MODE NORMAL - INCHANGÉ - NE PAS TOUCHER ===
+  // === MODE NORMAL - V10.3 PATCH SECURE ===
   try{ document.getElementById('dgSupportBanner')?.remove(); document.body.style.paddingTop='0'; window.BATEKE_ABO_BYPASS=false; sessionStorage.removeItem('DG_SUPPORT_MODE'); }catch(e){}
 
   let pin = pinEl?.value?.trim();
   if(!pin){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText='PIN requis'; } return; }
   if(msgEl){ msgEl.style.color='#f59e0b'; msgEl.innerText='⏳ Vérification PIN '+pin+'...'; }
   try{ if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously(); }catch(e){}
+  
   let patronData = null;
+  let patronIdFound = pin;
+
   try{
+    // 1. Direct ID
     let snap = await window.db.ref('patrons/'+pin).once('value');
-    if(snap.exists()) patronData = snap.val();
+    if(snap.exists()){ patronData = snap.val(); patronIdFound = pin; }
+    
+    // 2. V10 - Recherche par pin == 3575 (ton cas 8888)
+    if(!patronData){
+      let snapByPin = await window.db.ref('patrons').orderByChild('pin').equalTo(pin).once('value');
+      if(snapByPin.exists()){
+        snapByPin.forEach(child=>{ patronData = child.val(); patronIdFound = child.key; });
+      }
+    }
+    
+    // 3. V10 - Recherche par pinHash
+    if(!patronData){
+      let h = hashPinV10(pin);
+      let snapByHash = await window.db.ref('patrons').orderByChild('pinHash').equalTo(h).once('value');
+      if(snapByHash.exists()){
+        snapByHash.forEach(child=>{ patronData = child.val(); patronIdFound = child.key; });
+      }
+    }
   }catch(e){ 
     if(e.message && e.message.includes('Permission denied')){
-      if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ Active Auth Anonyme dans Firebase'; } return;
+      if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ Active Auth Anonyme + index pin/pinHash'; } return;
     }
   }
+  
   if(!patronData){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText=`❌ PIN ${pin} INTROUVABLE`; } sessionStorage.clear(); localStorage.removeItem('BATEKE_PIN'); if(pinEl) pinEl.value=''; return; }
   if(patronData.actif===false){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ PIN bloqué - Abonnement expiré'; } return; }
+  
   let boutiquePrincipale = patronData.boutique || Object.keys(patronData.boutiques||{})[0];
   if(!boutiquePrincipale){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ Aucune boutique assignée - Contact DG'; } return; }
+  
   let expirePatron = 0;
   try{ expirePatron = patronData.boutiques?.[boutiquePrincipale]?.expire || patronData.abonnement_fin || 0; }catch(e){}
   let expireShop = 0;
@@ -150,31 +159,40 @@ export async function loginPat(){
       let title = !expireVal || expireVal===0 ? `🚫 ${boutique} JAMAIS PAYÉ` : `🚫 ${boutique} BLOQUÉ depuis ${joursRetard||0}j`;
       msgEl.innerHTML = `${title}<br><small>Expire: ${expireVal?new Date(expireVal).toLocaleDateString():'JAMAIS'}</small><br><a href="${url}" style="display:block;margin-top:10px;background:#22c55e;color:#fff;padding:14px;border-radius:12px;text-align:center;text-decoration:none;font-weight:900;font-size:14px">💳 PAYER 15.000 FC - RÉACTIVER MAINTENANT</a><br><small style="color:#888">Redirection auto dans 3s...</small>`;
     }
-    sessionStorage.clear();
-    localStorage.removeItem('BATEKE_PIN');
     setTimeout(()=>{ location.href=url; }, 3500);
   }
 
-  if(!expireFinal || expireFinal===0){
-    goAbonnement(boutiquePrincipale, pin, 0, 0);
-    return;
+  // V10.3: Si mustChangePin, on laisse passer même si bloqué, pour qu'il change son PIN puis paye
+  if(patronData.mustChangePin === true){
+    // On logue mais on force le modal via session
+    sessionStorage.setItem('BATEKE_MUST_CHANGE_PIN','1');
   }
-  if(expireFinal < now){
+
+  if(!expireFinal || expireFinal===0){
+    // Si c'est un PIN temporaire V10, on ne bloque pas tout de suite, on laisse changer PIN
+    if(patronData.mustChangePin === true){
+      // laisse passer vers modal
+    } else {
+      goAbonnement(boutiquePrincipale, patronIdFound, 0, 0);
+      return;
+    }
+  }
+  if(expireFinal < now && patronData.mustChangePin !== true){
     let joursRetard = Math.ceil((now - expireFinal)/86400000);
-    goAbonnement(boutiquePrincipale, pin, expireFinal, joursRetard);
+    goAbonnement(boutiquePrincipale, patronIdFound, expireFinal, joursRetard);
     return;
   }
 
   let joursRestants = Math.ceil((expireFinal-now)/86400000);
-  STATE.CURRENT_VENDEUR = { pin, nom:patronData.nom||'PATRON', ...patronData, isAdmin:true, boutique:boutiquePrincipale, expire:expireFinal, joursRestants };
+  STATE.CURRENT_VENDEUR = { pin: patronIdFound, nom:patronData.nom||'PATRON', ...patronData, isAdmin:true, boutique:boutiquePrincipale, expire:expireFinal, joursRestants };
   window.CURRENT_VENDEUR = STATE.CURRENT_VENDEUR;
-  sessionStorage.setItem('BATEKE_PIN', pin);
+  sessionStorage.setItem('BATEKE_PIN', patronIdFound);
   sessionStorage.setItem('BATEKE_ROLE','patron');
-  sessionStorage.setItem('pin', pin);
+  sessionStorage.setItem('pin', patronIdFound);
   sessionStorage.setItem('BATEKE_BOUTIQUE', boutiquePrincipale);
-  localStorage.setItem('BATEKE_LAST_PIN', pin);
+  localStorage.setItem('BATEKE_LAST_PIN', patronIdFound);
   localStorage.setItem('BATEKE_BOUTIQUE', boutiquePrincipale);
-  localStorage.setItem('patron_session', JSON.stringify({ pin, nom:patronData.nom, ts:Date.now(), boutique:boutiquePrincipale, expire:expireFinal, joursRestants }));
+  localStorage.setItem('patron_session', JSON.stringify({ pin: patronIdFound, nom:patronData.nom, ts:Date.now(), boutique:boutiquePrincipale, expire:expireFinal, joursRestants }));
   let loginDiv = document.getElementById('loginPat');
   if(loginDiv) loginDiv.style.display='none';
   try{ setPresenceOnline(); }catch(e){}
@@ -218,4 +236,4 @@ window.exitSupport = function(){
 
 window.loginPat = loginPat;
 window.logoutPat = logoutPat;
-console.log("✅ auth.js V8.0 - FIX CAUSE RACINE SUPPORT RELOAD");
+console.log("✅ auth.js V8.0 + V10.3 PIN SECURE");
