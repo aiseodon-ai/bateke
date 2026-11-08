@@ -338,41 +338,5 @@ async function saveNewSecurePin(){
   }catch(e){ msg.innerText='Erreur: '+e.message; }
 }
 </script>
-<script>
-// 🔴 V10.2 REDIRECTION ABO - Si JAMAIS PAYÉ ou BLOQUÉ → page abonnement
-(function(){
-  function forceCheckAboRedirect(){
-    if(sessionStorage.getItem('DG_SUPPORT_MODE')==='1') return; // DG support ne bloque pas
-    let badge = document.getElementById('badgeAbo');
-    if(!badge) return;
-    let txt = badge.innerText || '';
-    if(txt.includes('JAMAIS PAYÉ') || txt.includes('Bloqué') || txt.includes('BLOQUÉ')){
-      if(!sessionStorage.getItem('REDIRECT_ABO_DONE')){
-        sessionStorage.setItem('REDIRECT_ABO_DONE','1');
-        console.log("🔴 Abonnement bloqué, redirection dans 3s...");
-        setTimeout(()=>{
-          let boutique = localStorage.getItem('BATEKE_BOUTIQUE') || localStorage.getItem('CURRENT_SHOP') || document.getElementById('shopSel')?.value || 'odoncel';
-          alert("🔴 Boutique "+boutique+" non active. Abonnement requis.");
-          location.href = '/bateke/abonnement.html?shop='+encodeURIComponent(boutique);
-        }, 3000);
-      }
-    }
-  }
-  
-  // Vérifie toutes les 2 sec pendant 30 sec au démarrage
-  let count=0;
-  let inter=setInterval(()=>{
-    count++;
-    forceCheckAboRedirect();
-    if(count>15) clearInterval(inter);
-  },2000);
-  
-  // Hook sur checkAbonnement existant
-  let oldUpdateBadge = window.updateBadgeAbo;
-  window.updateBadgeAbo = function(expire, shop){
-    if(oldUpdateBadge) oldUpdateBadge(expire, shop);
-    setTimeout(forceCheckAboRedirect, 500);
-  };
-})();
-</script>
+
 </body></html>
