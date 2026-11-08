@@ -220,8 +220,9 @@ window.switchShop = function(){ if(oldSwitchShopV9) oldSwitchShopV9.apply(this, 
 </script>
 
 <script>
-// 🔐 V10 PIN SECURE - LOGIQUE PATRON - WRAP loginPat sans toucher app.js stable
+// 🔐 V10.1 PIN SECURE - LOGIN FIX - CHERCHE PAR PIN et non par ID
 function hashPinV10(pin){ return btoa(pin+"|BATEKE_SALT_V10"); }
+
 (function(){
   let tries=0;
   let interval=setInterval(()=>{
@@ -229,25 +230,88 @@ function hashPinV10(pin){ return btoa(pin+"|BATEKE_SALT_V10"); }
     if(window.loginPat && !window._V10_WRAPPED){
       window._V10_WRAPPED=true;
       clearInterval(interval);
-      let _oldLoginPat = window.loginPat;
+      console.log("V10.1 WRAP loginPat");
+      
       window.loginPat = async function(){
-        await _oldLoginPat();
-        setTimeout(async ()=>{
-          let pinId = localStorage.getItem('BATEKE_LAST_PIN') || sessionStorage.getItem('BATEKE_PIN') || document.getElementById('pinPat')?.value;
-          if(!pinId || !window.db) return;
-          try{
-            let snap = await window.db.ref('patrons/'+pinId).once('value');
-            let p = snap.val();
-            if(!p) return;
-            if(p.mustChangePin === true){
-              document.getElementById('modalChangePin').style.display='flex';
+        let pinInput = document.getElementById('pinPat');
+        let entered = pinInput?.value?.trim();
+        let msg = document.getElementById('msgPat');
+        if(!entered){ msg.innerText='Tape ton PIN'; return; }
+        
+        try{
+          if(!window.db){ msg.innerText='Firebase pas prêt'; return; }
+          
+          // 1. Essaye d'abord par ID direct (ancien système)
+          let snapDirect = await window.db.ref('patrons/'+entered).once('value');
+          let patronData = snapDirect.val();
+          let patronId = entered;
+
+          // 2. Si pas trouvé, cherche par champ pin == entered (NOUVEAU V10)
+          if(!patronData){
+            let snapByPin = await window.db.ref('patrons').orderByChild('pin').equalTo(entered).once('value');
+            if(snapByPin.exists()){
+              snapByPin.forEach(child=>{
+                patronData = child.val();
+                patronId = child.key; // 8888
+              });
             }
-          }catch(e){}
-        }, 1300);
+          }
+
+          // 3. Si toujours pas, cherche par pinHash (après changement)
+          if(!patronData){
+            let hash = hashPinV10(entered);
+            let snapByHash = await window.db.ref('patrons').orderByChild('pinHash').equalTo(hash).once('value');
+            if(snapByHash.exists()){
+              snapByHash.forEach(child=>{
+                patronData = child.val();
+                patronId = child.key;
+              });
+            }
+          }
+
+          if(!patronData){
+            msg.innerText='❌ PIN '+entered+' INTROUVABLE';
+            return;
+          }
+
+          // SUCCÈS - On stocke comme avant
+          localStorage.setItem('BATEKE_LAST_PIN', patronId);
+          localStorage.setItem('patron_pin', patronData.pin || entered);
+          localStorage.setItem('patron_nom', patronData.nom || '');
+          sessionStorage.setItem('BATEKE_PIN', patronId);
+          sessionStorage.setItem('BATEKE_ROLE', 'patron');
+          sessionStorage.setItem('pin', patronId);
+          
+          if(patronData.boutique){
+            localStorage.setItem('BATEKE_BOUTIQUE', patronData.boutique);
+            localStorage.setItem('CURRENT_SHOP', patronData.boutique);
+            localStorage.setItem('patron_shop', patronData.boutique);
+          }
+
+          document.getElementById('loginPat').style.display='none';
+          msg.innerText='';
+
+          // VÉRIFIE mustChangePin
+          setTimeout(async ()=>{
+            try{
+              let snap = await window.db.ref('patrons/'+patronId).once('value');
+              let p = snap.val();
+              if(p && p.mustChangePin === true){
+                document.getElementById('modalChangePin').style.display='flex';
+              } else {
+                location.reload();
+              }
+            }catch(e){ location.reload(); }
+          }, 500);
+
+        }catch(e){
+          console.error(e);
+          msg.innerText='Erreur: '+e.message;
+        }
       };
     }
-    if(tries>50) clearInterval(interval);
-  },500);
+    if(tries>80) clearInterval(interval);
+  },400);
 })();
 
 async function saveNewSecurePin(){
@@ -256,23 +320,21 @@ async function saveNewSecurePin(){
   let msg = document.getElementById('msgChangePin');
   if(p1.length<4 || p1!==p2){ msg.innerText='PINs différents ou trop court (4 chiffres min)'; return; }
   if(!/^\d{4,6}$/.test(p1)){ msg.innerText='PIN doit être 4-6 chiffres'; return; }
-  let pinId = localStorage.getItem('BATEKE_LAST_PIN') || sessionStorage.getItem('BATEKE_PIN');
-  if(!pinId){ msg.innerText='Session perdue, reconnecte'; return; }
+  let patronId = localStorage.getItem('BATEKE_LAST_PIN') || sessionStorage.getItem('BATEKE_PIN');
+  if(!patronId){ msg.innerText='Session perdue'; return; }
   msg.innerText='Sauvegarde...';
   try{
-    await window.db.ref('patrons/'+pinId).update({
+    await window.db.ref('patrons/'+patronId).update({
       pin: p1,
       pinHash: hashPinV10(p1),
       mustChangePin: false,
       tempPinExpire: null,
       pinChangeLe: Date.now()
     });
-    let boutique = localStorage.getItem('BATEKE_BOUTIQUE') || document.getElementById('shopSel')?.value || 'global';
-    await window.db.ref('logs_support/'+boutique).push({date:Date.now(),action:'change_pin',par:pinId});
     document.getElementById('modalChangePin').style.display='none';
-    alert('✅ Ton nouveau PIN secret est sauvé. DG ne le connait pas. Retiens-le: '+p1);
-    localStorage.setItem('BATEKE_LAST_PIN', p1);
-    sessionStorage.setItem('BATEKE_PIN', p1);
+    alert('✅ Nouveau PIN secret sauvé: '+p1+'\nDG ne le connait pas');
+    localStorage.setItem('BATEKE_LAST_PIN', patronId);
+    location.reload();
   }catch(e){ msg.innerText='Erreur: '+e.message; }
 }
 </script>
