@@ -109,81 +109,137 @@ let oldSwitchShopBadge=window.switchShop;window.switchShop=function(){if(oldSwit
 </script>
 
 <script>
-// 🛡️ SUPPORT CONSENTI V9 - LOGIQUE PATRON - NOUVEAU MAIS N'ECRASE RIEN
-let G_SUPPORT_REQ_ID = null;
-let G_SUPPORT_SHOP_LISTEN = null;
+// 🛡️ SUPPORT CONSENTI V9.1 FIX - KIKE + TIMER + MULTI-BOUTIQUE
+let G_SUPPORT_REQ_IDS = {};
+let G_TIMER_INTERVAL = null;
+
+function getBoutiquesPatron(){
+  let sel = document.getElementById('shopSel');
+  let list = [];
+  if(sel && sel.options.length>0){
+    for(let o of sel.options){ if(o.value && o.value!=='ALL') list.push(o.value); }
+  }
+  let single = localStorage.getItem('BATEKE_BOUTIQUE') || localStorage.getItem('patron_shop');
+  if(single && !list.includes(single)) list.push(single);
+  return [...new Set(list)];
+}
+
 function initSupportConsenti(){
-  if(!window.db){setTimeout(initSupportConsenti,800);return;}
-  let shop = document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || localStorage.getItem('patron_shop') || '';
-  if(!shop||shop==='ALL'){setTimeout(initSupportConsenti,1500);return;}
-  if(G_SUPPORT_SHOP_LISTEN===shop) return;
-  G_SUPPORT_SHOP_LISTEN=shop;
-  window.db.ref('support_requests/'+shop).on('value', snap=>{
-    let hasPending=false; let lastReq=null; let lastId=null;
-    snap.forEach(child=>{let v=child.val(); if(v.status==='pending' && v.date > Date.now()-86400000){hasPending=true; lastReq=v; lastId=child.key;}});
-    let banner=document.getElementById('supportRequestBanner');
-    if(hasPending && !sessionStorage.getItem('DG_SUPPORT_MODE')){
-      G_SUPPORT_REQ_ID=lastId;
-      document.getElementById('supportReqText').innerText=`🛠️ DG demande accès à ${shop} - Motif: ${lastReq.motif||'Assistance'}`;
-      banner.style.display='block'; document.body.style.paddingTop='90px';
-      try{navigator.vibrate([200,100,200]);}catch(e){}
-    } else {
-      if(!document.getElementById('supportActiveBanner').style.display || document.getElementById('supportActiveBanner').style.display==='none'){
-        banner.style.display='none';
+  if(!window.db){ setTimeout(initSupportConsenti,800); return; }
+  
+  let boutiques = getBoutiquesPatron();
+  if(boutiques.length===0){ setTimeout(initSupportConsenti,1500); return; }
+
+  console.log("🛡️ V9.1 Ecoute support pour:", boutiques);
+
+  // Pour chaque boutique du patron, on écoute demande + autorisation
+  boutiques.forEach(shop=>{
+    // 1. Demandes en attente pour CETTE boutique exacte
+    window.db.ref('support_requests/'+shop).on('value', snap=>{
+      let hasPending=false, lastReq=null, lastId=null;
+      snap.forEach(child=>{
+        let v=child.val(); 
+        if(v.status==='pending' && v.date > Date.now()-86400000){ hasPending=true; lastReq=v; lastId=child.key; }
+      });
+      let banner=document.getElementById('supportRequestBanner');
+      if(hasPending && !sessionStorage.getItem('DG_SUPPORT_MODE')){
+        G_SUPPORT_REQ_IDS[shop]=lastId;
+        document.getElementById('supportReqText').innerText=`🛠️ DG demande accès à ${shop} - Motif: ${lastReq.motif||'Assistance'}`;
+        banner.dataset.shop=shop; // FIX: on garde la bonne boutique, pas Intendance
+        banner.style.display='block'; document.body.style.paddingTop='90px';
       }
-    }
-  });
-  window.db.ref('support_authorizations/'+shop+'/active').on('value', snap=>{
-    let auth=snap.val();
-    let activeBanner=document.getElementById('supportActiveBanner');
-    if(auth && auth.authorized && auth.jusqua > Date.now()){
+    });
+
+    // 2. Autorisation active pour CETTE boutique
+    window.db.ref('support_authorizations/'+shop+'/active').on('value', snap=>{
+      let auth=snap.val();
+      let activeBanner=document.getElementById('supportActiveBanner');
+      
+      // Côté PATRON
       if(!sessionStorage.getItem('DG_SUPPORT_MODE')){
-        document.getElementById('supportActiveShop').innerText=shop;
-        document.getElementById('supportActiveTime').innerText=new Date(auth.date).toLocaleTimeString();
-        activeBanner.style.display='block'; document.body.style.paddingTop='44px';
-        document.getElementById('supportRequestBanner').style.display='none';
+        if(auth && auth.authorized && auth.jusqua > Date.now()){
+          document.getElementById('supportActiveShop').innerText=shop;
+          activeBanner.dataset.shop=shop;
+          activeBanner.style.display='block'; 
+          document.body.style.paddingTop='44px';
+          startTimer(auth.jusqua);
+        } else {
+          // Si c'était cette boutique qui était en support, on cache
+          if(activeBanner.dataset.shop===shop) activeBanner.style.display='none';
+        }
+      } 
+      // Côté DG - FIX KIKE
+      else {
+        let dgShop = sessionStorage.getItem('DG_SUPPORT_SHOP');
+        if(dgShop===shop && (!auth || !auth.authorized)){
+          alert("🔴 Patron a terminé le support. Tu es déconnecté.");
+          exitSupport();
+        }
       }
-    } else {
-      activeBanner.style.display='none';
-      if(sessionStorage.getItem('DG_SUPPORT_MODE')==='1' && auth===null){
-        // patron a kické
-      }
-    }
+    });
   });
 }
+
+function startTimer(jusqua){
+  if(G_TIMER_INTERVAL) clearInterval(G_TIMER_INTERVAL);
+  let el=document.getElementById('supportActiveTime');
+  G_TIMER_INTERVAL=setInterval(()=>{
+    let reste = jusqua - Date.now();
+    if(reste<=0){ clearInterval(G_TIMER_INTERVAL); el.innerText="EXPIRÉ"; quitterSupport(); return; }
+    let m=Math.floor(reste/60000); let s=Math.floor((reste%60000)/1000);
+    el.innerText=`${m}m ${s}s restant`;
+  },1000);
+}
+
 function autoriserSupport(minutes){
-  let shop=document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || '';
+  let banner=document.getElementById('supportRequestBanner');
+  let shop=banner.dataset.shop || document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || '';
   if(!shop) return alert('Pas de boutique');
   let token=Math.random().toString(36).substring(2,12).toUpperCase();
   let jusque=Date.now()+minutes*60000;
   let pinPatron=localStorage.getItem('BATEKE_LAST_PIN') || sessionStorage.getItem('BATEKE_PIN') || 'PATRON';
-  window.db.ref('support_authorizations/'+shop+'/active').set({authorized:true,autorisePar:pinPatron,date:Date.now(),jusqua:jusque,token:token,duree:minutes}).then(()=>{
-    if(G_SUPPORT_REQ_ID) window.db.ref('support_requests/'+shop+'/'+G_SUPPORT_REQ_ID+'/status').set('autorise');
+  window.db.ref('support_authorizations/'+shop+'/active').set({authorized:true,autorisePar:pinPatron,date:Date.now(),jusqua:jusque,token:token,duree:minutes,boutique:shop}).then(()=>{
+    let reqId=G_SUPPORT_REQ_IDS[shop];
+    if(reqId) window.db.ref('support_requests/'+shop+'/'+reqId+'/status').set('autorise');
     window.db.ref('logs_support/'+shop).push({date:Date.now(),action:'autorise',par:pinPatron,duree:minutes,token:token});
-    document.getElementById('supportRequestBanner').style.display='none';
-    alert(`✅ Accès autorisé ${minutes}min pour DG`);
+    banner.style.display='none';
+    alert(`✅ Accès autorisé ${minutes}min pour DG sur ${shop}`);
   });
 }
 function refuserSupport(){
-  let shop=document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || '';
+  let banner=document.getElementById('supportRequestBanner');
+  let shop=banner.dataset.shop || '';
   let pinPatron=localStorage.getItem('BATEKE_LAST_PIN') || 'PATRON';
-  if(G_SUPPORT_REQ_ID) window.db.ref('support_requests/'+shop+'/'+G_SUPPORT_REQ_ID+'/status').set('refuse');
+  let reqId=G_SUPPORT_REQ_IDS[shop];
+  if(reqId) window.db.ref('support_requests/'+shop+'/'+reqId+'/status').set('refuse');
   window.db.ref('logs_support/'+shop).push({date:Date.now(),action:'refuse',par:pinPatron});
-  document.getElementById('supportRequestBanner').style.display='none';
-  document.body.style.paddingTop='0';
+  banner.style.display='none'; document.body.style.paddingTop='0';
 }
 function quitterSupport(){
-  if(!confirm("Kicker DG du support? Il sera déconnecté immédiatement.")) return;
-  let shop=document.getElementById('shopSel')?.value || localStorage.getItem('BATEKE_BOUTIQUE') || '';
+  let banner=document.getElementById('supportActiveBanner');
+  let shop=banner.dataset.shop || document.getElementById('supportRequestBanner').dataset.shop || localStorage.getItem('BATEKE_BOUTIQUE') || '';
+  if(!shop) shop=sessionStorage.getItem('DG_SUPPORT_SHOP')||'';
   let pinPatron=localStorage.getItem('BATEKE_LAST_PIN') || 'PATRON';
+  if(!confirm(`Kicker DG du support ${shop}?`)) return;
   window.db.ref('support_authorizations/'+shop+'/active').remove().then(()=>{
     window.db.ref('logs_support/'+shop).push({date:Date.now(),action:'revoque',par:pinPatron});
-    document.getElementById('supportActiveBanner').style.display='none';
-    document.body.style.paddingTop='0';
+    banner.style.display='none'; document.body.style.paddingTop='0';
+    if(G_TIMER_INTERVAL) clearInterval(G_TIMER_INTERVAL);
   });
 }
+function exitSupport(){
+  // Appelé côté DG quand patron kicke
+  try{
+    sessionStorage.removeItem('DG_SUPPORT_MODE');
+    sessionStorage.removeItem('DG_SUPPORT_SHOP');
+    localStorage.removeItem('patron_shop');
+    localStorage.removeItem('BATEKE_BOUTIQUE');
+    localStorage.removeItem('CURRENT_SHOP');
+  }catch(e){}
+  location.href='/bateke/';
+}
+
 setTimeout(initSupportConsenti,1500);
-// Hook sans écraser switchShop original (déjà hooké par badge)
 let oldSwitchShopV9 = window.switchShop;
 window.switchShop = function(){ if(oldSwitchShopV9) oldSwitchShopV9.apply(this, arguments); setTimeout(initSupportConsenti, 800); };
 </script>
