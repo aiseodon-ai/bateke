@@ -147,11 +147,20 @@ function checkAboVendeur(){
   const shop = new URLSearchParams(location.search).get('shop') || localStorage.getItem('BATEKE_SHOP') || localStorage.getItem('shop') || 'Menkao1';
   let badge = document.getElementById('badgeAbo');
   
-  firebase.database().ref('shops/'+shop+'/abonnements').once('value').then(snap=>{
-    let abo = snap.val()||{};
+  firebase.database().ref('shops/'+shop).once('value').then(snap=>{
+    let all = snap.val()||{};
+    let abo = all.abonnements||{};
+    let config = all.config||{};
     let t = toTimeBateke(abo.expire);
     let now = Date.now();
     
+    // === CAS 0: PAUSE PAR PATRON (NOUVEAU) ===
+    if(config.bloqueParPatron === true || abo.bloqueParPatron === true){
+      bloquerVendeur(shop, 0, '⏸️ PAUSE par le patron - Boutique fermée temporairement');
+      if(badge){ badge.style.display='inline-block'; badge.style.background='#111'; badge.style.color='#fff'; badge.innerText='⏸️ PAUSE'; }
+      return;
+    }
+
     // === CAS 1: JAMAIS PAYÉ ===
     if(!t || t===0){
       bloquerVendeur(shop, 0, 'JAMAIS PAYÉ - 15K requis');
@@ -183,25 +192,9 @@ function checkAboVendeur(){
     }
   }).catch(e=>{
     console.warn('check abo vendeur error', e.message);
-    // Si offline, on laisse vendre mais on affiche badge offline
     if(badge){ badge.style.display='inline-block'; badge.style.background='#888'; badge.innerText='📶 Offline'; }
   });
 }
-
-// Check immédiat + toutes les 60s + à chaque retour online
-setTimeout(checkAboVendeur, 1000);
-setInterval(checkAboVendeur, 60000);
-window.addEventListener('online', checkAboVendeur);
-</script>
-  
-<script type="module" src="js/vendeur/app.js?v=5.6.5-appcheck-fixed"></script>
-
-<script>
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', e=>{
-  e.preventDefault(); deferredPrompt=e;
-  const b=document.getElementById('btnInstall'); if(b) b.style.display='block';
-});
 async function installerApp(){
   if(!deferredPrompt){
     alert('iPhone: bouton Partager > Sur ecran accueil\nAndroid: menu ⋮ > Installer app / Ajouter à l ecran accueil');
