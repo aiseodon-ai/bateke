@@ -1,4 +1,4 @@
-// RAPPORT SAFE V4.9.26 - FULL 19 RAPPORTS - PDF FIX TECNO/PC
+// RAPPORT SAFE V4.9.26 + GRAPH V5.0 PAR TYPE - FULL 19 RAPPORTS - PDF FIX TECNO/PC
 export function onTypeChange(){
  try{
   let t=document.getElementById('typeRapport')?.value;
@@ -137,7 +137,7 @@ export function genRapport(){
    html=`<h3>RAPPORT ${escFn(type)} - ${ca.toLocaleString()} FC - Bénéf ${benef.toLocaleString()} FC - ${vPeriode.length} ventes</h3><table><tr><th>Date</th><th>Vendeur</th><th>Total</th></tr>`+vPeriode.slice(0,200).map(v=>`<tr><td>${new Date(v.date).toLocaleString()}</td><td>${escFn(v.vendeurNom||'')}</td><td>${(parseFloat(v.total||0)||0).toLocaleString()}</td></tr>`).join('')+`</table>`;
  }
 
- // INJECTE LE HTML + BOUTONS PDF (FIX)
+ // INJECTE LE HTML + BOUTONS PDF
  let rc=document.getElementById('rapportC');
  if(rc){
    let cfg = window.CURRENT_CONFIG || {};
@@ -151,7 +151,10 @@ export function genRapport(){
    </div>`;
    rc.innerHTML = entete + html;
  }
- if(window.genGraph) window.genGraph(vPeriode, dPeriode);
+
+ // === NOUVEAU V5.0: SAUVE DATA POUR GRAPH ===
+ window._lastRapportData = {type, du, au, data, vPeriode, dPeriode, vers:data.vers||[], stockMap, ALL_DATA, SHOP, SHOPS_LIST};
+ if(window.genGraph) window.genGraph();
 
  }catch(e){
    console.error("genRapport error", e);
@@ -160,19 +163,92 @@ export function genRapport(){
  }
 }
 
-// ====== PDF FIX POUR TECNO SPARK 10 + PC ======
+// ====== GRAPH INTELLIGENT PAR TYPE V5.0 ======
+export function genGraph(){
+  try{
+    let last = window._lastRapportData;
+    if(!last){ console.log('Pas de data pour graph'); return; }
+    let type = last.type;
+    let vPeriode = last.vPeriode||[];
+    let dPeriode = last.dPeriode||[];
+    let stockMap = last.stockMap||{};
+    let ctx = document.getElementById('chartRapport');
+    if(!ctx) return;
+    if(window.chartRapportInstance) window.chartRapportInstance.destroy();
+
+    let labels=[], values=[], label='', chartType='bar';
+    const colors = ['#0b5e2f','#0ea5e9','#facc15','#ef4444','#7c3aed','#22c55e','#f59e0b','#ec4899','#14b8a6','#a3e635'];
+
+    if(['synthese_avec_benef','synthese_sans_benef','synthese','ca_periode','ca_par_jour'].includes(type)){
+      let byDay={}; vPeriode.forEach(v=>{let day=new Date(v.date).toLocaleDateString('fr-FR'); if(!byDay[day])byDay[day]={ca:0,benef:0}; byDay[day].ca+=parseFloat(v.total||0)||0; byDay[day].benef+=parseFloat(v.benefice||0)||0;});
+      labels=Object.keys(byDay); 
+      let caVals=labels.map(d=>byDay[d].ca);
+      let benefVals=labels.map(d=>byDay[d].benef);
+      // Graph double bar
+      window.chartRapportInstance = new Chart(ctx, {
+        type:'bar',
+        data:{labels, datasets:[{label:'CA', data:caVals, backgroundColor:'#0b5e2f'}, {label:'Bénéf', data:benefVals, backgroundColor:'#22c55e'}]},
+        options:{responsive:true}
+      });
+      return;
+    } else if(type==='vente_article' || type==='vente_par_article' || type==='top'){
+      let map={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{let code=i.CODE||i.code; if(!map[code])map[code]=0; map[code]+=parseFloat(i.qty||0)||0;}));
+      let top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,10);
+      labels=top.map(x=>x[0]); values=top.map(x=>x[1]); label='Qté vendue'; chartType='doughnut';
+    } else if(type==='ca_client'){
+      let map={}; vPeriode.forEach(v=>{let c=v.client||v.clientNom||'Inconnu'; map[c]=(map[c]||0)+(parseFloat(v.total||0)||0);});
+      let top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,8);
+      labels=top.map(x=>x[0]); values=top.map(x=>x[1]); label='CA par client'; chartType='pie';
+    } else if(type==='depense_type' || type==='synthese_depenses' || type==='depenses'){
+      let map={}; dPeriode.forEach(d=>{let k=d.type||d.categorie||d.motif||'Autre'; map[k]=(map[k]||0)+(parseFloat(d.montant||0)||0);});
+      labels=Object.keys(map); values=Object.values(map); label='Dépenses'; chartType='doughnut';
+    } else if(type==='benef_par_vendeur' || type==='synthese_ventes_vendeur'){
+      let map={}; vPeriode.forEach(v=>{let vd=v.vendeurNom||v.vendeur||'?'; if(!map[vd])map[vd]={ca:0,benef:0}; map[vd].benef+=parseFloat(v.benefice||0)||0; map[vd].ca+=parseFloat(v.total||0)||0;});
+      labels=Object.keys(map); values=labels.map(k=>map[k].benef); label='Bénéf par vendeur';
+    } else if(type==='caisse_journaliere' || type==='synthese_caisse' || type==='caisse_detail'){
+      let encaisse=vPeriode.reduce((s,v)=>s+(parseFloat(v.payé||v.paye||v.total||0)||0),0);
+      let dep=dPeriode.reduce((s,d)=>s+(parseFloat(d.montant||0)||0),0);
+      let verse=(last.vers||[]).filter(c=>{let d=new Date(c.date); return d>=last.du && d<=last.au;}).filter(c=>(c.type||'').toLowerCase().includes('vers')).reduce((s,c)=>s+(parseFloat(c.montant||0)||0),0);
+      labels=['Encaissé','Dépenses','Versé','Ecart']; values=[encaisse,dep,verse,encaisse-dep-verse]; label='Caisse';
+    } else if(type==='invendu' || type==='invendus'){
+      let vendus=new Set(); vPeriode.forEach(v=>(v.items||[]).forEach(i=>vendus.add(i.CODE||i.code)));
+      let inv=(last.data.stock||[]).filter(p=>!vendus.has(p.CODE));
+      let valBloq=inv.reduce((s,p)=>s+((p.Quantite||0)*(p['Prix Achat']||0)),0);
+      let valDispo=(last.data.stock||[]).reduce((s,p)=>{if(vendus.has(p.CODE)) return s+((p.Quantite||0)*(p['Prix Achat']||0)); return s;},0);
+      labels=['Valeur stock actif','Valeur bloquée invendu']; values=[valDispo,valBloq]; label='Cash'; chartType='pie';
+    } else if(type==='synthese_achats' || type==='synthese_des_achats' || type==='synthese_entrees'){
+      let all=[]; let src=(last.SHOP==='ALL')?last.SHOPS_LIST:[last.SHOP]; src.forEach(s=>{(last.ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=last.du&&d<=last.au) all.push(e);});});
+      let map={}; all.forEach(e=>{let c=e.CODE||'?'; map[c]=(map[c]||0)+Number(e.qty??e.qte??0);});
+      let top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,10);
+      labels=top.map(x=>x[0]); values=top.map(x=>x[1]); label='Qté entrée'; chartType='bar';
+    } else if(type==='dettes'){
+      let dettes=vPeriode.filter(v=>parseFloat(v.reste||0)>0);
+      let map={}; dettes.forEach(v=>{let c=v.client||'Inconnu'; map[c]=(map[c]||0)+(parseFloat(v.reste||0)||0);});
+      let top=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,10);
+      labels=top.map(x=>x[0]); values=top.map(x=>x[1]); label='Dette restante'; chartType='bar';
+    } else {
+      let byDay={}; vPeriode.forEach(v=>{let day=new Date(v.date).toLocaleDateString('fr-FR'); byDay[day]=(byDay[day]||0)+(parseFloat(v.total||0)||0);});
+      labels=Object.keys(byDay); values=Object.values(byDay); label='CA';
+    }
+
+    if(labels.length===0){ console.log('Graph vide pour',type); return; }
+
+    window.chartRapportInstance = new Chart(ctx, {
+      type: chartType,
+      data: { labels, datasets: [{ label, data: values, backgroundColor: chartType==='bar'? '#0b5e2f' : labels.map((_,i)=>colors[i%colors.length]), borderWidth:1 }] },
+      options: { responsive:true, plugins:{ title:{display:true, text:label+' - '+type}, legend:{display: chartType!=='bar'} } }
+    });
+  }catch(e){ console.error('genGraph',e); }
+}
+
 export function exportRapportPDF(){
   let rc=document.getElementById('rapportC');
   if(!rc ||!rc.innerHTML.trim()){ alert('Génère d\'abord le rapport'); return; }
   let cfg = window.CURRENT_CONFIG || {};
   let content = rc.innerHTML;
   let isAndroid = /Android/i.test(navigator.userAgent);
-
-  // Sur Android Tecno, on utilise RawBT si imprimante dispo, sinon partage PDF natif
   if(isAndroid && window.CURRENT_CONFIG?.imprimante?.type==='rawbt'){
     if(confirm('📱 Android détecté\n\n1. PDF = Partager le rapport en fichier\n2. Ticket = Imprimer résumé sur T58_AFC6 via RawBT\n\nVeux-tu imprimer le résumé du rapport sur imprimante thermique?')){
-      // Imprime résumé via RawBT
-      let caMatch = content.match(/CA[^0-9]*([0-9.,]+)/);
       let txt = `BATEKE RAPPORT\n${new Date().toLocaleString()}\n${document.getElementById('typeRapport')?.value||''}\n${content.replace(/<[^>]*>/g,' ').substring(0,800)}\n`;
       let bytes = new TextEncoder().encode('\x1B\x40'+txt+'\n\n\n\x1D\x56\x00');
       let b64=''; bytes.forEach(b=>b64+=String.fromCharCode(b)); b64=btoa(b64);
@@ -180,47 +256,28 @@ export function exportRapportPDF(){
       return;
     }
   }
-
-  // Méthode PDF universelle qui marche PC + Android Chrome
   let win = window.open('', '_blank');
   if(!win){ alert('Popup bloquée. Autorise les popups pour exporter PDF'); return; }
   win.document.write(`
   <html><head><title>Rapport BATEKE - ${new Date().toLocaleDateString()}</title>
-  <style>
-    body{font-family:Arial,sans-serif;padding:20px;font-size:12px}
-    table{width:100%;border-collapse:collapse;margin:10px 0}
-    th,td{border:1px solid #ccc;padding:6px;text-align:left;font-size:11px}
-    th{background:#111;color:#fff}
-    h3{background:#f0fdf4;padding:10px;border-radius:6px}
-    @media print{button{display:none}}
-  </style></head><body>
-  <h2>${cfg.nom||'ETS BATEKE'} - RAPPORT</h2>
-  <p>${cfg.adresse||''} - ${cfg.tel||''} - ${new Date().toLocaleString()}</p>
-  ${content}
-  <script>window.onload=function(){ setTimeout(()=>window.print(), 500); }<\/script>
-  </body></html>`);
+  <style>body{font-family:Arial,sans-serif;padding:20px;font-size:12px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #ccc;padding:6px;text-align:left;font-size:11px}th{background:#111;color:#fff}h3{background:#f0fdf4;padding:10px;border-radius:6px}@media print{button{display:none}}</style></head><body>
+  <h2>${cfg.nom||'ETS BATEKE'} - RAPPORT</h2><p>${cfg.adresse||''} - ${cfg.tel||''} - ${new Date().toLocaleString()}</p>${content}<script>window.onload=function(){ setTimeout(()=>window.print(), 500); }<\/script></body></html>`);
   win.document.close();
 }
-
-export function printRapport(){
-  exportRapportPDF();
-}
-
+export function printRapport(){ exportRapportPDF(); }
 export function shareRapport(){
   let rc=document.getElementById('rapportC');
   if(!rc){ alert('Rien à partager'); return; }
   let text = rc.innerText.substring(0,2000);
-  if(navigator.share){
-    navigator.share({title:'Rapport BATEKE', text:text}).catch(()=>{});
-  } else {
-    navigator.clipboard.writeText(text).then(()=>alert('Rapport copié'));
-  }
+  if(navigator.share){ navigator.share({title:'Rapport BATEKE', text:text}).catch(()=>{}); }
+  else { navigator.clipboard.writeText(text).then(()=>alert('Rapport copié')); }
 }
 
 window.onTypeChange=onTypeChange;
 window.getPeriodeData=getPeriodeData;
 window.genRapport=genRapport;
+window.genGraph=genGraph;
 window.exportRapportPDF=exportRapportPDF;
 window.printRapport=printRapport;
 window.shareRapport=shareRapport;
-console.log("✅ rapport.js V4.9.26 PDF FIX TECNO+PC chargé");
+console.log("✅ rapport.js V4.9.26 + GRAPH V5.0 PAR TYPE chargé");
