@@ -162,7 +162,20 @@ export function genRapport(){
    if(rc) rc.innerHTML='<p style="color:red">Erreur rapport: '+e.message+'</p>';
  }
 }
+//
+// ====== SOUS-ONGLETS TABLE / GRAPH ======
+export function switchSub(which){
+  document.getElementById('sub-table')?.classList.toggle('active', which==='table');
+  document.getElementById('sub-graph')?.classList.toggle('active', which==='graph');
+  let vt = document.getElementById('vue-table');
+  let vg = document.getElementById('vue-graph');
+  if(vt) vt.style.display = which==='table' ? 'block' : 'none';
+  if(vg) vg.style.display = which==='graph' ? 'block' : 'none';
+  if(which==='graph' && window.genGraph) window.genGraph();
+}
+window.switchSub = switchSub;
 
+export function genGraph(){
 // ====== GRAPH INTELLIGENT PAR TYPE V5.0 ======
 export function genGraph(){
   try{
