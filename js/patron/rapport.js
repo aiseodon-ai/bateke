@@ -158,6 +158,7 @@ export function genRapport(){
    let rc=document.getElementById('rapportC');
    if(rc) rc.innerHTML='<p style="color:red">Erreur rapport: '+e.message+'</p>';
  }
+ window._lastRapportData = {vPeriode, dPeriode, type};
 }
 
 // ====== PDF FIX POUR TECNO SPARK 10 + PC ======
@@ -224,3 +225,21 @@ window.exportRapportPDF=exportRapportPDF;
 window.printRapport=printRapport;
 window.shareRapport=shareRapport;
 console.log("✅ rapport.js V4.9.26 PDF FIX TECNO+PC chargé");
+// GRAPH ADD-ON SAFE - ne bloque pas login si Chart absent
+window.genGraph = function(){
+  try{
+    let c = document.getElementById('chartRapport');
+    if(!c || !window.Chart) return;
+    let last = window._lastRapportData;
+    if(!last || !last.vPeriode) return;
+    if(window.chartRapportInstance) window.chartRapportInstance.destroy();
+    let byDay={}; last.vPeriode.forEach(v=>{let d=new Date(v.date).toLocaleDateString(); byDay[d]=(byDay[d]||0)+Number(v.total||0);});
+    window.chartRapportInstance = new Chart(c, {type:'bar', data:{labels:Object.keys(byDay), datasets:[{label:'CA par jour', data:Object.values(byDay), backgroundColor:'#0b5e2f'}]}});
+  }catch(e){ console.log('graph skip', e); }
+}
+window.switchSub = function(which){
+  let vt=document.getElementById('vue-table'), vg=document.getElementById('vue-graph');
+  if(vt) vt.style.display=which==='table'?'block':'none';
+  if(vg) vg.style.display=which==='graph'?'block':'none';
+  if(which==='graph') window.genGraph();
+}
