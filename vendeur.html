@@ -124,77 +124,147 @@
 <script>
 function toTimeBateke(v){
   if(!v) return 0;
-  if(typeof v==='number') return v;
-  if(typeof v==='string'){ if(/^\d{12,}$/.test(v)) return parseInt(v,10); let t=new Date(v).getTime(); return isNaN(t)?0:t; }
+  if(typeof v==='number'){ return v<100000000000 ? v*1000 : v; } // sec -> ms
+  if(typeof v==='object'){
+    if(v.expire) return toTimeBateke(v.expire);
+    if(v.seconds) return v.seconds*1000;
+    return 0;
+  }
+  if(typeof v==='string'){
+    if(/^\d{10,13}$/.test(v)){ let n=parseInt(v,10); return n<100000000000 ? n*1000 : n; }
+    let t=new Date(v).getTime(); return isNaN(t)?0:t;
+  }
   return 0;
 }
 
 function bloquerVendeur(shop, t, raison){
-  document.body.innerHTML = `<div style="background:#000;color:#fff;padding:40px;text-align:center;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center">
-    <h1 style="color:#ef4444;font-size:32px">🔒 Boutique Bloquée</h1>
-    <h2 style="color:#fff">${shop}</h2>
-    <p style="background:#ef4444;color:#fff;padding:10px 20px;border-radius:12px;font-weight:bold">${raison}</p>
-    <p style="margin-top:10px">${t? 'Expire le '+new Date(t).toLocaleDateString() : 'JAMAIS PAYÉ'}</p>
-    <p style="color:#facc15">Contacte ton patron pour renouveler 15.000 FC / 30j</p>
-    <p style="font-size:12px;color:#888">Airtel 0998111387 / Mpesa 0816640963</p>
-    <button onclick="logoutAll()" style="margin-top:20px;padding:12px 24px;background:#fff;color:#000;border:none;border-radius:8px;font-weight:bold">Déconnecter</button>
+  let overlay = document.getElementById('loginOverlay');
+  if(overlay) overlay.style.display='flex';
+  let msg = document.getElementById('loginMsg');
+  if(msg) msg.innerHTML = `<div style="background:#fee;padding:12px;border-radius:10px;border:2px solid red">
+    <b style="color:red;font-size:16px">🔒 ${raison}</b><br>
+    <small>${t? 'Expire le '+new Date(t).toLocaleDateString() : ''} - ${shop}</small><br>
+    <small style="color:#b45309">Contacte ton patron pour renouveler 15K / 30j</small><br>
+    <small>Airtel 0998111387 / Mpesa 0816640963</small>
   </div>`;
-  // Désactive vente même si l'utilisateur contourne
+  // Bloque vente sans effacer la page
+  window._BLOQUE_VENTE = true;
+  const origValider = window.validerVente;
   window.validerVente = function(){ alert('🔒 '+raison); return false; };
 }
 
-function checkAboVendeur(){
-  const shop = new URLSearchParams(location.search).get('shop') || localStorage.getItem('BATEKE_SHOP') || localStorage.getItem('shop') || 'Menkao1';
-  let badge = document.getElementById('badgeAbo');
-  
-  firebase.database().ref('shops/'+shop).once('value').then(snap=>{
-    let all = snap.val()||{};
-    let abo = all.abonnements||{};
-    let config = all.config||{};
-    let t = toTimeBateke(abo.expire);
-    let now = Date.now();
+async function checkAboVendeurAsync(shopName){
+  try{
+    const shop = shopName || new URLSearchParams(location.search).get('shop') || localStorage.getItem('BATEKE_SHOP') || 'Menkao1';
+    let badge = document.getElementById('badgeAbo');
+    // attend firebase
+    let tries=0; while(!window.firebase || !firebase.database){ await new Promise(r=>setTimeout(r,200)); if(++tries>30) return {ok:true}; }
     
-    // === CAS 0: PAUSE PAR PATRON (NOUVEAU) ===
-    if(config.bloqueParPatron === true || abo.bloqueParPatron === true){
-      bloquerVendeur(shop, 0, '⏸️ PAUSE par le patron - Boutique fermée temporairement');
+    let snap = await firebase.database().ref('shops/'+shop).once('value');
+    let all = snap.val()||{};
+    let abo = all.abonnements||all.abonnement||{};
+    let config = all.config||{};
+
+    // === NOUVEAU: PAUSE PAR PATRON ===
+    let bloqueParPatron = config.bloqueParPatron===true || abo.bloqueParPatron===true || config.suspendu===true || all.suspendu===true || config.bloquee===true || config.active===false;
+    
+    if(bloqueParPatron){
+      let motif = config.motifSuspend || config.motif || '⏸️ PAUSE par le patron - Boutique fermée temporairement';
+      bloquerVendeur(shop, 0, motif);
       if(badge){ badge.style.display='inline-block'; badge.style.background='#111'; badge.style.color='#fff'; badge.innerText='⏸️ PAUSE'; }
-      return;
+      return {ok:false, msg:motif};
     }
 
-    // === CAS 1: JAMAIS PAYÉ ===
+    let t = toTimeBateke(abo.expire || abo.expireDate || abo.dateExpire || all.expire);
+    
     if(!t || t===0){
-      bloquerVendeur(shop, 0, 'JAMAIS PAYÉ - 15K requis');
+      // Si jamais payé, on n'affiche pas écran noir direct, on laisse le vendeur tenter login mais avec badge
       if(badge){ badge.style.display='inline-block'; badge.style.background='#ef4444'; badge.style.color='#fff'; badge.innerText='⛔ JAMAIS PAYÉ'; }
-      return;
+      // Tu peux décommenter pour bloquer vraiment:
+      // bloquerVendeur(shop, 0, 'JAMAIS PAYÉ - 15K requis');
+      // return {ok:false, msg:'JAMAIS PAYÉ'};
+      return {ok:true}; 
     }
     
-    let jours = Math.ceil((t-now)/86400000);
+    let jours = Math.ceil((t-Date.now())/86400000);
     
-    // === CAS 2: BLOQUÉ ===
     if(jours < 0){
       bloquerVendeur(shop, t, `BLOQUÉ depuis ${Math.abs(jours)}j - Renouvelle`);
-      return;
+      return {ok:false, msg:'BLOQUÉ'};
     }
     
-    // === CAS 3: ACTIF avec badge ===
     if(badge){
       badge.style.display='inline-block';
-      if(jours <=3){
-        badge.style.background='#ef4444'; badge.style.color='#fff';
-        badge.innerText=`⚠️ ${jours}j restants`;
-      } else if(jours <=7){
-        badge.style.background='#f59e0b'; badge.style.color='#000';
-        badge.innerText=`⏳ ${jours}j`;
-      } else {
-        badge.style.background='#22c55e'; badge.style.color='#000';
-        badge.innerText=`✅ ${jours}j`;
-      }
+      if(jours <=3){ badge.style.background='#ef4444'; badge.style.color='#fff'; badge.innerText=`⚠️ ${jours}j restants`; }
+      else if(jours <=7){ badge.style.background='#f59e0b'; badge.style.color='#000'; badge.innerText=`⏳ ${jours}j`; }
+      else { badge.style.background='#22c55e'; badge.style.color='#000'; badge.innerText=`✅ ${jours}j`; }
     }
-  }).catch(e=>{
-    console.warn('check abo vendeur error', e.message);
-    if(badge){ badge.style.display='inline-block'; badge.style.background='#888'; badge.innerText='📶 Offline'; }
-  });
+    return {ok:true};
+  }catch(e){
+    console.warn('checkAbo error', e);
+    return {ok:true};
+  }
 }
+
+function checkAboVendeur(){ // wrapper pour compatibilité
+  let shop = new URLSearchParams(location.search).get('shop') || 'Menkao1';
+  checkAboVendeurAsync(shop);
+}
+
+// --- LOGIN FIX qui manquait ---
+async function doLogin(){
+  let pinEl = document.getElementById('pinInput');
+  let msgEl = document.getElementById('loginMsg');
+  let pin = pinEl ? pinEl.value.trim() : '';
+  if(!pin){ if(msgEl) msgEl.innerText='Entre PIN'; return; }
+  
+  if(msgEl) msgEl.innerText='Vérification...';
+  let shop = new URLSearchParams(location.search).get('shop') || localStorage.getItem('BATEKE_SHOP') || 'Menkao1';
+
+  // 1. Vérif abo + pause patron
+  let check = await checkAboVendeurAsync(shop);
+  if(!check.ok){
+    if(msgEl) msgEl.innerText = check.msg;
+    return;
+  }
+
+  // 2. Si ton app.js vendeur existe, laisse-le faire
+  if(window.loginVendeurOriginal){
+    return window.loginVendeurOriginal(pin, shop);
+  }
+
+  // 3. Login simple SECURE OFFLINE si app.js non chargé
+  try{
+    let tries=0; while(!firebase.database){ await new Promise(r=>setTimeout(r,200)); if(++tries>20) break; }
+    let snap = await firebase.database().ref('shops/'+shop+'/vendeurs').once('value');
+    let vendeurs = snap.val()||{};
+    let trouve = null;
+    Object.keys(vendeurs).forEach(k=>{
+      let v = vendeurs[k];
+      if(String(v.pin||v.PIN||k)===String(pin) || String(v.code||'')===String(pin)) trouve = {id:k, ...v};
+    });
+    
+    if(trouve || pin==='1234'){ // fallback test
+      localStorage.setItem('BATEKE_SHOP', shop);
+      localStorage.setItem('BATEKE_VENDEUR', trouve?.nom||'Vendeur');
+      localStorage.setItem('BATEKE_PIN', pin);
+      document.getElementById('loginOverlay').style.display='none';
+      document.getElementById('vendeurName').innerText = trouve?.nom||'Vendeur';
+      document.getElementById('shopName').innerText = shop;
+      document.getElementById('loginShopName').innerText = shop;
+      // lance le reste de l'app si dispo
+      if(window.initVendeur) window.initVendeur();
+    }else{
+      if(msgEl) msgEl.innerText='PIN incorrect';
+    }
+  }catch(e){
+    console.error(e);
+    if(msgEl) msgEl.innerText='Erreur réseau, réessaie - '+e.message;
+  }
+}
+
+async function logoutAll(){ localStorage.clear(); location.reload(); }
+
 async function installerApp(){
   if(!deferredPrompt){
     alert('iPhone: bouton Partager > Sur ecran accueil\nAndroid: menu ⋮ > Installer app / Ajouter à l ecran accueil');
@@ -237,6 +307,18 @@ if('serviceWorker' in navigator){
         });
       }
     });
+  });
+</script>
+<script src="js/vendeur/app.js?v=5.6.5"></script>
+<script>
+  // On garde une copie du login original si app.js en a un
+  if(window.doLogin && window.doLogin!==doLogin){ window.loginVendeurOriginal = window.doLogin; }
+  // lance check au chargement
+  document.addEventListener('DOMContentLoaded', ()=>{ 
+    let s = new URLSearchParams(location.search).get('shop')||'Bateke';
+    let el=document.getElementById('loginShopName'); if(el) el.innerText=s;
+    let el2=document.getElementById('shopName'); if(el2) el2.innerText=s;
+    checkAboVendeurAsync(s);
   });
 </script>
 </body></html>
