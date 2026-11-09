@@ -1,4 +1,4 @@
-// js/vendeur/modules/auth.js - V5.6.5 - PATRON 7832 ACCES TOTAL
+// js/vendeur/modules/auth.js - V5.6.5 STABLE + PAUSE PATRON V10.9
 import { STATE } from '../core/state.js';
 import { setPresenceOnline } from '../core/presence.js';
 
@@ -42,8 +42,7 @@ function unlockShopForPatron(currentShop){
     sel.style.display = 'block';
   }
   
-  // LISTE FALLBACK si shops/.read bloqué
-  let fallbackList = ["Menkao1","Menkao2","Menkao3","Kenge","Kisantu"]; // Mets tes vraies boutiques ici
+  let fallbackList = ["Menkao1","Menkao2","Menkao3","Kenge","Kisantu"];
   
   if(window.db){
     window.db.ref('shops').once('value').then(snap=>{
@@ -54,7 +53,6 @@ function unlockShopForPatron(currentShop){
         sel.innerHTML = list.map(s=>`<option ${s===currentShop?'selected':''} value="${s}">${s}</option>`).join('');
       }
     }).catch(()=>{
-      // Si permission denied, utilise fallback
       if(sel){
         sel.innerHTML = fallbackList.map(s=>`<option ${s===currentShop?'selected':''} value="${s}">${s}</option>`).join('');
       }
@@ -63,7 +61,21 @@ function unlockShopForPatron(currentShop){
   console.log("🔓 PATRON MODE - Sélecteur débloqué");
 }
 
-export function doLogin(){
+// === AJOUT PAUSE PATRON V10.9 - LIT TON BOUTON BLOQUER ===
+async function isShopPausedByPatron(shop){
+  try{
+    if(!window.db) return {paused:false};
+    let snap = await window.db.ref('shops/'+shop+'/config/bloqueParPatron').once('value');
+    let val = snap.val();
+    if(val===true){
+      let snap2 = await window.db.ref('shops/'+shop+'/config/motifSuspend').once('value').catch(()=>null);
+      return {paused:true, motif: snap2?.val() || '⏸️ Boutique en PAUSE par patron'};
+    }
+    return {paused:false};
+  }catch(e){ return {paused:false}; }
+}
+
+export async function doLogin(){
   let pin = (document.getElementById('pinInput')?.value || '').toString().replace(/\D/g,'').trim();
   let msg = document.getElementById('loginMsg');
   if(!pin){ msg.innerText='PIN requis'; return; }
@@ -72,13 +84,23 @@ export function doLogin(){
   console.log("Tentative PIN", pin, "shop", currentShop);
   msg.innerText='Vérification '+pin+'...';
 
+  // === NOUVELLE OPTION PAUSE PATRON V10.9 - AVANT TOUT ===
+  // Si boutique en pause, seul 7832 peut entrer
+  if(pin !== PATRON_PIN){
+    let checkPause = await isShopPausedByPatron(currentShop);
+    if(checkPause.paused){
+      msg.innerHTML = `<div style="background:#fee;padding:12px;border-radius:10px;border:2px solid #111"><b style="color:#111">⏸️ ${checkPause.motif}</b><br><small>${currentShop} est fermée temporairement par le patron<br>Contacte le patron pour réouverture</small></div>`;
+      console.log("SHOP PAUSE PAR PATRON V10.9 - Bloque", currentShop);
+      return;
+    }
+  }
+
   // === 1. SI C'EST LE PATRON 7832 - ACCES TOTAL ===
   if(pin === PATRON_PIN){
     if(!window.db){
       msg.innerText='Firebase pas prêt...';
       return;
     }
-    // Vérifie patrons/7832 mais même si offline on laisse passer 7832
     window.db.ref('patrons/7832').once('value').then(snap=>{
       let patronData = snap.val() || { nom: "DG PATRON", code: "7832" };
       
@@ -104,7 +126,6 @@ export function doLogin(){
       setPresenceOnline();
       console.log("✅ PATRON 7832 CONNECTE - ACCES TOTAL");
     }).catch(e=>{
-      // Même si patrons/7832 non lisible, on autorise 7832 en mode offline patron
       console.warn("Patron node non lisible, mais on autorise 7832:", e.message);
       STATE.CURRENT_VENDEUR = { pin, nom:"DG PATRON", boutique:"ALL", isAdmin:true, admin:true, isPatron:true };
       window.CURRENT_VENDEUR = STATE.CURRENT_VENDEUR;
@@ -115,7 +136,7 @@ export function doLogin(){
     return;
   }
 
-  // === 2. VENDEUSE NORMALE - LOGIQUE EXISTANTE ===
+  // === 2. VENDEUSE NORMALE - LOGIQUE EXISTANTE INTACTE ===
   let cacheKey = 'bateke_vendeurs_'+currentShop;
   let cached = {};
   try{ cached = JSON.parse(localStorage.getItem(cacheKey)||'{}'); }catch(e){}
@@ -163,7 +184,6 @@ export function logoutAll(){
 }
 
 export function switchShop(){ 
-  // PATRON PEUT SWITCHER, VENDEUSE NON
   if(STATE.CURRENT_VENDEUR?.isPatron || STATE.CURRENT_VENDEUR?.isAdmin){
     let sel=document.getElementById('shopSel')?.value; 
     if(sel){ 
@@ -184,4 +204,4 @@ export function switchShop(){
 }
 
 window.doLogin=doLogin; window.logoutAll=logoutAll; window.switchShop=switchShop;
-console.log("auth.js V5.6.5 PATRON 7832 OK");
+console.log("auth.js V5.6.5 + PAUSE PATRON V10.9 OK");
