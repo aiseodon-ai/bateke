@@ -99,15 +99,8 @@ table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:6px;borde
 <option value="dettes">💳 DETTES</option>
 <option value="caisse_journaliere">💰 CAISSE JOURNALIERE - ENCAISSE / DEP / VERSE / ECART</option>
 <option value="benef_par_vendeur">👥 BENEF PAR VENDEUR + VENTES A PERTE</option>
-</select><div id="filtreExtra" style="grid-column:span 2"></div></div><div class="subtabs" style="margin-top:10px;display:flex;gap:6px">
-  <button id="sub-table" class="active" onclick="switchSub('table')" style="padding:6px 12px;border-radius:8px;border:1px solid #0b5e2f;background:#f0fdf4;font-weight:bold">📋 Tableau</button>
-  <button id="sub-graph" onclick="switchSub('graph')" style="padding:6px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;font-weight:bold">📈 Graphique</button>
-</div>
+</select><div id="filtreExtra" style="grid-column:span 2"></div></div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-g" onclick="genRapport()">🔍 Générer</button><button class="btn btn-y" onclick="pdfRapportOnly()">📄 PDF</button><button class="btn btn-b" onclick="exportExcelRapport()">📊 Excel</button><button class="btn btn-super" onclick="pdfCompta()">💼 PDF Compta</button></div><div id="rapportC" style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:8px;overflow:auto;min-height:120px;margin-top:8px;white-space:pre-wrap">Clique Générer</div><canvas id="chartRapport" style="max-height:400px;margin-top:10px"></canvas></div></div>
 
-<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-g" onclick="genRapport()">🔍 Générer</button><button class="btn btn-y" onclick="pdfRapportOnly()">📄 PDF</button><button class="btn btn-b" onclick="exportExcelRapport()">📊 Excel</button><button class="btn btn-super" onclick="pdfCompta()">💼 PDF Compta</button></div>
-
-<div id="vue-table"><div id="rapportC" style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:8px;overflow:auto;min-height:120px;margin-top:8px;white-space:pre-wrap">Clique Générer</div></div>
-<div id="vue-graph" style="display:none"><canvas id="chartRapport" style="max-height:400px;margin-top:10px"></canvas><div style="text-align:center;margin-top:6px"><button class="btn btn-y" onclick="genGraph()">🔄 Actualiser Graph</button></div></div>
 <div id="crm" class="sec"><div class="card"><h4>👥 CRM</h4><input id="searchCli" placeholder="Nom ou Tel" oninput="renderCRM()"><div style="overflow:auto"><table><thead><tr><th>Nom</th><th>Tél</th><th>Nb</th><th>Total</th><th>Dette</th><th>Dernière</th></tr></thead><tbody id="crmList"></tbody></table></div></div></div>
 <div id="dettes" class="sec"><div class="card"><h4>💳 Dettes</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Tél</th><th>Boutique</th><th>Vendeur</th><th>Total</th><th>Payé</th><th>Reste</th></tr></thead><tbody id="dettesList"></tbody></table></div></div></div>
 <div id="caisse" class="sec"><div class="card"><h4>💰 Caisse</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Type</th><th>Motif</th><th>Montant</th><th>Action</th></tr></thead><tbody id="caisseList"></tbody></table></div></div></div>
