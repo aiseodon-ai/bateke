@@ -12,8 +12,8 @@ import "./vendeurs.js";
 import "./crm.js";
 import "./dettes.js";
 import "./boutiques.js";
-//import "./rapport.js";
-import "./rapport.js?v=4941";
+import "./rapport.js";
+//import "./rapport.js?v=4941";
 import "./compta.js";
 import "./parametres.js";
 
