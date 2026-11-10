@@ -114,18 +114,40 @@ table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:6px;borde
 
 <div id="rapportC" style="background:#fff;padding:10px;border:1px solid #ddd;border-radius:8px;overflow:auto;min-height:120px;margin-top:10px">Clique Générer</div>
 
-<div id="vue-graph" style="display:none;background:#fff;padding:12px;border-radius:12px;border:3px solid #0b5e2f;margin-top:10px;min-height:380px">
-  <h4 id="graphTitle">📊 Graphique</h4>
-  <div style="position:relative;width:100%;height:350px"><canvas id="chartRapport"></canvas></div>
-  <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-    <button class="btn btn-b" onclick="changeChartType('bar')">Bar</button>
-    <button class="btn btn-b" onclick="changeChartType('line')">Ligne</button>
-    <button class="btn btn-y" onclick="changeChartType('pie')">Camembert</button>
-    <button class="btn btn-y" onclick="changeChartType('doughnut')">Anneau</button>
-    <button class="btn btn-g" onclick="genGraph()">🔄 Actualiser</button>
+<div id="vue-graph" style="display:none;background:#fff;padding:12px;border-radius:12px;border:3px solid #0b5e2f;margin-top:10px;min-height:480px">
+  <h4 id="graphTitle">📊 Graphique enrichi - SAAS</h4>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;background:#f0fdf4;padding:10px;border-radius:8px;border:1px solid #bbf7d0">
+    <div><label style="font-size:10px;font-weight:bold">Axe X (abscisse)</label><br>
+      <select id="axeX" onchange="changeAxeX()" style="padding:7px;border-radius:6px;border:1px solid #0b5e2f;font-size:11px">
+        <option value="CODE">CODE article</option>
+        <option value="DES">Désignation</option>
+        <option value="DATE">Date (jour)</option>
+        <option value="VENDEUR">Vendeur / Client / Type dépense</option>
+      </select>
+    </div>
+    <div><label style="font-size:10px;font-weight:bold">Axe Y (ordonnée)</label><br>
+      <select id="axeY" onchange="changeAxeY()" style="padding:7px;border-radius:6px;border:1px solid #0b5e2f;font-size:11px">
+        <option value="ca">CA (FC)</option>
+        <option value="qty">Qté vendue</option>
+        <option value="benef">Bénéfice</option>
+        <option value="stock">Stock actuel</option>
+        <option value="marge">Marge %</option>
+        <option value="nb">Nbre ventes</option>
+      </select>
+    </div>
+    <div><label style="font-size:10px;font-weight:bold">Type</label><br>
+      <select id="chartTypeSel" onchange="changeChartType(this.value)" style="padding:7px;border-radius:6px;border:1px solid #ccc;font-size:11px">
+        <option value="bar">📊 Barres</option>
+        <option value="line">📈 Ligne</option>
+        <option value="pie">🥧 Camembert</option>
+        <option value="doughnut">🍩 Anneau</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:end"><button onclick="genGraph()" style="padding:7px 12px;background:#111;color:#fff;border-radius:6px;font-size:11px">🔄 Actualiser</button></div>
   </div>
+  <div style="position:relative;width:100%;height:360px"><canvas id="chartRapport"></canvas></div>
+  <div id="graphLegendInfo" style="margin-top:8px;font-size:10px;color:#0b5e2f;background:#f0fdf4;padding:6px;border-radius:6px">💡 Légende active - survole les barres. Ex: X=VENDEUR + Y=CA = performance vendeur. X=DATE + Y=benef = évolution bénéfice.</div>
 </div>
-</div></div>
 
 <div id="crm" class="sec"><div class="card"><h4>👥 CRM</h4><input id="searchCli" placeholder="Nom ou Tel" oninput="renderCRM()"><div style="overflow:auto"><table><thead><tr><th>Nom</th><th>Tél</th><th>Nb</th><th>Total</th><th>Dette</th><th>Dernière</th></tr></thead><tbody id="crmList"></tbody></table></div></div></div>
 <div id="dettes" class="sec"><div class="card"><h4>💳 Dettes</h4><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Tél</th><th>Boutique</th><th>Vendeur</th><th>Total</th><th>Payé</th><th>Reste</th></tr></thead><tbody id="dettesList"></tbody></table></div></div></div>
