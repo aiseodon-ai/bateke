@@ -25,6 +25,75 @@ export function getPeriodeData(){
   return {du,au,data,vPeriode,dPeriode};
 }
 window._lastRapportData=null;
+//
+window.chartRapportInstance=null; 
+window.currentChartType='bar';
+window.graphConfig={x:'CODE', y:'ca'};
+window.changeChartType=function(t){window.currentChartType=t; window.genGraph();}
+window.changeAxeX=function(){ var el=document.getElementById('axeX'); if(el) window.graphConfig.x=el.value; window.genGraph(); }
+window.changeAxeY=function(){ var el=document.getElementById('axeY'); if(el) window.graphConfig.y=el.value; window.genGraph(); }
+
+window.genGraph=function(){
+  try{
+    var c=document.getElementById('chartRapport'); if(!c) return;
+    if(!window.Chart){ var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'; s.onload=function(){ window.genGraph(); }; document.head.appendChild(s); return; }
+    var last=window._lastRapportData; if(!last || !last.vPeriode) return;
+    if(window.chartRapportInstance) window.chartRapportInstance.destroy();
+
+    var cfgX = (document.getElementById('axeX') && document.getElementById('axeX').value) || window.graphConfig.x || 'CODE';
+    var cfgY = (document.getElementById('axeY') && document.getElementById('axeY').value) || window.graphConfig.y || 'ca';
+    window.graphConfig={x:cfgX, y:cfgY};
+
+    var labels=[], values=[], title='';
+    var colors=['#0b5e2f','#2563eb','#f59e0b','#ef4444','#8b5cf6','#22c55e','#111','#ec4899','#06b6d4','#f97316'];
+
+    var yLabel='CA (FC)'; if(cfgY==='qty') yLabel='Qté vendue'; if(cfgY==='benef') yLabel='Bénéfice (FC)'; if(cfgY==='stock') yLabel='Stock actuel'; if(cfgY==='marge') yLabel='Marge %'; if(cfgY==='nb') yLabel='Nbre ventes';
+    var xLabel='CODE'; if(cfgX==='DES') xLabel='Désignation'; if(cfgX==='DATE') xLabel='Date (jour)'; if(cfgX==='VENDEUR') xLabel='Vendeur / Client / Type';
+
+    // RECALCUL DYNAMIQUE DIRECTEMENT DEPUIS vPeriode - C'EST CE QUI MANQUAIT
+    if(cfgX==='CODE' || cfgX==='DES'){
+      var map={};
+      last.vPeriode.forEach(function(v){ (v.items||[]).forEach(function(i){ var code=i.CODE||i.code; if(!code) return; if(!map[code]) map[code]={CODE:code, Des:i.Designation||code, ca:0, qty:0, benef:0, stock:0, stockActuel:0, nb:0}; var q=parseFloat(i.qty||0)||0; var px=parseFloat(i.Prix||0)||0; map[code].ca+=q*px; map[code].qty+=q; map[code].nb++; var pa=(window._stockMap && window._stockMap[code]) ? window._stockMap[code]['Prix Achat']||0 : 0; map[code].benef+=q*(px-pa); }); });
+      var list=Object.values(map).sort(function(a,b){ var av=a[cfgY]||a.ca||0; var bv=b[cfgY]||b.ca||0; return bv-av; }).slice(0,12);
+      labels=list.map(function(a){ return cfgX==='DES' ? (a.Des||'').substring(0,18) : a.CODE; });
+      values=list.map(function(a){ if(cfgY==='ca') return a.ca; if(cfgY==='qty') return a.qty; if(cfgY==='benef') return a.benef; if(cfgY==='nb') return a.nb; return a.ca; });
+      title=yLabel+' par '+xLabel;
+    } else if(cfgX==='DATE'){
+      var byDay={};
+      last.vPeriode.forEach(function(v){ var d=new Date(v.date).toLocaleDateString('fr-FR'); if(!byDay[d]) byDay[d]={ca:0, qty:0, benef:0, nb:0}; byDay[d].ca+=parseFloat(v.total||0)||0; byDay[d].benef+=parseFloat(v.benefice||0)||0; byDay[d].nb++; (v.items||[]).forEach(function(i){ byDay[d].qty+=parseFloat(i.qty||0)||0; }); });
+      labels=Object.keys(byDay);
+      values=labels.map(function(k){ var o=byDay[k]; if(cfgY==='ca') return o.ca; if(cfgY==='qty') return o.qty; if(cfgY==='benef') return o.benef; if(cfgY==='nb') return o.nb; return o.ca; });
+      title=yLabel+' par '+xLabel;
+    } else if(cfgX==='VENDEUR'){
+      var byV={};
+      last.vPeriode.forEach(function(v){ var k=v.vendeurNom||v.vendeur||v.client||'Inconnu'; if(!byV[k]) byV[k]={ca:0, qty:0, benef:0, nb:0}; byV[k].ca+=parseFloat(v.total||0)||0; byV[k].benef+=parseFloat(v.benefice||0)||0; byV[k].nb++; });
+      labels=Object.keys(byV).slice(0,12);
+      values=labels.map(function(k){ var o=byV[k]; if(cfgY==='ca') return o.ca; if(cfgY==='qty') return o.qty; if(cfgY==='benef') return o.benef; if(cfgY==='nb') return o.nb; return o.ca; });
+      title=yLabel+' par '+xLabel;
+    }
+
+    if(labels.length===0){ labels=['Aucune']; values=[0]; }
+    var t=window.currentChartType||'bar'; var isPie=(t==='pie'||t==='doughnut');
+    window.chartRapportInstance=new Chart(c,{
+      type:t,
+      data:{labels:labels, datasets:[{label:title, data:values, backgroundColor:isPie? colors.slice(0,labels.length) : '#0b5e2f', borderWidth:isPie?2:1}]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:true, position: isPie?'right':'top'},
+          title:{display:true, text:title+' - '+(last.type||'')},
+          tooltip:{callbacks:{label:function(ctx){ return ctx.label+': '+Number(ctx.raw).toLocaleString()+(cfgY==='marge'?'%':' FC'); }}}
+        },
+        scales: isPie?{}:{
+          x:{title:{display:true, text:xLabel, font:{weight:'bold'}}, ticks:{maxRotation:45}},
+          y:{beginAtZero:true, title:{display:true, text:yLabel, font:{weight:'bold'}}}
+        }
+      }
+    });
+    var leg=document.getElementById('graphLegendInfo');
+    if(leg){ leg.innerHTML='📊 Axe X=<b>'+xLabel+'</b> | Axe Y=<b>'+yLabel+'</b> | '+labels.length+' valeurs | Dynamique OK'; }
+  }catch(e){ console.log('genGraph V4.9.36 err',e); }
+}
 
 export function genRapport(){
  try{
