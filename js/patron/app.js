@@ -13,7 +13,7 @@ import "./crm.js";
 import "./dettes.js";
 import "./boutiques.js";
 //import "./rapport.js";
-import "./rapport.js?v=4938";
+import "./rapport.js?v=4939";
 import "./compta.js";
 import "./parametres.js";
 
