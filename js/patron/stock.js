@@ -1,4 +1,4 @@
-// stock.js V8.27 - STABLE V8.26 + CATEGORIE - _id unique - compatible V6.2 + rapport V4.9.43
+// stock.js V8.28 FINAL - STABLE V8.26 + CATEGORIE + FIX BOUTON DEFINITIF
 import { esc } from "../common/utils.js";
 
 let DATA_MAP = {};
@@ -9,7 +9,6 @@ function getShop(){
   try{ if(typeof SHOP!=='undefined' && SHOP) return SHOP; }catch(e){}
   return localStorage.getItem('patron_shop')||'Menkao1';
 }
-
 function getFilteredSafe(){
   try{ if(typeof getFiltered==='function') return getFiltered(); }catch(e){}
   try{ if(window.getFiltered) return window.getFiltered(); }catch(e){}
@@ -17,7 +16,6 @@ function getFilteredSafe(){
   let all = (window.ALL_DATA||{})[shop]||{stock:[]};
   return {stock: all.stock||[], shop};
 }
-
 function buildDataMap(stock){
   DATA_MAP={};
   stock.forEach(p=>{
@@ -26,18 +24,11 @@ function buildDataMap(stock){
   });
   window.DATA_MAP=DATA_MAP;
 }
-
 export function renderStock(){
   let data = getFilteredSafe();
   let shop = getShop();
   let q=(document.getElementById('searchS')?.value||'').toLowerCase();
-  // AMELIORATION: recherche aussi dans Categorie
-  let list = (data.stock||[]).filter(p=>
-    (p.CODE||'').toLowerCase().includes(q)||
-    (p.Designation||'').toLowerCase().includes(q)||
-    (p.Categorie||'').toLowerCase().includes(q)
-  ).sort((a,b)=>(a.CODE||'').localeCompare(b.CODE||''));
-  
+  let list = (data.stock||[]).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)||(p.Categorie||'').toLowerCase().includes(q)).sort((a,b)=>(a.CODE||'').localeCompare(b.CODE||''));
   let totalFC=0,totalPA=0,totalQte=0,totalRef=0;
   (data.stock||[]).filter(p=>p.actif!==false).forEach(p=>{
     let pv = p['Prix Unit']||p.Prix||p.PV||0;
@@ -50,12 +41,9 @@ export function renderStock(){
   if(document.getElementById('valStockUSD')) document.getElementById('valStockUSD').innerText=(tauxUSD?totalFC/tauxUSD:0).toLocaleString(undefined,{maximumFractionDigits:2})+' $';
   if(document.getElementById('valStockPA')) document.getElementById('valStockPA').innerText=totalPA.toLocaleString()+' FC';
   if(document.getElementById('valStockBenef')) document.getElementById('valStockBenef').innerText=(totalFC-totalPA).toLocaleString()+' FC';
-
   buildDataMap(list);
-
   let tbody = document.getElementById('stockT');
   if(!tbody) return;
-  
   tbody.innerHTML = list.map(p=>{
     let uid = p._id || p.CODE;
     let codeTxt = esc(p.CODE||'');
@@ -82,153 +70,69 @@ export function renderStock(){
       </td></tr>`;
   }).join('');
 }
-
 export function toggleActif(uid){
-  let s=getShop();
-  let p=DATA_MAP[uid];
-  let cur=p?.actif!==false;
+  let s=getShop(); let p=DATA_MAP[uid]; let cur=p?.actif!==false;
   if(confirm(cur?'Désactiver '+(p?.CODE||uid)+'?':'Activer '+(p?.CODE||uid)+'?')){
     let dbRef = window.db || firebase.database();
     dbRef.ref('shops/'+s+'/stock/'+uid).update({actif:!cur});
   }
 }
-
 export function editField(uid, field){
-  let p = DATA_MAP[uid];
-  if(!p){ alert('Article non trouvé: '+uid); return; }
-  let oldVal = p[field] ?? p.Designation ?? p.Quantite ?? '';
+  let p = DATA_MAP[uid]; if(!p){ alert('Article non trouvé: '+uid); return; }
+  let oldVal = p[field] ?? '';
   if(field==='Designation') oldVal = p.Designation||'';
   if(field==='Categorie') oldVal = p.Categorie||'AUTRE';
   if(field==='Quantite') oldVal = p.Quantite??0;
   if(field==='seuil') oldVal = p.seuil??3;
   if(field==='Prix Unit') oldVal = p['Prix Unit']||p.Prix||0;
   if(field==='Prix Achat') oldVal = p['Prix Achat']||0;
-
   let nv=prompt(`Modifier ${field} pour ${p.CODE||uid}\nAncien: ${oldVal}\nNouveau:`, oldVal);
   if(nv===null || nv==='') return;
-  
   let val = nv;
-  if(field!=='Designation' && field!=='Categorie'){
-    val = Number(nv.replace(',','.'))||0;
-  } else {
-    if(/[<>]/.test(nv)){ alert('⛔ < > interdits'); return; }
-    val = nv.trim().toUpperCase();
-    if(field==='Designation') val = nv.trim(); // garde casse pour désignation
-  }
-
-  let s=getShop();
-  let dbRef = window.db || firebase.database();
-  
+  if(field!=='Designation' && field!=='Categorie'){ val = Number(nv.replace(',','.'))||0; }
+  else { if(/[<>]/.test(nv)){ alert('⛔ < > interdits'); return; } val = (field==='Categorie'? nv.trim().toUpperCase() : nv.trim()); }
+  let s=getShop(); let dbRef = window.db || firebase.database();
   if(field==='Quantite'){
-    dbRef.ref('shops/'+s+'/stock/'+uid+'/Quantite').transaction(()=>val).then(r=>{
-      if(r.committed){ p.Quantite=val; renderStock(); }
-    });
+    dbRef.ref('shops/'+s+'/stock/'+uid+'/Quantite').transaction(()=>val).then(r=>{ if(r.committed){ p.Quantite=val; renderStock(); } });
   }else{
-    let firebaseField = field;
-    if(field==='Prix Unit') firebaseField='Prix Unit';
-    if(field==='Prix Achat') firebaseField='Prix Achat';
-    if(field==='Categorie') firebaseField='Categorie';
-    dbRef.ref('shops/'+s+'/stock/'+uid).update({[firebaseField]:val}).then(()=>{
-      p[firebaseField]=val;
-      if(field==='Designation') p.Designation=val;
-      if(field==='Categorie') p.Categorie=val;
-      renderStock();
-    });
+    let firebaseField = field; if(field==='Prix Unit') firebaseField='Prix Unit'; if(field==='Prix Achat') firebaseField='Prix Achat';
+    dbRef.ref('shops/'+s+'/stock/'+uid).update({[firebaseField]:val}).then(()=>{ p[firebaseField]=val; if(field==='Designation') p.Designation=val; if(field==='Categorie') p.Categorie=val; renderStock(); });
   }
 }
-
 export function entree(uid){
-  let qty=parseInt(prompt('Qté entrée ?'));
-  if(!qty) return;
-  let s=getShop();
-  let qui=prompt('Qui?','PATRON');
-  let dbRef = window.db || firebase.database();
+  let qty=parseInt(prompt('Qté entrée ?')); if(!qty) return;
+  let s=getShop(); let qui=prompt('Qui?','PATRON'); let dbRef = window.db || firebase.database();
   dbRef.ref('shops/'+s+'/stock/'+uid+'/Quantite').transaction(cur=> (cur||0)+qty).then(r=>{
     if(r.committed){
       dbRef.ref('shops/'+s+'/stock/'+uid).once('value').then(snap=>{
         let p=snap.val();
-        dbRef.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:p?.CODE||uid,Designation:p?.Designation||uid,boutique:s,qty:qty,vendeur:qui, Categorie:p?.Categorie||'AUTRE'});
+        dbRef.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:p?.CODE||uid,Designation:p?.Designation||uid,boutique:s,qty:qty,vendeur:qui,Categorie:p?.Categorie||'AUTRE'});
       });
-      alert(`✅ +${qty} => ${r.snapshot.val()}`);
-      renderStock();
+      alert(`✅ +${qty} => ${r.snapshot.val()}`); renderStock();
     }
   });
 }
-
 export function supp(uid){
-  let p=DATA_MAP[uid];
-  if(!confirm('Supprimer '+(p?.CODE||uid)+' - '+(p?.Designation||'')+' ?\nCette action est définitive.')) return;
-  let s=getShop();
-  let dbRef = window.db || firebase.database();
+  let p=DATA_MAP[uid]; if(!confirm('Supprimer '+(p?.CODE||uid)+' - '+(p?.Designation||'')+' ?')) return;
+  let s=getShop(); let dbRef = window.db || firebase.database();
   dbRef.ref('shops/'+s+'/stock/'+uid).remove().then(()=>{ renderStock(); });
 }
-
 export function saveNewArt(){
-  let codeEl = document.getElementById('newCode');
-  let desEl = document.getElementById('newDes');
-  let catEl = document.getElementById('newCategorie'); // NOUVEAU
-  let pvEl = document.getElementById('newPV');
-  let paEl = document.getElementById('newPA');
-  let qteEl = document.getElementById('newQte');
-  let seuilEl = document.getElementById('newSeuil');
-  let actifEl = document.getElementById('newActif');
-
-  let code = codeEl?.value.trim().toUpperCase();
-  if(!code){ alert('CODE vide'); return; }
-  let des = desEl?.value.trim();
-  if(!des){ alert('Désignation vide'); return; }
-  // NOUVEAU: Categorie obligatoire mais avec defaut AUTRE
-  let cat = (catEl?.value||'AUTRE').trim().toUpperCase();
-  if(!cat) cat='AUTRE';
-
-  let data={
-    CODE:code,
-    Designation:des,
-    Categorie:cat,
-    'Prix Unit':Number(pvEl?.value)||0,
-    'Prix Achat':Number(paEl?.value)||0,
-    Quantite:Number(qteEl?.value)||0,
-    seuil:Number(seuilEl?.value)||3,
-    actif: actifEl?.checked!==false
-  };
-  
-  let s=getShop();
-  let dbRef = window.db || firebase.database();
-  
-  // On garde ta logique CODE comme clé (stable) - si tu es passé en _id, change ici en push()
+  let codeEl=document.getElementById('newCode'); let desEl=document.getElementById('newDes'); let catEl=document.getElementById('newCategorie');
+  let pvEl=document.getElementById('newPV'); let paEl=document.getElementById('newPA'); let qteEl=document.getElementById('newQte'); let seuilEl=document.getElementById('newSeuil'); let actifEl=document.getElementById('newActif');
+  let code=codeEl?.value.trim().toUpperCase(); if(!code){ alert('CODE vide'); return; }
+  let des=desEl?.value.trim(); if(!des){ alert('Désignation vide'); return; }
+  let cat=(catEl?.value||'AUTRE').trim().toUpperCase(); if(!cat) cat='AUTRE';
+  let data={ CODE:code, Designation:des, Categorie:cat, 'Prix Unit':Number(pvEl?.value)||0, 'Prix Achat':Number(paEl?.value)||0, Quantite:Number(qteEl?.value)||0, seuil:Number(seuilEl?.value)||3, actif: actifEl?.checked!==false };
+  let s=getShop(); let dbRef = window.db || firebase.database();
   dbRef.ref('shops/'+s+'/stock/'+code).set(data).then(()=>{
-    if(codeEl) codeEl.value='';
-    if(desEl) desEl.value='';
-    if(catEl) catEl.value='';
-    if(pvEl) pvEl.value='';
-    if(paEl) paEl.value='';
-    if(qteEl) qteEl.value='';
-    if(seuilEl) seuilEl.value='3';
-    if(actifEl) actifEl.checked=true;
-    
-    try{ closeModal('modalArt'); }catch(e){}
-    renderStock();
-    console.log('✅ Article créé avec Categorie:', code, cat);
+    if(codeEl) codeEl.value=''; if(desEl) desEl.value=''; if(catEl) catEl.value=''; if(pvEl) pvEl.value=''; if(paEl) paEl.value=''; if(qteEl) qteEl.value=''; if(seuilEl) seuilEl.value='3'; if(actifEl) actifEl.checked=true;
+    try{ closeModal('modalArt'); }catch(e){ let m=document.getElementById('modalArt'); if(m) m.style.display='none'; }
+    renderStock(); console.log('✅ Article créé:', code, cat);
   }).catch(e=> alert('Erreur: '+e.message));
 }
-
-// Expose global
+// GARANTIE BOUTON +ARTICLE - DEFINITION GLOBALE
 window.renderStock=renderStock; window.toggleActif=toggleActif; window.editField=editField; window.entree=entree; window.supp=supp; window.saveNewArt=saveNewArt; window.buildDataMap=buildDataMap;
-// FORCE BOUTON + ARTICLE - DEFINITION GLOBALE HORS MODULE
-window.openNewArt=function(){
-  let m=document.getElementById('modalArt');
-  if(m){
-    m.style.display='flex';
-    m.style.alignItems='center';
-    m.style.justifyContent='center';
-    m.style.position='fixed';
-    m.style.inset='0';
-    m.style.zIndex='9999';
-  }
-};
-window.closeModal=function(id){
-  let m=document.getElementById(id||'modalArt');
-  if(m) m.style.display='none';
-};
-console.log('✅ STOCK V8.27 CATEGORIE + FIX BOUTON');
-//console.log('✅ STOCK V8.27 CATEGORIE - STABLE V8.26 + CATEGORIE');
+window.openNewArt=function(){ let m=document.getElementById('modalArt'); if(m){ m.style.display='flex'; m.style.position='fixed'; m.style.inset='0'; m.style.zIndex='99999'; m.style.alignItems='center'; m.style.justifyContent='center'; } };
+window.closeModal=function(id){ let m=document.getElementById(id||'modalArt'); if(m) m.style.display='none'; };
+console.log('✅ STOCK V8.28 FINAL CATEGORIE + FIX BOUTON DEFINITIF');
