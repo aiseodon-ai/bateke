@@ -209,12 +209,12 @@ window.switchShop = function(){ if(oldSwitchShopV9) oldSwitchShopV9.apply(this, 
   }
 })();
 </script>
-<div id="modalArt" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:center;justify-content:center">
+<div id="modalArt" class="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:center;justify-content:center">
 <div class="modalBox" style="background:#fff;padding:16px;border-radius:12px;width:95%;max-width:400px">
 <h3>Nouvel Article</h3>
 <input id="newCode" placeholder="CODE"><input id="newDes" placeholder="Désignation">
-<input id="newCategorie" list="listCats" placeholder="CATEGORIE" style="background:#e8f5e9">
-<datalist id="listCats"><option value="CABLE"><option value="CHARGEUR"><option value="FICHE"><option value="AMPOULE"><option value="SOCKET"><option value="AUTRE"></datalist>
+<input id="newCategorie" list="listCats" placeholder="CATEGORIE" style="background:#e8f5e9;border:2px solid #4caf50">
+<datalist id="listCats"><option value="CABLE"><option value="CHARGEUR"><option value="FICHE"><option value="AMPOULE"><option value="SOCKET"><option value="INTERRUPTEUR"><option value="ACCESSOIRE"><option value="AUTRE"></datalist>
 <input id="newPV" type="number" placeholder="PV"><input id="newPA" type="number" placeholder="PA">
 <input id="newQte" type="number" placeholder="Qté"><input id="newSeuil" type="number" value="3">
 <label><input type="checkbox" id="newActif" checked> Actif</label>
