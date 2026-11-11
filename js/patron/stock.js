@@ -214,5 +214,16 @@ export function saveNewArt(){
 
 // Expose global
 window.renderStock=renderStock; window.toggleActif=toggleActif; window.editField=editField; window.entree=entree; window.supp=supp; window.saveNewArt=saveNewArt; window.buildDataMap=buildDataMap;
-
+// FIX BOUTON +ARTICLE - OBLIGATOIRE pour que openNewArt() marche
+window.openNewArt=function(){
+  let m=document.getElementById('modalArt');
+  if(!m){ alert('Modal modalArt introuvable'); return; }
+  m.style.display='flex';
+  m.style.alignItems='center';
+  m.style.justifyContent='center';
+};
+window.closeModal=function(id){
+  let m=document.getElementById(id||'modalArt');
+  if(m) m.style.display='none';
+};
 console.log('✅ STOCK V8.27 CATEGORIE - STABLE V8.26 + CATEGORIE');
