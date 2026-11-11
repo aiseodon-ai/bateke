@@ -1,4 +1,4 @@
-// stock.js V8.26 - FIX EDIT/SUPP - utilise _id unique - compatible V6.2
+// stock.js V8.27 - STABLE V8.26 + CATEGORIE - _id unique - compatible V6.2 + rapport V4.9.43
 import { esc } from "../common/utils.js";
 
 let DATA_MAP = {};
@@ -21,7 +21,7 @@ function getFilteredSafe(){
 function buildDataMap(stock){
   DATA_MAP={};
   stock.forEach(p=>{
-    let uid = p._id || p.CODE; // uid unique = clé Firebase
+    let uid = p._id || p.CODE;
     if(uid) DATA_MAP[uid]=p;
   });
   window.DATA_MAP=DATA_MAP;
@@ -31,7 +31,12 @@ export function renderStock(){
   let data = getFilteredSafe();
   let shop = getShop();
   let q=(document.getElementById('searchS')?.value||'').toLowerCase();
-  let list = (data.stock||[]).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).sort((a,b)=>(a.CODE||'').localeCompare(b.CODE||''));
+  // AMELIORATION: recherche aussi dans Categorie
+  let list = (data.stock||[]).filter(p=>
+    (p.CODE||'').toLowerCase().includes(q)||
+    (p.Designation||'').toLowerCase().includes(q)||
+    (p.Categorie||'').toLowerCase().includes(q)
+  ).sort((a,b)=>(a.CODE||'').localeCompare(b.CODE||''));
   
   let totalFC=0,totalPA=0,totalQte=0,totalRef=0;
   (data.stock||[]).filter(p=>p.actif!==false).forEach(p=>{
@@ -53,9 +58,9 @@ export function renderStock(){
   
   tbody.innerHTML = list.map(p=>{
     let uid = p._id || p.CODE;
-    // PAS de esc() sur uid pour data-id, sinon -O... cassé
     let codeTxt = esc(p.CODE||'');
     let desTxt = esc(p.Designation||'');
+    let catTxt = esc(p.Categorie||'AUTRE');
     let qte = p.Quantite ?? 0;
     let seuil = p.seuil ?? 3;
     let pv = p['Prix Unit']||p.Prix||0;
@@ -63,6 +68,7 @@ export function renderStock(){
     return `<tr style="${p.actif===false?'opacity:.5;background:#fee':''}">
       <td><b>${codeTxt}</b></td>
       <td class="editable" style="background:#fffde7;cursor:pointer" onclick="window.editField('${uid}','Designation')">${desTxt} ✏️</td>
+      <td class="editable" style="background:#e8f5e9;cursor:pointer" onclick="window.editField('${uid}','Categorie')">${catTxt} ✏️</td>
       <td class="editable" style="background:#fffde7;cursor:pointer" onclick="window.editField('${uid}','Quantite')">${qte} ✏️</td>
       <td class="editable" style="cursor:pointer" onclick="window.editField('${uid}','seuil')">${seuil} ✏️</td>
       <td class="editable" style="cursor:pointer" onclick="window.editField('${uid}','Prix Unit')">${Number(pv).toLocaleString()} ✏️</td>
@@ -92,6 +98,7 @@ export function editField(uid, field){
   if(!p){ alert('Article non trouvé: '+uid); return; }
   let oldVal = p[field] ?? p.Designation ?? p.Quantite ?? '';
   if(field==='Designation') oldVal = p.Designation||'';
+  if(field==='Categorie') oldVal = p.Categorie||'AUTRE';
   if(field==='Quantite') oldVal = p.Quantite??0;
   if(field==='seuil') oldVal = p.seuil??3;
   if(field==='Prix Unit') oldVal = p['Prix Unit']||p.Prix||0;
@@ -101,17 +108,17 @@ export function editField(uid, field){
   if(nv===null || nv==='') return;
   
   let val = nv;
-  if(field!=='Designation'){
+  if(field!=='Designation' && field!=='Categorie'){
     val = Number(nv.replace(',','.'))||0;
   } else {
     if(/[<>]/.test(nv)){ alert('⛔ < > interdits'); return; }
-    val = nv.trim();
+    val = nv.trim().toUpperCase();
+    if(field==='Designation') val = nv.trim(); // garde casse pour désignation
   }
 
   let s=getShop();
   let dbRef = window.db || firebase.database();
   
-  // FIX: update avec uid unique, pas avec CODE --
   if(field==='Quantite'){
     dbRef.ref('shops/'+s+'/stock/'+uid+'/Quantite').transaction(()=>val).then(r=>{
       if(r.committed){ p.Quantite=val; renderStock(); }
@@ -119,9 +126,12 @@ export function editField(uid, field){
   }else{
     let firebaseField = field;
     if(field==='Prix Unit') firebaseField='Prix Unit';
+    if(field==='Prix Achat') firebaseField='Prix Achat';
+    if(field==='Categorie') firebaseField='Categorie';
     dbRef.ref('shops/'+s+'/stock/'+uid).update({[firebaseField]:val}).then(()=>{
       p[firebaseField]=val;
       if(field==='Designation') p.Designation=val;
+      if(field==='Categorie') p.Categorie=val;
       renderStock();
     });
   }
@@ -137,7 +147,7 @@ export function entree(uid){
     if(r.committed){
       dbRef.ref('shops/'+s+'/stock/'+uid).once('value').then(snap=>{
         let p=snap.val();
-        dbRef.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:p?.CODE||uid,Designation:p?.Designation||uid,boutique:s,qty:qty,vendeur:qui});
+        dbRef.ref('shops/'+s+'/entrees/'+Date.now()).set({date:new Date().toISOString(),CODE:p?.CODE||uid,Designation:p?.Designation||uid,boutique:s,qty:qty,vendeur:qui, Categorie:p?.Categorie||'AUTRE'});
       });
       alert(`✅ +${qty} => ${r.snapshot.val()}`);
       renderStock();
@@ -156,6 +166,7 @@ export function supp(uid){
 export function saveNewArt(){
   let codeEl = document.getElementById('newCode');
   let desEl = document.getElementById('newDes');
+  let catEl = document.getElementById('newCategorie'); // NOUVEAU
   let pvEl = document.getElementById('newPV');
   let paEl = document.getElementById('newPA');
   let qteEl = document.getElementById('newQte');
@@ -166,10 +177,14 @@ export function saveNewArt(){
   if(!code){ alert('CODE vide'); return; }
   let des = desEl?.value.trim();
   if(!des){ alert('Désignation vide'); return; }
+  // NOUVEAU: Categorie obligatoire mais avec defaut AUTRE
+  let cat = (catEl?.value||'AUTRE').trim().toUpperCase();
+  if(!cat) cat='AUTRE';
 
   let data={
     CODE:code,
     Designation:des,
+    Categorie:cat,
     'Prix Unit':Number(pvEl?.value)||0,
     'Prix Achat':Number(paEl?.value)||0,
     Quantite:Number(qteEl?.value)||0,
@@ -180,10 +195,11 @@ export function saveNewArt(){
   let s=getShop();
   let dbRef = window.db || firebase.database();
   
+  // On garde ta logique CODE comme clé (stable) - si tu es passé en _id, change ici en push()
   dbRef.ref('shops/'+s+'/stock/'+code).set(data).then(()=>{
-    // ✅ VIDAGE DES CHAMPS - c'est ce qui manquait
     if(codeEl) codeEl.value='';
     if(desEl) desEl.value='';
+    if(catEl) catEl.value='';
     if(pvEl) pvEl.value='';
     if(paEl) paEl.value='';
     if(qteEl) qteEl.value='';
@@ -192,11 +208,11 @@ export function saveNewArt(){
     
     try{ closeModal('modalArt'); }catch(e){}
     renderStock();
-    console.log('✅ Article créé et champs vidés:', code);
+    console.log('✅ Article créé avec Categorie:', code, cat);
   }).catch(e=> alert('Erreur: '+e.message));
 }
 
 // Expose global
 window.renderStock=renderStock; window.toggleActif=toggleActif; window.editField=editField; window.entree=entree; window.supp=supp; window.saveNewArt=saveNewArt; window.buildDataMap=buildDataMap;
 
-console.log('✅ STOCK V8.26 FIX EDIT/SUPP - _id unique');
+console.log('✅ STOCK V8.27 CATEGORIE - STABLE V8.26 + CATEGORIE');
