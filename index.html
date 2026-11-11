@@ -169,6 +169,27 @@ let oldSwitchShopBadge=window.switchShop;window.switchShop=function(){if(oldSwit
 <script type="module" src="js/patron/app.js?v=6.2-fix-parametres-20261028"></script>
 
 <script>
+// FIX FINAL - APRES APP.JS - ECRASE TOUTE ANCIENNE VERSION
+window.openNewArt = function(){
+  var m = document.getElementById('modalArt');
+  if(!m){ alert('modalArt introuvable'); return; }
+  m.classList.add('active');
+  m.style.display = 'flex';
+  m.style.position = 'fixed';
+  m.style.inset = '0';
+  m.style.zIndex = '99999';
+  m.style.alignItems = 'center';
+  m.style.justifyContent = 'center';
+  console.log('✅ MODAL OUVERT PAR FIX FINAL');
+};
+window.closeModal = function(id){
+  var m = document.getElementById(id||'modalArt');
+  if(m){ m.classList.remove('active'); m.style.display='none'; }
+};
+console.log('✅ FIX FINAL BOUTON +ARTICLE ACTIF APRES APP.JS');
+</script>
+ 
+<script>
 (function(){
   function showSupportBanner(){
     let params = new URLSearchParams(location.search);
