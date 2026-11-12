@@ -1,8 +1,8 @@
-// js/vendeur/modules/stock.js - FIX V5.6.4 APP CHECK + ASCII
+// js/vendeur/modules/stock.js - V5.6.4 + CATEGORIE V8.30 - 0 PERTE
 import { STATE } from '../core/state.js';
 import { saveStockCache, saveQueue, updateOfflineUI } from '../core/offline.js';
 
-const CACHE_VERSION = 'v5.6.4-appcheck-20261020'; // 👈 FORCER MAJ PWA
+const CACHE_VERSION = 'v5.6.4-appcheck-20261020-categorie'; // 👈 FORCER MAJ PWA
 
 function esc(t){ return window.esc?window.esc(t):String(t||''); }
 
@@ -13,15 +13,16 @@ function formatPrix(n){
 
 export function renderStock(){
   let q=(document.getElementById('searchS')?.value||'').toLowerCase().trim();
-  let f=STATE.STOCK.filter(p=>p.actif!==false).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).sort((a,b)=>(a.CODE||'').localeCompare(b.CODE||''));
+  let f=STATE.STOCK.filter(p=>p.actif!==false).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)||(p.Categorie||p.CATEGORIE||'').toLowerCase().includes(q)).sort((a,b)=>(a.CODE||'').localeCompare(b.CODE||''));
   let el=document.getElementById('stockT'); if(!el) return;
-  if(!f.length){ el.innerHTML='<tr><td colspan=6>Aucun article</td></tr>'; return; }
+  if(!f.length){ el.innerHTML='<tr><td colspan=7>Aucun article</td></tr>'; return; }
   el.innerHTML=f.map(p=>{
     let actif=p.actif!==false;
     let seuil=p.seuil||3;
     let statut=p.Quantite<=seuil?`<span style="color:red;font-weight:bold">⚠️ Faible (${p.Quantite})</span>`:`<span style="color:green">OK</span>`;
     let prix=p['Prix Unit']||p.Prix||p.PV||0;
-    return `<tr style="${!actif?'background:#fee;opacity:0.6':''}"><td><b>${esc(p.CODE)}</b></td><td>${esc(p.Designation)}</td><td>${p.Quantite}</td><td>${formatPrix(prix)} FC</td><td>${statut}</td><td>${actif?'✅ Actif':'🚫 Désactivé'}</td></tr>`;
+    let cat=p.Categorie||p.CATEGORIE||'AUTRE';
+    return `<tr style="${!actif?'background:#fee;opacity:0.6':''}"><td><b>${esc(p.CODE)}</b></td><td>${esc(p.Designation)}</td><td style="background:#e8f5e9"><b>${esc(cat)}</b></td><td>${p.Quantite}</td><td>${formatPrix(prix)} FC</td><td>${statut}</td><td>${actif?'✅ Actif':'🚫 Désactivé'}</td></tr>`;
   }).join('');
   if(window.updateOfflineUI) window.updateOfflineUI();
 }
@@ -30,16 +31,16 @@ export function searchArticle(){
   let q=document.getElementById('searchArt')?.value?.toLowerCase().trim()||''; 
   let sug=document.getElementById('suggest'); if(!sug) return;
   if(!q){ sug.style.display='none'; return; }
-  let f=STATE.STOCK.filter(p=>p.actif!==false).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).slice(0,10);
+  let f=STATE.STOCK.filter(p=>p.actif!==false).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)||(p.Categorie||'').toLowerCase().includes(q)).slice(0,10);
   if(!f.length){ sug.style.display='none'; return; }
-  sug.innerHTML=f.map(p=>`<div onclick="selectArt('${esc(p.CODE)}')"><b>${esc(p.CODE)}</b> - ${esc(p.Designation)} - ${formatPrix(p['Prix Unit']||0)} FC - Stock:${p.Quantite}</div>`).join('');
+  sug.innerHTML=f.map(p=>`<div onclick="selectArt('${esc(p.CODE)}')"><b>${esc(p.CODE)}</b> [${esc(p.Categorie||'AUTRE')}] - ${esc(p.Designation)} - ${formatPrix(p['Prix Unit']||0)} FC - Stock:${p.Quantite}</div>`).join('');
   sug.style.display='block';
 }
 export function selectArt(code){
   let p=STATE.STOCK.find(x=>x.CODE===code); if(!p) return;
   document.getElementById('codeArt').value=p.CODE;
   document.getElementById('pvArt').value=p['Prix Unit']||0;
-  document.getElementById('searchArt').value=p.CODE+' '+p.Designation;
+  document.getElementById('searchArt').value=p.CODE+' ['+(p.Categorie||'AUTRE')+'] '+p.Designation;
   document.getElementById('suggest').style.display='none';
   document.getElementById('qteArt')?.focus();
 }
@@ -61,6 +62,7 @@ export function openEntree(){
     jour: now.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}),
     heure: now.toLocaleTimeString('fr-FR'),
     CODE: code,
+    Categorie: st.Categorie||st.CATEGORIE||'AUTRE',
     Designation: st.Designation,
     boutique: STATE.SHOP,
     qty: qty,
@@ -76,7 +78,7 @@ export function openEntree(){
     STATE.OFFLINE_QUEUE.push({type:'entree',shop:STATE.SHOP,id:id,CODE:code,newQte:newQte,data:ent});
     saveQueue(); updateOfflineUI();
   }
-  alert('✅ Entrée +'+qty+' '+code+' -> Stock: '+newQte);
+  alert('✅ Entrée +'+qty+' '+code+' ['+(st.Categorie||'AUTRE')+'] -> Stock: '+newQte);
 }
 
 window.renderStock=renderStock;
@@ -84,4 +86,4 @@ window.searchArticle=searchArticle;
 window.selectArt=selectArt;
 window.selectArticle=selectArt;
 window.openEntree=openEntree;
-console.log("stock.js V5.6.4 APP CHECK + ASCII OK -", STATE.STOCK.length, "articles - CACHE:", CACHE_VERSION);
+console.log("stock.js V5.6.4 + CATEGORIE V8.30 OK -", STATE.STOCK.length, "articles - CACHE:", CACHE_VERSION);
