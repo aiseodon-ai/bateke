@@ -1,4 +1,4 @@
-// stock.js V8.26 - FIX EDIT/SUPP - utilise _id unique - compatible V6.2
+// stock.js V8.26 - FIX BOUTON + MODAL VIDE - version stable sans Categorie
 import { esc } from "../common/utils.js";
 
 let DATA_MAP = {};
@@ -21,7 +21,7 @@ function getFilteredSafe(){
 function buildDataMap(stock){
   DATA_MAP={};
   stock.forEach(p=>{
-    let uid = p._id || p.CODE; // uid unique = clé Firebase
+    let uid = p._id || p.CODE;
     if(uid) DATA_MAP[uid]=p;
   });
   window.DATA_MAP=DATA_MAP;
@@ -29,10 +29,8 @@ function buildDataMap(stock){
 
 export function renderStock(){
   let data = getFilteredSafe();
-  let shop = getShop();
   let q=(document.getElementById('searchS')?.value||'').toLowerCase();
   let list = (data.stock||[]).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)).sort((a,b)=>(a.CODE||'').localeCompare(b.CODE||''));
-  
   let totalFC=0,totalPA=0,totalQte=0,totalRef=0;
   (data.stock||[]).filter(p=>p.actif!==false).forEach(p=>{
     let pv = p['Prix Unit']||p.Prix||p.PV||0;
@@ -45,15 +43,11 @@ export function renderStock(){
   if(document.getElementById('valStockUSD')) document.getElementById('valStockUSD').innerText=(tauxUSD?totalFC/tauxUSD:0).toLocaleString(undefined,{maximumFractionDigits:2})+' $';
   if(document.getElementById('valStockPA')) document.getElementById('valStockPA').innerText=totalPA.toLocaleString()+' FC';
   if(document.getElementById('valStockBenef')) document.getElementById('valStockBenef').innerText=(totalFC-totalPA).toLocaleString()+' FC';
-
   buildDataMap(list);
-
   let tbody = document.getElementById('stockT');
   if(!tbody) return;
-  
   tbody.innerHTML = list.map(p=>{
     let uid = p._id || p.CODE;
-    // PAS de esc() sur uid pour data-id, sinon -O... cassé
     let codeTxt = esc(p.CODE||'');
     let desTxt = esc(p.Designation||'');
     let qte = p.Quantite ?? 0;
@@ -90,16 +84,14 @@ export function toggleActif(uid){
 export function editField(uid, field){
   let p = DATA_MAP[uid];
   if(!p){ alert('Article non trouvé: '+uid); return; }
-  let oldVal = p[field] ?? p.Designation ?? p.Quantite ?? '';
+  let oldVal = p[field] ?? '';
   if(field==='Designation') oldVal = p.Designation||'';
   if(field==='Quantite') oldVal = p.Quantite??0;
   if(field==='seuil') oldVal = p.seuil??3;
   if(field==='Prix Unit') oldVal = p['Prix Unit']||p.Prix||0;
   if(field==='Prix Achat') oldVal = p['Prix Achat']||0;
-
   let nv=prompt(`Modifier ${field} pour ${p.CODE||uid}\nAncien: ${oldVal}\nNouveau:`, oldVal);
   if(nv===null || nv==='') return;
-  
   let val = nv;
   if(field!=='Designation'){
     val = Number(nv.replace(',','.'))||0;
@@ -107,18 +99,14 @@ export function editField(uid, field){
     if(/[<>]/.test(nv)){ alert('⛔ < > interdits'); return; }
     val = nv.trim();
   }
-
   let s=getShop();
   let dbRef = window.db || firebase.database();
-  
-  // FIX: update avec uid unique, pas avec CODE --
   if(field==='Quantite'){
     dbRef.ref('shops/'+s+'/stock/'+uid+'/Quantite').transaction(()=>val).then(r=>{
       if(r.committed){ p.Quantite=val; renderStock(); }
     });
   }else{
     let firebaseField = field;
-    if(field==='Prix Unit') firebaseField='Prix Unit';
     dbRef.ref('shops/'+s+'/stock/'+uid).update({[firebaseField]:val}).then(()=>{
       p[firebaseField]=val;
       if(field==='Designation') p.Designation=val;
@@ -147,7 +135,7 @@ export function entree(uid){
 
 export function supp(uid){
   let p=DATA_MAP[uid];
-  if(!confirm('Supprimer '+(p?.CODE||uid)+' - '+(p?.Designation||'')+' ?\nCette action est définitive.')) return;
+  if(!confirm('Supprimer '+(p?.CODE||uid)+' - '+(p?.Designation||'')+' ?')) return;
   let s=getShop();
   let dbRef = window.db || firebase.database();
   dbRef.ref('shops/'+s+'/stock/'+uid).remove().then(()=>{ renderStock(); });
@@ -161,12 +149,10 @@ export function saveNewArt(){
   let qteEl = document.getElementById('newQte');
   let seuilEl = document.getElementById('newSeuil');
   let actifEl = document.getElementById('newActif');
-
   let code = codeEl?.value.trim().toUpperCase();
   if(!code){ alert('CODE vide'); return; }
   let des = desEl?.value.trim();
   if(!des){ alert('Désignation vide'); return; }
-
   let data={
     CODE:code,
     Designation:des,
@@ -176,12 +162,9 @@ export function saveNewArt(){
     seuil:Number(seuilEl?.value)||3,
     actif: actifEl?.checked!==false
   };
-  
   let s=getShop();
   let dbRef = window.db || firebase.database();
-  
   dbRef.ref('shops/'+s+'/stock/'+code).set(data).then(()=>{
-    // ✅ VIDAGE DES CHAMPS - c'est ce qui manquait
     if(codeEl) codeEl.value='';
     if(desEl) desEl.value='';
     if(pvEl) pvEl.value='';
@@ -189,29 +172,35 @@ export function saveNewArt(){
     if(qteEl) qteEl.value='';
     if(seuilEl) seuilEl.value='3';
     if(actifEl) actifEl.checked=true;
-    
     try{ closeModal('modalArt'); }catch(e){}
     renderStock();
-    console.log('✅ Article créé et champs vidés:', code);
   }).catch(e=> alert('Erreur: '+e.message));
 }
 
-// Expose global
 window.renderStock=renderStock; window.toggleActif=toggleActif; window.editField=editField; window.entree=entree; window.supp=supp; window.saveNewArt=saveNewArt; window.buildDataMap=buildDataMap;
+
 window.openNewArt = function(){
   var m = document.getElementById('modalArt');
-  if(!m){ console.error('modalArt introuvable'); return; }
+  if(!m){ alert('modalArt introuvable'); return; }
+  if(!document.getElementById('newCode')){
+    m.innerHTML = `
+    <div class="modalBox" style="background:#fff;padding:16px;border-radius:12px;width:95%;max-width:420px">
+      <h3>+ Nouvel Article</h3>
+      <input id="newCode" placeholder="CODE" style="width:100%;padding:8px;margin:4px 0;border:1px solid #ccc;border-radius:8px">
+      <input id="newDes" placeholder="Désignation" style="width:100%;padding:8px;margin:4px 0;border:1px solid #ccc;border-radius:8px">
+      <div style="display:flex;gap:6px"><input id="newPV" type="number" placeholder="PV" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"><input id="newPA" type="number" placeholder="PA" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"></div>
+      <div style="display:flex;gap:6px;margin-top:4px"><input id="newQte" type="number" placeholder="Qté" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"><input id="newSeuil" type="number" value="3" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"></div>
+      <label style="display:flex;gap:6px;margin:8px 0"><input type="checkbox" id="newActif" checked> Actif</label>
+      <div style="display:flex;gap:6px;justify-content:end"><button class="btn" onclick="window.closeModal('modalArt')" style="background:#ccc;padding:8px 12px;border-radius:8px">Annuler</button><button class="btn btn-g" onclick="window.saveNewArt()" style="background:#0b5e2f;color:#fff;padding:8px 12px;border-radius:8px">Créer</button></div>
+    </div>`;
+  }
   m.classList.add('active');
-  m.style.display = 'flex';
-  m.style.position = 'fixed';
-  m.style.inset = '0';
-  m.style.zIndex = '99999';
-  m.style.alignItems = 'center';
-  m.style.justifyContent = 'center';
-  console.log('✅ Modal ouvert depuis STOCK V8.26 FIX');
+  m.style.cssText = 'display:flex !important;position:fixed !important;inset:0 !important;background:rgba(0,0,0,.7) !important;z-index:999999 !important;align-items:center !important;justify-content:center !important;';
 };
+
 window.closeModal = function(id){
   var m = document.getElementById(id||'modalArt');
   if(m){ m.classList.remove('active'); m.style.display='none'; }
 };
-console.log('✅ STOCK V8.26 FIX EDIT/SUPP - _id unique');
+
+console.log('✅ STOCK V8.26 FIX BOUTON + MODAL VIDE - SANS CATEGORIE');
