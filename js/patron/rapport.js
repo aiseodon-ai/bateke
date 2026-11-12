@@ -1,16 +1,16 @@
-// RAPPORT SAFE V4.9.43 - TA V4.9.33 FULL 19 RAPPORTS INTACT + GRAPH DYNAMIQUE X/Y NOMME - LOGIN OK
+// RAPPORT SAFE V8.30 - V4.9.43 FULL 19 RAPPORTS INTACT + CATEGORIE - 0 PERTE
 export function onTypeChange(){
  try{
   let t=document.getElementById('typeRapport')?.value;
   let extra=document.getElementById('filtreExtra');
   if(!extra) return;
-  if(['vente_article','entree_article','entree_par_article','vente_par_article'].includes(t)){
-    extra.innerHTML='<input id="filtreCode" placeholder="CODE ou Désignation (optionnel)" style="padding:8px;border:1px solid #ccc;border-radius:8px;width:100%">';
+  if(['vente_article','entree_article','entree_par_article','vente_par_article','stock_par_categorie','par_categorie'].includes(t)){
+    extra.innerHTML='<input id="filtreCode" placeholder="CODE / Désignation / CATEGORIE (optionnel)" style="padding:8px;border:1px solid #ccc;border-radius:8px;width:100%">';
   } else if(t==='benef_par_vendeur' || t==='synthese_ventes_vendeur' || t==='ca_client'){
-    extra.innerHTML='<input id="filtreCode" placeholder="Nom / Client / Vendeur (optionnel)" style="padding:8px;border:1px solid #ccc;border-radius:8px;width:100%">';
+    extra.innerHTML='<input id="filtreCode" placeholder="Nom / Client / Vendeur / CATEGORIE (optionnel)" style="padding:8px;border:1px solid #ccc;border-radius:8px;width:100%">';
   } else if(t==='entree_stock_detail' || t==='synthese_achats' || t==='synthese_entrees'){
-    extra.innerHTML='<input id="filtreCode" placeholder="Filtre CODE (optionnel)" style="padding:8px;border:1px solid #ccc;border-radius:8px;width:100%">';
-  } else { extra.innerHTML=''; }
+    extra.innerHTML='<input id="filtreCode" placeholder="Filtre CODE ou CATEGORIE (optionnel)" style="padding:8px;border:1px solid #ccc;border-radius:8px;width:100%">';
+  } else { extra.innerHTML='<input id="filtreCode" placeholder="CODE / CATEGORIE (optionnel)" style="padding:8px;border:1px solid #ccc;border-radius:8px;width:100%">'; }
  }catch(e){}
 }
 export function getPeriodeData(){
@@ -39,18 +39,26 @@ export function genRapport(){
  let stockMap={}; (data.stock||[]).forEach(p=>{let c=p.CODE||p.code; if(c) stockMap[c]=p;});
  let nbJours = Math.max(1, Math.ceil((au-du)/86400000)+1);
  const getAuteur = (e)=> e.vendeurNom||e.vendeur||e.faitPar||e.auteur||e.vendeurPin||e.pin||'?';
+ const getCat = (code)=> stockMap[code]?.Categorie||stockMap[code]?.CATEGORIE||stockMap[code]?.categorie||stockMap[code]?.Categorie||'AUTRE';
+ const matchFiltre = (code, des, cat)=> { if(!codeFiltre) return true; return code.toLowerCase().includes(codeFiltre) || (des||'').toLowerCase().includes(codeFiltre) || (cat||'').toLowerCase().includes(codeFiltre); };
 
  if(type==='synthese_avec_benef'){
    let ca=vPeriode.reduce((s,v)=>s+(parseFloat(v.total||0)||0),0); let benef=vPeriode.reduce((s,v)=>s+(parseFloat(v.benefice||0)||0),0); let dep=dPeriode.reduce((s,d)=>s+(parseFloat(d.montant||0)||0),0);
-   let parArticle={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{let code=i.CODE||i.code; if(!code) return; if(codeFiltre &&!code.toLowerCase().includes(codeFiltre) &&!(i.Designation||'').toLowerCase().includes(codeFiltre)) return; if(!parArticle[code])parArticle[code]={CODE:code,Des:i.Designation||stockMap[code]?.Designation||code,qty:0,ca:0,benef:0,stockActuel:stockMap[code]?.Quantite||0}; let pa=stockMap[code]?.['Prix Achat']||0; parArticle[code].qty+=parseFloat(i.qty||0)||0; parArticle[code].ca+= (parseFloat(i.qty||0)||0)*parseFloat(i.Prix||0); parArticle[code].benef+= (parseFloat(i.qty||0)||0)*(parseFloat(i.Prix||0)-pa); }));
+   let parArticle={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{let code=i.CODE||i.code; if(!code) return; let cat=getCat(code); let des=i.Designation||stockMap[code]?.Designation||code; if(!matchFiltre(code,des,cat)) return; if(!parArticle[code])parArticle[code]={CODE:code,Categorie:cat,Des:des,qty:0,ca:0,benef:0,stockActuel:stockMap[code]?.Quantite||0}; let pa=stockMap[code]?.['Prix Achat']||0; parArticle[code].qty+=parseFloat(i.qty||0)||0; parArticle[code].ca+= (parseFloat(i.qty||0)||0)*parseFloat(i.Prix||0); parArticle[code].benef+= (parseFloat(i.qty||0)||0)*(parseFloat(i.Prix||0)-pa); }));
    let list=Object.values(parArticle).sort((a,b)=>b.ca-a.ca); window._tmpParArticle=parArticle;
-   html=`<h3>⭐ SYNTHESE AVEC BENEFICE + STOCK - ${list.length} articles</h3><table><tr><th>Indicateur</th><th>Montant</th></tr><tr><td>CA</td><td><b>${ca.toLocaleString()} FC</b></td></tr><tr><td>Bénéf</td><td style="color:#0b5e2f"><b>${benef.toLocaleString()}</b></td></tr><tr><td>Dép</td><td style="color:red">-${dep.toLocaleString()}</td></tr><tr style="background:#111;color:#fff"><td>NET</td><td><b>${(benef-dep).toLocaleString()}</b></td></tr></table><table><tr><th>CODE</th><th>Dés</th><th>Qté</th><th>CA</th><th>Bénéf</th><th>Marge</th><th>Stock</th><th>Rot</th><th>Jours</th></tr>`+list.map(a=>{let rot=a.stockActuel>0?(a.qty/((a.stockActuel+a.qty)/2||1))*100:0; let couv=a.qty>0?(a.stockActuel/(a.qty/nbJours)):999; return `<tr><td>${escFn(a.CODE)}</td><td>${escFn(a.Des)}</td><td>${a.qty}</td><td>${a.ca.toLocaleString()}</td><td style="color:#0b5e2f">${a.benef.toLocaleString()}</td><td>${a.ca?((a.benef/a.ca)*100).toFixed(1):0}%</td><td style="background:#fef3c7;text-align:center"><b>${a.stockActuel}</b></td><td>${rot.toFixed(1)}%</td><td>${couv>365?'∞':couv.toFixed(0)+'j'}</td></tr>`;}).join('')+`</table>`;
+   let byCat={}; list.forEach(a=>{if(!byCat[a.Categorie])byCat[a.Categorie]={qty:0,ca:0,benef:0,stock:0,valStock:0}; byCat[a.Categorie].qty+=a.qty; byCat[a.Categorie].ca+=a.ca; byCat[a.Categorie].benef+=a.benef; byCat[a.Categorie].stock+=a.stockActuel; byCat[a.Categorie].valStock+=a.stockActuel*(stockMap[a.CODE]?.['Prix Achat']||0);});
+   let htmlCat = `<h4 style="margin:10px 0">📦 VALEUR PAR CATEGORIE</h4><table><tr><th>Catégorie</th><th>Qté Vendue</th><th>CA</th><th>Bénéf</th><th>Stock Actuel</th><th>Valeur Stock (PA)</th></tr>`+Object.entries(byCat).sort((a,b)=>b[1].ca-a[1].ca).map(([cat,v])=>`<tr><td style="background:#e8f5e9"><b>${escFn(cat)}</b></td><td>${v.qty}</td><td>${v.ca.toLocaleString()}</td><td style="color:#0b5e2f"><b>${v.benef.toLocaleString()}</b></td><td style="background:#fef3c7;text-align:center"><b>${v.stock}</b></td><td>${v.valStock.toLocaleString()}</td></tr>`).join('')+`</table>`;
+   html=`<h3>⭐ SYNTHESE AVEC BENEFICE + STOCK - ${list.length} articles</h3>${htmlCat}<table><tr><th>Indicateur</th><th>Montant</th></tr><tr><td>CA</td><td><b>${ca.toLocaleString()} FC</b></td></tr><tr><td>Bénéf</td><td style="color:#0b5e2f"><b>${benef.toLocaleString()}</b></td></tr><tr><td>Dép</td><td style="color:red">-${dep.toLocaleString()}</td></tr><tr style="background:#111;color:#fff"><td>NET</td><td><b>${(benef-dep).toLocaleString()}</b></td></tr></table><table><tr><th>CODE</th><th>Catégorie</th><th>Dés</th><th>Qté</th><th>CA</th><th>Bénéf</th><th>Marge</th><th>Stock</th><th>Rot</th><th>Jours</th></tr>`+list.map(a=>{let rot=a.stockActuel>0?(a.qty/((a.stockActuel+a.qty)/2||1))*100:0; let couv=a.qty>0?(a.stockActuel/(a.qty/nbJours)):999; return `<tr><td>${escFn(a.CODE)}</td><td style="background:#e8f5e9"><b>${escFn(a.Categorie)}</b></td><td>${escFn(a.Des)}</td><td>${a.qty}</td><td>${a.ca.toLocaleString()}</td><td style="color:#0b5e2f">${a.benef.toLocaleString()}</td><td>${a.ca?((a.benef/a.ca)*100).toFixed(1):0}%</td><td style="background:#fef3c7;text-align:center"><b>${a.stockActuel}</b></td><td>${rot.toFixed(1)}%</td><td>${couv>365?'∞':couv.toFixed(0)+'j'}</td></tr>`;}).join('')+`</table>`;
+ } else if(type==='stock_par_categorie' || type==='par_categorie'){
+   let mapStock={}; (data.stock||[]).forEach(p=>{let cat=p.Categorie||p.CATEGORIE||'AUTRE'; if(!matchFiltre(p.CODE||'',p.Designation||'',cat)) return; if(!mapStock[cat])mapStock[cat]={qty:0,valAchat:0,valVente:0,benefPot:0,nb:0}; let q=p.Quantite||0; mapStock[cat].qty+=q; mapStock[cat].valAchat+=q*(p['Prix Achat']||0); mapStock[cat].valVente+=q*(p['Prix Vente']||p.Prix||0); mapStock[cat].benefPot+=q*((p['Prix Vente']||0)-(p['Prix Achat']||0)); mapStock[cat].nb++;});
+   let totalAchat=Object.values(mapStock).reduce((s,v)=>s+v.valAchat,0);
+   html=`<h3>📦 STOCK PAR CATEGORIE - ${Object.keys(mapStock).length} catégories - NOUVEAU</h3><table><tr><th>Catégorie</th><th>Nb Réf</th><th>Qté Tot</th><th>Val Achat</th><th>Val Vente</th><th>Bénéf Pot</th><th>% Stock</th></tr>`+Object.entries(mapStock).sort((a,b)=>b[1].valAchat-a[1].valAchat).map(([cat,v])=>`<tr><td style="background:#1b5e20;color:#fff"><b>${escFn(cat)}</b></td><td>${v.nb}</td><td style="background:#fef3c7;text-align:center"><b>${v.qty}</b></td><td>${v.valAchat.toLocaleString()}</td><td>${v.valVente.toLocaleString()}</td><td style="color:#0b5e2f"><b>${v.benefPot.toLocaleString()}</b></td><td>${totalAchat?((v.valAchat/totalAchat)*100).toFixed(1):0}%</td></tr>`).join('')+`</table>`; window._tmpParArticle=mapStock;
  } else if(type==='synthese_sans_benef'){
-   let ca=vPeriode.reduce((s,v)=>s+(parseFloat(v.total||0)||0),0); let map={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{let code=i.CODE||i.code; if(!map[code])map[code]={CODE:code,Des:i.Designation||stockMap[code]?.Designation||code,qty:0,ca:0,stock:stockMap[code]?.Quantite||0}; map[code].qty+=parseFloat(i.qty||0)||0; map[code].ca+= (parseFloat(i.qty||0)||0)*parseFloat(i.Prix||0);} )); let list=Object.values(map).sort((a,b)=>b.ca-a.ca).filter(a=>!codeFiltre||a.CODE.toLowerCase().includes(codeFiltre)); window._tmpParArticle=map;
-   html=`<h3>⭐ SYNTHESE SANS BENEFICE - CA ${ca.toLocaleString()} FC</h3><table><tr><th>CODE</th><th>Dés</th><th>Qté</th><th>CA</th><th>Stock</th></tr>`+list.map(a=>`<tr><td>${escFn(a.CODE)}</td><td>${escFn(a.Des)}</td><td>${a.qty}</td><td>${a.ca.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${a.stock}</td></tr>`).join('')+`</table>`;
+   let ca=vPeriode.reduce((s,v)=>s+(parseFloat(v.total||0)||0),0); let map={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{let code=i.CODE||i.code; let cat=getCat(code); let des=i.Designation||stockMap[code]?.Designation||code; if(!matchFiltre(code,des,cat)) return; if(!map[code])map[code]={CODE:code,Categorie:cat,Des:des,qty:0,ca:0,stock:stockMap[code]?.Quantite||0}; map[code].qty+=parseFloat(i.qty||0)||0; map[code].ca+= (parseFloat(i.qty||0)||0)*parseFloat(i.Prix||0);} )); let list=Object.values(map).sort((a,b)=>b.ca-a.ca); window._tmpParArticle=map;
+   html=`<h3>⭐ SYNTHESE SANS BENEFICE - CA ${ca.toLocaleString()} FC</h3><table><tr><th>CODE</th><th>Catégorie</th><th>Dés</th><th>Qté</th><th>CA</th><th>Stock</th></tr>`+list.map(a=>`<tr><td>${escFn(a.CODE)}</td><td style="background:#e8f5e9">${escFn(a.Categorie)}</td><td>${escFn(a.Des)}</td><td>${a.qty}</td><td>${a.ca.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${a.stock}</td></tr>`).join('')+`</table>`;
  } else if(type==='synthese_achats' || type==='synthese_des_achats'){
-   let all=[]; let src=(SHOP==='ALL')?SHOPS_LIST:[SHOP]; src.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au){if(codeFiltre&&!(e.CODE||'').toLowerCase().includes(codeFiltre))return; all.push({...e,_shopReel:s});}});}); let map={}; all.forEach(e=>{let q=Number(e.qty??e.qte??e.Quantite??0); let st=stockMap[e.CODE]; if(!map[e.CODE])map[e.CODE]={CODE:e.CODE,Des:e.Designation||st?.Designation||e.CODE,qty:0,stock:st?.Quantite||0,auteurs:new Set()}; map[e.CODE].qty+=q; map[e.CODE].auteurs.add(getAuteur(e));}); let list=Object.values(map).sort((a,b)=>b.qty-a.qty); window._tmpParArticle=map;
-   html=`<h3>🛒 SYNTHESE ACHATS / ENTREES + STOCK ACTUEL - ${list.length} refs</h3><table><tr><th>CODE</th><th>Dés</th><th>Qté entrée</th><th>Stock</th><th>Auteurs</th></tr>`+list.map(a=>`<tr><td><b>${escFn(a.CODE)}</b></td><td>${escFn(a.Des)}</td><td style="background:#dcfce7;text-align:center"><b>${a.qty}</b></td><td style="background:#fef3c7;text-align:center">${a.stock}</td><td>${escFn(Array.from(a.auteurs).join(', '))}</td></tr>`).join('')+`</table>`;
+   let all=[]; let src=(SHOP==='ALL')?SHOPS_LIST:[SHOP]; src.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au){if(codeFiltre&&!matchFiltre(e.CODE||'',e.Designation||'',getCat(e.CODE)))return; all.push({...e,_shopReel:s});}});}); let map={}; all.forEach(e=>{let q=Number(e.qty??e.qte??e.Quantite??0); let st=stockMap[e.CODE]; if(!map[e.CODE])map[e.CODE]={CODE:e.CODE,Categorie:getCat(e.CODE),Des:e.Designation||st?.Designation||e.CODE,qty:0,stock:st?.Quantite||0,auteurs:new Set()}; map[e.CODE].qty+=q; map[e.CODE].auteurs.add(getAuteur(e));}); let list=Object.values(map).sort((a,b)=>b.qty-a.qty); window._tmpParArticle=map;
+   html=`<h3>🛒 SYNTHESE ACHATS / ENTREES + STOCK ACTUEL - ${list.length} refs</h3><table><tr><th>CODE</th><th>Catégorie</th><th>Dés</th><th>Qté entrée</th><th>Stock</th><th>Auteurs</th></tr>`+list.map(a=>`<tr><td><b>${escFn(a.CODE)}</b></td><td style="background:#e8f5e9">${escFn(a.Categorie)}</td><td>${escFn(a.Des)}</td><td style="background:#dcfce7;text-align:center"><b>${a.qty}</b></td><td style="background:#fef3c7;text-align:center">${a.stock}</td><td>${escFn(Array.from(a.auteurs).join(', '))}</td></tr>`).join('')+`</table>`;
  } else if(type==='synthese' || type==='synthese_generale'){
    let ca=vPeriode.reduce((s,v)=>s+(parseFloat(v.total||0)||0),0); let benef=vPeriode.reduce((s,v)=>s+(parseFloat(v.benefice||0)||0),0); let dep=dPeriode.reduce((s,d)=>s+(parseFloat(d.montant||0)||0),0); let byShop={}; vPeriode.forEach(v=>{let sh=v._shop||v._shopReel||SHOP; byShop[sh]=(byShop[sh]||0)+ (parseFloat(v.total||0)||0);}); window._tmpParArticle=byShop;
    html=`<h3>⭐ SYNTHESE GENERALE - ${du.toLocaleDateString()} au ${au.toLocaleDateString()}</h3><table><tr><th>Indicateur</th><th>Montant</th></tr><tr><td>CA</td><td>${ca.toLocaleString()}</td></tr><tr><td>Bénéf Brut</td><td>${benef.toLocaleString()}</td></tr><tr><td>Dép</td><td>-${dep.toLocaleString()}</td></tr><tr style="background:#111;color:#fff"><td>NET</td><td>${(benef-dep).toLocaleString()}</td></tr></table><h4>Par Boutique</h4><table><tr><th>Boutique</th><th>CA</th></tr>`+Object.entries(byShop).map(([s,c])=>`<tr><td>${escFn(s)}</td><td>${c.toLocaleString()}</td></tr>`).join('')+`</table>`;
@@ -60,8 +68,8 @@ export function genRapport(){
  } else if(type==='synthese_ventes_patron' || type==='ventes_patron_toutes'){
    html=`<h3>⭐ VENTES PATRON TOUTES BOUTIQUES</h3>`; SHOPS_LIST.forEach(s=>{let vs=(ALL_DATA[s]?.ventes||[]).filter(v=>{let d=new Date(v.date);return d>=du&&d<=au;}); let ca=vs.reduce((a,b)=>a+(parseFloat(b.total||0)||0),0); html+=`<p><b>${escFn(s)}</b>: ${vs.length} ventes - ${ca.toLocaleString()} FC</p>`;}); html+=`<table><tr><th>Date</th><th>Boutique</th><th>Vendeur</th><th>Total</th></tr>`+vPeriode.slice(0,300).map(v=>`<tr><td>${new Date(v.date).toLocaleString()}</td><td>${escFn(v._shop||SHOP)}</td><td>${escFn(v.vendeurNom||'')}</td><td>${(parseFloat(v.total||0)||0).toLocaleString()}</td></tr>`).join('')+`</table>`;
  } else if(type==='synthese_entrees' || type==='entrees_stock_detail'){
-   let all=[]; let src=(SHOP==='ALL')?SHOPS_LIST:[SHOP]; src.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au) all.push({...e,_shopReel:s});});}); all.sort((a,b)=>new Date(b.date)-new Date(a.date)); if(codeFiltre) all=all.filter(e=>e.CODE?.toLowerCase().includes(codeFiltre));
-   html=`<h3>📥 ENTREES STOCK DETAIL - ${all.length} mouv.</h3><table><tr><th>Date</th><th>Boutique</th><th>CODE</th><th>Qté</th><th>Auteur</th><th>Stock</th></tr>`+all.slice(0,500).map(e=>{let st=stockMap[e.CODE]; let raw=getAuteur(e); let nom=raw; if(/^\d{2,6}$/.test(String(raw))){let vd=ALL_DATA[e._shopReel]?.vendeurs?.[raw]||ALL_DATA[SHOP]?.vendeurs?.[raw]; if(vd?.nom) nom=vd.nom+' ('+raw+')';} return `<tr><td>${new Date(e.date).toLocaleString('fr-FR')}</td><td style="background:#fef3c7"><b>${escFn(e._shopReel)}</b></td><td><b>${escFn(e.CODE||'')}</b></td><td style="background:#dcfce7;text-align:center"><b>${Number(e.qty??e.qte??e.Quantite??0)}</b></td><td style="background:#f0fdf4"><b style="color:#0b5e2f">${escFn(nom||'?')}</b></td><td>${st?.Quantite??''}</td></tr>`;}).join('')+`</table>`;
+   let all=[]; let src=(SHOP==='ALL')?SHOPS_LIST:[SHOP]; src.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au) all.push({...e,_shopReel:s});});}); all.sort((a,b)=>new Date(b.date)-new Date(a.date)); if(codeFiltre) all=all.filter(e=>matchFiltre(e.CODE||'',e.Designation||'',getCat(e.CODE)));
+   html=`<h3>📥 ENTREES STOCK DETAIL - ${all.length} mouv.</h3><table><tr><th>Date</th><th>Boutique</th><th>CODE</th><th>Catégorie</th><th>Qté</th><th>Auteur</th><th>Stock</th></tr>`+all.slice(0,500).map(e=>{let st=stockMap[e.CODE]; let raw=getAuteur(e); let nom=raw; if(/^\d{2,6}$/.test(String(raw))){let vd=ALL_DATA[e._shopReel]?.vendeurs?.[raw]||ALL_DATA[SHOP]?.vendeurs?.[raw]; if(vd?.nom) nom=vd.nom+' ('+raw+')';} return `<tr><td>${new Date(e.date).toLocaleString('fr-FR')}</td><td style="background:#fef3c7"><b>${escFn(e._shopReel)}</b></td><td><b>${escFn(e.CODE||'')}</b></td><td style="background:#e8f5e9">${escFn(getCat(e.CODE))}</td><td style="background:#dcfce7;text-align:center"><b>${Number(e.qty??e.qte??e.Quantite??0)}</b></td><td style="background:#f0fdf4"><b style="color:#0b5e2f">${escFn(nom||'?')}</b></td><td>${st?.Quantite??''}</td></tr>`;}).join('')+`</table>`;
  } else if(type==='synthese_depenses' || type==='depense_type' || type==='depenses'){
    let map={}; dPeriode.forEach(d=>{let k=d.type||d.categorie||d.motif||'Autre'; if(!map[k])map[k]=0; map[k]+=parseFloat(d.montant||0)||0;}); let total=dPeriode.reduce((s,d)=>s+(parseFloat(d.montant||0)||0),0); window._tmpParArticle=map;
    html=`<h3>💸 DEPENSES - ${total.toLocaleString()} FC</h3><table><tr><th>Type</th><th>Montant</th><th>%</th></tr>`+Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${escFn(k)}</td><td>${v.toLocaleString()}</td><td>${total?((v/total)*100).toFixed(1):0}%</td></tr>`).join('')+`</table>`;
@@ -72,17 +80,17 @@ export function genRapport(){
    let byDay={}; vPeriode.forEach(v=>{let day=new Date(v.date).toLocaleDateString('fr-FR'); if(!byDay[day])byDay[day]={ca:0,benef:0,nb:0}; byDay[day].ca+=parseFloat(v.total||0)||0; byDay[day].benef+=parseFloat(v.benefice||0)||0; byDay[day].nb++;}); window._tmpByDay=byDay;
    html=`<h3>📅 CA PAR JOUR</h3><table><tr><th>Date</th><th>Nb</th><th>CA</th><th>Bénéf</th></tr>`+Object.entries(byDay).map(([d,v])=>`<tr><td>${d}</td><td>${v.nb}</td><td><b>${v.ca.toLocaleString()}</b></td><td style="color:#0b5e2f">${v.benef.toLocaleString()}</td></tr>`).join('')+`</table>`;
  } else if(type==='vente_article' || type==='vente_par_article'){
-   let all=[]; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{let code=i.CODE||i.code; if(!code) return; if(codeFiltre&&!code.toLowerCase().includes(codeFiltre)&&!(i.Designation||'').toLowerCase().includes(codeFiltre))return; all.push({date:v.date,vendeur:v.vendeurNom||v.vendeur,CODE:code,Des:i.Designation||stockMap[code]?.Designation||code,qty:i.qty,Prix:i.Prix,Total:(parseFloat(i.qty||0)||0)*parseFloat(i.Prix||0),Benef:(parseFloat(i.qty||0)||0)*(parseFloat(i.Prix||0)-(stockMap[code]?.['Prix Achat']||0)),stock:stockMap[code]?.Quantite||0});})); window._tmpParArticle={}; all.forEach(r=>{if(!window._tmpParArticle[r.CODE])window._tmpParArticle[r.CODE]={CODE:r.CODE,ca:0,qty:0}; window._tmpParArticle[r.CODE].ca+=r.Total; window._tmpParArticle[r.CODE].qty+=parseFloat(r.qty||0)||0;});
-   html=`<h3>📦 VENTE PAR ARTICLE + STOCK - ${all.length} lignes</h3><table><tr><th>Date</th><th>Vendeur</th><th>CODE</th><th>Qté</th><th>Total</th><th>Bénéf</th><th>Stock</th></tr>`+all.slice(0,400).map(r=>`<tr><td>${new Date(r.date).toLocaleString()}</td><td>${escFn(r.vendeur)}</td><td><b>${escFn(r.CODE)}</b></td><td>${r.qty}</td><td>${r.Total.toLocaleString()}</td><td style="color:${r.Benef<0?'red':'#0b5e2f'}">${r.Benef.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${r.stock}</td></tr>`).join('')+`</table>`;
+   let all=[]; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{let code=i.CODE||i.code; if(!code) return; let cat=getCat(code); let des=i.Designation||stockMap[code]?.Designation||code; if(!matchFiltre(code,des,cat))return; all.push({date:v.date,vendeur:v.vendeurNom||v.vendeur,CODE:code,Categorie:cat,Des:des,qty:i.qty,Prix:i.Prix,Total:(parseFloat(i.qty||0)||0)*parseFloat(i.Prix||0),Benef:(parseFloat(i.qty||0)||0)*(parseFloat(i.Prix||0)-(stockMap[code]?.['Prix Achat']||0)),stock:stockMap[code]?.Quantite||0});})); window._tmpParArticle={}; all.forEach(r=>{if(!window._tmpParArticle[r.CODE])window._tmpParArticle[r.CODE]={CODE:r.CODE,Categorie:r.Categorie,ca:0,qty:0}; window._tmpParArticle[r.CODE].ca+=r.Total; window._tmpParArticle[r.CODE].qty+=parseFloat(r.qty||0)||0;});
+   html=`<h3>📦 VENTE PAR ARTICLE + STOCK - ${all.length} lignes</h3><table><tr><th>Date</th><th>Vendeur</th><th>CODE</th><th>Catégorie</th><th>Qté</th><th>Total</th><th>Bénéf</th><th>Stock</th></tr>`+all.slice(0,400).map(r=>`<tr><td>${new Date(r.date).toLocaleString()}</td><td>${escFn(r.vendeur)}</td><td><b>${escFn(r.CODE)}</b></td><td style="background:#e8f5e9">${escFn(r.Categorie)}</td><td>${r.qty}</td><td>${r.Total.toLocaleString()}</td><td style="color:${r.Benef<0?'red':'#0b5e2f'}">${r.Benef.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${r.stock}</td></tr>`).join('')+`</table>`;
  } else if(type==='entree_article' || type==='entree_par_article'){
-   let all=[]; let src=(SHOP==='ALL')?SHOPS_LIST:[SHOP]; src.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au){if(codeFiltre&&!(e.CODE||'').toLowerCase().includes(codeFiltre))return; all.push({...e,_shopReel:s});}});}); all.sort((a,b)=>new Date(b.date)-new Date(a.date));
-   html=`<h3>📦 ENTREE PAR ARTICLE + STOCK - ${all.length} lignes</h3><table><tr><th>Date</th><th>Boutique</th><th>CODE</th><th>Qté</th><th>Auteur</th><th>Stock</th></tr>`+all.slice(0,400).map(e=>`<tr><td>${new Date(e.date).toLocaleString()}</td><td>${escFn(e._shopReel)}</td><td><b>${escFn(e.CODE)}</b></td><td style="background:#dcfce7;text-align:center"><b>${Number(e.qty??e.qte??0)}</b></td><td>${escFn(getAuteur(e))}</td><td>${stockMap[e.CODE]?.Quantite||''}</td></tr>`).join('')+`</table>`;
+   let all=[]; let src=(SHOP==='ALL')?SHOPS_LIST:[SHOP]; src.forEach(s=>{(ALL_DATA[s]?.entrees||[]).forEach(e=>{let d=new Date(e.date); if(d>=du&&d<=au){if(codeFiltre&&!matchFiltre(e.CODE||'',e.Designation||'',getCat(e.CODE)))return; all.push({...e,_shopReel:s});}});}); all.sort((a,b)=>new Date(b.date)-new Date(a.date));
+   html=`<h3>📦 ENTREE PAR ARTICLE + STOCK - ${all.length} lignes</h3><table><tr><th>Date</th><th>Boutique</th><th>CODE</th><th>Catégorie</th><th>Qté</th><th>Auteur</th><th>Stock</th></tr>`+all.slice(0,400).map(e=>`<tr><td>${new Date(e.date).toLocaleString()}</td><td>${escFn(e._shopReel)}</td><td><b>${escFn(e.CODE)}</b></td><td style="background:#e8f5e9">${escFn(getCat(e.CODE))}</td><td style="background:#dcfce7;text-align:center"><b>${Number(e.qty??e.qte??0)}</b></td><td>${escFn(getAuteur(e))}</td><td>${stockMap[e.CODE]?.Quantite||''}</td></tr>`).join('')+`</table>`;
  } else if(type==='top'){
-   let map={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{let code=i.CODE||i.code; if(!map[code])map[code]={CODE:code,Des:i.Designation||stockMap[code]?.Designation||code,qty:0,ca:0,stock:stockMap[code]?.Quantite||0}; map[code].qty+=parseFloat(i.qty||0)||0; map[code].ca+= (parseFloat(i.qty||0)||0)*parseFloat(i.Prix||0);})); let top=Object.values(map).sort((a,b)=>b.qty-a.qty).slice(0,20); window._tmpParArticle=map;
-   html=`<h3>🏆 TOP 20 + STOCK ACTUEL</h3><table><tr><th>#</th><th>CODE</th><th>Dés</th><th>Qté</th><th>CA</th><th>Stock</th></tr>`+top.map((t,i)=>`<tr><td>${i+1}</td><td><b>${escFn(t.CODE)}</b></td><td>${escFn(t.Des)}</td><td><b>${t.qty}</b></td><td>${t.ca.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${t.stock}</td></tr>`).join('')+`</table>`;
+   let map={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{let code=i.CODE||i.code; if(!map[code])map[code]={CODE:code,Categorie:getCat(code),Des:i.Designation||stockMap[code]?.Designation||code,qty:0,ca:0,stock:stockMap[code]?.Quantite||0}; map[code].qty+=parseFloat(i.qty||0)||0; map[code].ca+= (parseFloat(i.qty||0)||0)*parseFloat(i.Prix||0);})); let top=Object.values(map).sort((a,b)=>b.qty-a.qty).slice(0,20); window._tmpParArticle=map;
+   html=`<h3>🏆 TOP 20 + STOCK ACTUEL</h3><table><tr><th>#</th><th>CODE</th><th>Catégorie</th><th>Dés</th><th>Qté</th><th>CA</th><th>Stock</th></tr>`+top.map((t,i)=>`<tr><td>${i+1}</td><td><b>${escFn(t.CODE)}</b></td><td style="background:#e8f5e9">${escFn(t.Categorie)}</td><td>${escFn(t.Des)}</td><td><b>${t.qty}</b></td><td>${t.ca.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${t.stock}</td></tr>`).join('')+`</table>`;
  } else if(type==='invendu' || type==='invendus'){
    let vendus=new Set(); vPeriode.forEach(v=>(v.items||[]).forEach(i=>vendus.add(i.CODE||i.code))); let inv=data.stock.filter(p=>!vendus.has(p.CODE));
-   html=`<h3>💤 INVENDUS + STOCK - ${inv.length} refs</h3><table><tr><th>CODE</th><th>Dés</th><th>Stock</th><th>PA</th><th>Valeur bloquée</th></tr>`+inv.slice(0,300).map(p=>{let val=(p.Quantite||0)*(p['Prix Achat']||0); return `<tr><td>${escFn(p.CODE)}</td><td>${escFn(p.Designation)}</td><td style="background:#fee;text-align:center"><b>${p.Quantite}</b></td><td>${(p['Prix Achat']||0).toLocaleString()}</td><td style="color:red"><b>${val.toLocaleString()}</b></td></tr>`;}).join('')+`</table>`;
+   html=`<h3>💤 INVENDUS + STOCK - ${inv.length} refs</h3><table><tr><th>CODE</th><th>Catégorie</th><th>Dés</th><th>Stock</th><th>PA</th><th>Valeur bloquée</th></tr>`+inv.slice(0,300).map(p=>{let val=(p.Quantite||0)*(p['Prix Achat']||0); return `<tr><td>${escFn(p.CODE)}</td><td style="background:#e8f5e9">${escFn(p.Categorie||'AUTRE')}</td><td>${escFn(p.Designation)}</td><td style="background:#fee;text-align:center"><b>${p.Quantite}</b></td><td>${(p['Prix Achat']||0).toLocaleString()}</td><td style="color:red"><b>${val.toLocaleString()}</b></td></tr>`;}).join('')+`</table>`;
  } else if(type==='ca_client'){
    let byC={}; vPeriode.forEach(v=>{let k=v.client||v.clientNom||'Inconnu'; if(codeFiltre&&!k.toLowerCase().includes(codeFiltre))return; if(!byC[k])byC[k]={ca:0,nb:0}; byC[k].ca+=parseFloat(v.total||0)||0; byC[k].nb++;}); window._tmpByV=byC;
    html=`<h3>👤 CA PAR CLIENT</h3><table><tr><th>Client</th><th>Nb</th><th>CA</th></tr>`+Object.entries(byC).sort((a,b)=>b[1].ca-a[1].ca).slice(0,200).map(([k,v])=>`<tr><td>${escFn(k)}</td><td>${v.nb}</td><td>${v.ca.toLocaleString()}</td></tr>`).join('')+`</table>`;
@@ -97,120 +105,45 @@ export function genRapport(){
    html=`<h3>RAPPORT ${escFn(type)} - ${ca.toLocaleString()} FC - Bénéf ${benef.toLocaleString()} FC - ${vPeriode.length} ventes</h3><table><tr><th>Date</th><th>Vendeur</th><th>Total</th></tr>`+vPeriode.slice(0,200).map(v=>`<tr><td>${new Date(v.date).toLocaleString()}</td><td>${escFn(v.vendeurNom||'')}</td><td>${(parseFloat(v.total||0)||0).toLocaleString()}</td></tr>`).join('')+`</table>`;
  }
 
- let rc=document.getElementById('rapportC');
- let vt=document.getElementById('vue-table');
- let vg=document.getElementById('vue-graph');
- if(rc){
-   let cfg = window.CURRENT_CONFIG || {};
-   let entete = `<div style="background:#f0fdf4;padding:10px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><b>${escFn(cfg.nom||'BATEKE')}</b> - ${du.toLocaleDateString()} au ${au.toLocaleDateString()} - ${escFn(type)} - ${vPeriode.length} ventes</div><div style="display:flex;gap:6px"><button onclick="window.switchSub('table')" style="padding:6px 10px;background:#111;color:#fff;border-radius:6px">📋 Table</button><button onclick="window.switchSub('graph')" style="padding:6px 10px;background:#0b5e2f;color:#fff;border-radius:6px">📊 Graph</button><button onclick="window.exportRapportPDF()" style="padding:6px 10px;background:#2563eb;color:#fff;border-radius:6px">PDF</button></div></div>`;
-   rc.innerHTML = entete + html;
-   if(vt) vt.style.display='block';
-   if(vg) vg.style.display='none';
-   rc.style.display='block';
- }
+ let rc=document.getElementById('rapportC'); let vt=document.getElementById('vue-table'); let vg=document.getElementById('vue-graph');
+ if(rc){ let cfg = window.CURRENT_CONFIG || {}; let entete = `<div style="background:#f0fdf4;padding:10px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><b>${escFn(cfg.nom||'BATEKE')}</b> - ${du.toLocaleDateString()} au ${au.toLocaleDateString()} - ${escFn(type)} - ${vPeriode.length} ventes</div><div style="display:flex;gap:6px"><button onclick="window.switchSub('table')" style="padding:6px 10px;background:#111;color:#fff;border-radius:6px">📋 Table</button><button onclick="window.switchSub('graph')" style="padding:6px 10px;background:#0b5e2f;color:#fff;border-radius:6px">📊 Graph</button><button onclick="window.exportRapportPDF()" style="padding:6px 10px;background:#2563eb;color:#fff;border-radius:6px">PDF</button></div></div>`; rc.innerHTML = entete + html; if(vt) vt.style.display='block'; if(vg) vg.style.display='none'; rc.style.display='block'; }
  window._lastRapportData={vPeriode,dPeriode,type,du,au,parArticle:window._tmpParArticle||{}, byDay:window._tmpByDay||{}, byVendeur:window._tmpByV||{}, byShop:{}};
  let byDayCalc={}; vPeriode.forEach(v=>{let d=new Date(v.date).toLocaleDateString('fr-FR'); byDayCalc[d]=(byDayCalc[d]||0)+Number(v.total||0);}); window._lastRapportData.byDay=byDayCalc;
  setTimeout(()=>window.genGraph&&window.genGraph(),300);
-
- }catch(e){
-   console.error("genRapport error", e);
-   let rc=document.getElementById('rapportC');
-   if(rc) rc.innerHTML='<p style="color:red">Erreur rapport: '+e.message+'</p>';
- }
+ }catch(e){ console.error("genRapport error", e); let rc=document.getElementById('rapportC'); if(rc) rc.innerHTML='<p style="color:red">Erreur rapport: '+e.message+'</p>'; }
 }
-export function exportRapportPDF(){
-  let rc=document.getElementById('rapportC'); if(!rc) return;
-  let cfg = window.CURRENT_CONFIG || {}; let content = rc.innerHTML;
-  let isAndroid = /Android/i.test(navigator.userAgent);
-  if(isAndroid && window.CURRENT_CONFIG?.imprimante?.type==='rawbt'){
-    if(confirm('Android - Imprimer resume sur T58 via RawBT?')){
-      let txt = `BATEKE RAPPORT\n${new Date().toLocaleString()}\n${content.replace(/<[^>]*>/g,' ').substring(0,800)}\n`; let bytes = new TextEncoder().encode('\x1B\x40'+txt+'\n\n\n\x1D\x56\x00'); let b64=''; bytes.forEach(b=>b64+=String.fromCharCode(b)); b64=btoa(b64); window.location.href=`rawbt:base64,${b64}`; return;
-    }
-  }
-  let win = window.open('', '_blank'); if(!win){ alert('Popup bloque'); return; }
-  win.document.write(`<html><head><title>Rapport BATEKE</title><style>body{font-family:Arial;padding:20px;font-size:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px}th{background:#111;color:#fff}</style></head><body><h2>${cfg.nom||'ETS BATEKE'}</h2>${content}<script>setTimeout(()=>window.print(),500)<\/script></body></html>`); win.document.close();
-}
+export function exportRapportPDF(){ let rc=document.getElementById('rapportC'); if(!rc) return; let cfg = window.CURRENT_CONFIG || {}; let content = rc.innerHTML; let isAndroid = /Android/i.test(navigator.userAgent); if(isAndroid && window.CURRENT_CONFIG?.imprimante?.type==='rawbt'){ if(confirm('Android - Imprimer resume sur T58 via RawBT?')){ let txt = `BATEKE RAPPORT\n${new Date().toLocaleString()}\n${content.replace(/<[^>]*>/g,' ').substring(0,800)}\n`; let bytes = new TextEncoder().encode('\x1B\x40'+txt+'\n\n\n\x1D\x56\x00'); let b64=''; bytes.forEach(b=>b64+=String.fromCharCode(b)); b64=btoa(b64); window.location.href=`rawbt:base64,${b64}`; return; } } let win = window.open('', '_blank'); if(!win){ alert('Popup bloque'); return; } win.document.write(`<html><head><title>Rapport BATEKE</title><style>body{font-family:Arial;padding:20px;font-size:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px}th{background:#111;color:#fff}</style></head><body><h2>${cfg.nom||'ETS BATEKE'}</h2>${content}<script>setTimeout(()=>window.print(),500)<\/script></body></html>`); win.document.close(); }
 export function printRapport(){ exportRapportPDF(); }
 export function shareRapport(){ let rc=document.getElementById('rapportC'); if(!rc) return; let text=rc.innerText.substring(0,2000); if(navigator.share){ navigator.share({title:'Rapport BATEKE', text}).catch(()=>{});} else { navigator.clipboard.writeText(text).then(()=>alert('Copie')); } }
-export function exportExcelRapport(){
-  let last=window._lastRapportData;
-  if(!last){ alert('Genere dabord le rapport'); return; }
-  let csv='Date,Total,Vendeur\n'+last.vPeriode.map(v=>`${new Date(v.date).toLocaleDateString()},${v.total},${v.vendeurNom||''}`).join('\n');
-  let blob=new Blob([csv],{type:'text/csv'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='rapport_'+last.type+'.csv'; a.click();
-}
-
-// ====== GRAPH DYNAMIQUE V4.9.43 - BASE SUR TA V4.9.33 QUI MARCHE - X/Y NOMME ======
-window.chartRapportInstance=null; 
-window.currentChartType='bar';
-window.graphConfig={x:'CODE', y:'ca'};
+export function exportExcelRapport(){ let last=window._lastRapportData; if(!last){ alert('Genere dabord le rapport'); return; } let csv='Date,Total,Vendeur\n'+last.vPeriode.map(v=>`${new Date(v.date).toLocaleDateString()},${v.total},${v.vendeurNom||''}`).join('\n'); let blob=new Blob([csv],{type:'text/csv'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='rapport_'+last.type+'.csv'; a.click(); }
+window.chartRapportInstance=null; window.currentChartType='bar'; window.graphConfig={x:'CODE', y:'ca'};
 window.changeChartType=function(t){ window.currentChartType=t; window.genGraph(); };
 window.changeAxeX=function(){ let el=document.getElementById('axeX'); if(el) window.graphConfig.x=el.value; window.genGraph(); };
 window.changeAxeY=function(){ let el=document.getElementById('axeY'); if(el) window.graphConfig.y=el.value; window.genGraph(); };
-
 window.genGraph=function(){
   try{
     let c=document.getElementById('chartRapport'); if(!c) return;
     if(!window.Chart){ let s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'; s.onload=()=>window.genGraph(); document.head.appendChild(s); return; }
     let last=window._lastRapportData; if(!last || !last.vPeriode) return;
     if(window.chartRapportInstance) window.chartRapportInstance.destroy();
-
     let cfgX = (document.getElementById('axeX')?.value) || window.graphConfig.x || 'CODE';
     let cfgY = (document.getElementById('axeY')?.value) || window.graphConfig.y || 'ca';
     window.graphConfig={x:cfgX, y:cfgY};
-
     let labels=[], values=[], title='', yLabel='', xLabel='';
     if(cfgY==='ca') yLabel='CA (FC)'; else if(cfgY==='qty') yLabel='Qte vendue'; else if(cfgY==='benef') yLabel='Benefice (FC)'; else if(cfgY==='nb') yLabel='Nbre ventes';
-    if(cfgX==='CODE') xLabel='CODE'; else if(cfgX==='DES') xLabel='Designation'; else if(cfgX==='DATE') xLabel='Date (jour)'; else if(cfgX==='VENDEUR') xLabel='Vendeur / Client';
-
+    if(cfgX==='CODE') xLabel='CODE'; else if(cfgX==='DES') xLabel='Designation'; else if(cfgX==='DATE') xLabel='Date (jour)'; else if(cfgX==='VENDEUR') xLabel='Vendeur / Client'; else if(cfgX==='CATEGORIE') xLabel='Catégorie';
     let parArticle = last.parArticle || window._tmpParArticle || {};
-    let byDay = last.byDay || {};
-    let byVendeur = last.byVendeur || window._tmpByV || {};
-
-    // RECALCULE VRAIMENT selon X/Y choisis
-    if(cfgX==='CODE' || cfgX==='DES'){
-      let list=Object.values(parArticle).sort((a,b)=> (b[cfgY]||b.ca||0)-(a[cfgY]||a.ca||0)).slice(0,12);
-      labels=list.map(a=> cfgX==='DES' ? (a.Des||a.CODE||'').toString().substring(0,18) : a.CODE);
-      values=list.map(a=>{ if(cfgY==='ca') return a.ca||0; if(cfgY==='qty') return a.qty||0; if(cfgY==='benef') return a.benef||0; if(cfgY==='nb') return a.nb||0; return a.ca||0; });
-      title = yLabel + ' par ' + xLabel;
-    } else if(cfgX==='DATE'){
-      // si byDay contient nombre simple, on le transforme
-      if(Object.values(byDay).length>0 && typeof Object.values(byDay)[0]==='number'){
-        labels=Object.keys(byDay); values=Object.values(byDay);
-      } else {
-        labels=Object.keys(byDay); values=labels.map(k=>{ let o=byDay[k]; if(!o) return 0; if(typeof o==='number') return o; if(cfgY==='ca') return o.ca||0; if(cfgY==='qty') return o.qty||0; if(cfgY==='benef') return o.benef||0; if(cfgY==='nb') return o.nb||0; return o.ca||0; });
-      }
-      title = yLabel + ' par Jour';
-    } else if(cfgX==='VENDEUR'){
-      labels=Object.keys(byVendeur).slice(0,12);
-      values=labels.map(k=>{ let o=byVendeur[k]; if(!o) return 0; if(typeof o==='number') return o; if(cfgY==='ca') return o.ca||0; if(cfgY==='qty') return o.qty||0; if(cfgY==='benef') return o.benef||0; if(cfgY==='nb') return o.nb||0; return o.ca||0; });
-      title = yLabel + ' par Vendeur/Client';
-    }
-
+    let byDay = last.byDay || {}; let byVendeur = last.byVendeur || window._tmpByV || {};
+    if(cfgX==='CATEGORIE'){ let byCat={}; Object.values(parArticle).forEach(a=>{let cat=a.Categorie||'AUTRE'; if(!byCat[cat])byCat[cat]=0; byCat[cat]+= (cfgY==='ca'?a.ca||0: cfgY==='qty'?a.qty||0: a.benef||0);}); labels=Object.keys(byCat); values=Object.values(byCat); title=yLabel+' par Catégorie'; }
+    else if(cfgX==='CODE' || cfgX==='DES'){ let list=Object.values(parArticle).sort((a,b)=> (b[cfgY]||b.ca||0)-(a[cfgY]||a.ca||0)).slice(0,12); labels=list.map(a=> cfgX==='DES' ? (a.Des||a.CODE||'').toString().substring(0,18) : a.CODE); values=list.map(a=>{ if(cfgY==='ca') return a.ca||0; if(cfgY==='qty') return a.qty||0; if(cfgY==='benef') return a.benef||0; if(cfgY==='nb') return a.nb||0; return a.ca||0; }); title = yLabel + ' par ' + xLabel; }
+    else if(cfgX==='DATE'){ if(Object.values(byDay).length>0 && typeof Object.values(byDay)[0]==='number'){ labels=Object.keys(byDay); values=Object.values(byDay); } else { labels=Object.keys(byDay); values=labels.map(k=>{ let o=byDay[k]; if(!o) return 0; if(typeof o==='number') return o; if(cfgY==='ca') return o.ca||0; if(cfgY==='qty') return o.qty||0; if(cfgY==='benef') return o.benef||0; if(cfgY==='nb') return o.nb||0; return o.ca||0; }); } title = yLabel + ' par Jour'; }
+    else if(cfgX==='VENDEUR'){ labels=Object.keys(byVendeur).slice(0,12); values=labels.map(k=>{ let o=byVendeur[k]; if(!o) return 0; if(typeof o==='number') return o; if(cfgY==='ca') return o.ca||0; if(cfgY==='qty') return o.qty||0; if(cfgY==='benef') return o.benef||0; if(cfgY==='nb') return o.nb||0; return o.ca||0; }); title = yLabel + ' par Vendeur/Client'; }
     if(labels.length===0){ labels=['Aucune']; values=[0]; }
-
-    let t=window.currentChartType||'bar'; let isPie=['pie','doughnut'].includes(t);
-    let bg = isPie ? ['#0b5e2f','#2563eb','#f59e0b','#ef4444','#8b5cf6','#22c55e','#111','#ec4899'].slice(0,labels.length) : '#0b5e2f';
-
-    window.chartRapportInstance=new Chart(c,{
-      type:t,
-      data:{labels, datasets:[{label:title, data:values, backgroundColor:bg}]},
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        plugins:{title:{display:true, text:title+' - '+last.type}, legend:{display:true}},
-        scales: isPie ? {} : {x:{title:{display:true, text:xLabel, font:{weight:'bold'}}}, y:{beginAtZero:true, title:{display:true, text:yLabel, font:{weight:'bold'}}}}
-      }
-    });
-
-    let leg=document.getElementById('graphLegendInfo');
-    if(leg){ leg.innerHTML=`📊 Axe X=<b>${xLabel}</b> | Axe Y=<b>${yLabel}</b> | ${labels.length} valeurs | V4.9.43 DYNAMIQUE OK`; }
-
-  }catch(e){ console.log('graph V4.9.43 err',e); }
+    let t=window.currentChartType||'bar'; let isPie=['pie','doughnut'].includes(t); let bg = isPie ? ['#0b5e2f','#2563eb','#f59e0b','#ef4444','#8b5cf6','#22c55e','#111','#ec4899'].slice(0,labels.length) : '#0b5e2f';
+    window.chartRapportInstance=new Chart(c,{ type:t, data:{labels, datasets:[{label:title, data:values, backgroundColor:bg}]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{title:{display:true, text:title+' - '+last.type}, legend:{display:true}}, scales: isPie ? {} : {x:{title:{display:true, text:xLabel, font:{weight:'bold'}}}, y:{beginAtZero:true, title:{display:true, text:yLabel, font:{weight:'bold'}}}} } });
+    let leg=document.getElementById('graphLegendInfo'); if(leg){ leg.innerHTML=`📊 Axe X=<b>${xLabel}</b> | Axe Y=<b>${yLabel}</b> | ${labels.length} valeurs | V8.30 FULL CATEGORIE`; }
+  }catch(e){ console.log('graph V8.30 err',e); }
 }
-window.switchSub=function(which){
-  let rc=document.getElementById('rapportC'); let vt=document.getElementById('vue-table'); let vg=document.getElementById('vue-graph');
-  let subT=document.getElementById('sub-table'); let subG=document.getElementById('sub-graph');
-  if(which==='table'){ if(rc) rc.style.display='block'; if(vt) vt.style.display='block'; if(vg) vg.style.display='none'; if(subT) subT.classList.add('active'); if(subG) subG.classList.remove('active'); }
-  else { if(rc) rc.style.display='none'; if(vt) vt.style.display='none'; if(vg) vg.style.display='block'; if(subG) subG.classList.add('active'); if(subT) subT.classList.remove('active'); setTimeout(()=>window.genGraph(),150); vg&&vg.scrollIntoView({behavior:'smooth'}); }
-}
+window.switchSub=function(which){ let rc=document.getElementById('rapportC'); let vt=document.getElementById('vue-table'); let vg=document.getElementById('vue-graph'); let subT=document.getElementById('sub-table'); let subG=document.getElementById('sub-graph'); if(which==='table'){ if(rc) rc.style.display='block'; if(vt) vt.style.display='block'; if(vg) vg.style.display='none'; if(subT) subT.classList.add('active'); if(subG) subG.classList.remove('active'); } else { if(rc) rc.style.display='none'; if(vt) vt.style.display='none'; if(vg) vg.style.display='block'; if(subG) subG.classList.add('active'); if(subT) subT.classList.remove('active'); setTimeout(()=>window.genGraph(),150); vg&&vg.scrollIntoView({behavior:'smooth'}); } }
 window.onTypeChange=onTypeChange; window.getPeriodeData=getPeriodeData; window.genRapport=genRapport; window.exportRapportPDF=exportRapportPDF; window.printRapport=printRapport; window.shareRapport=shareRapport; window.exportExcelRapport=exportExcelRapport;
-console.log("✅ rapport.js V4.9.43 FULL 19 + GRAPH DYNAMIQUE X/Y NOMME charge - BASE V4.9.33 STABLE");
+console.log("✅ rapport.js V8.30 FULL 19 + CATEGORIE + STOCK_PAR_CATEGORIE - 0 PERTE");
