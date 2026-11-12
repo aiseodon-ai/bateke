@@ -222,36 +222,5 @@ window.switchShop = function(){ if(oldSwitchShopV9) oldSwitchShopV9.apply(this, 
 </div></div>
 
  <!-- TOUT EN BAS, DERNIERE CHOSE AVANT </body> -->
-<script>
-// FIX ULTIME - PLACE EN DERNIER - FORCE MODAL VISIBLE
-setTimeout(()=>{
-  window.openNewArt = function(){
-    var m = document.getElementById('modalArt');
-    if(!m){
-      m = document.createElement('div');
-      m.id='modalArt';
-      m.className='modal';
-      document.body.appendChild(m);
-    }
-    m.innerHTML = `<div class="modalBox" style="background:#fff;padding:16px;border-radius:12px;width:95%;max-width:400px">
-<h3>Nouvel Article + Categorie</h3>
-<input id="newCode" placeholder="CODE"><input id="newDes" placeholder="Désignation">
-<input id="newCategorie" list="listCats" placeholder="CATEGORIE" style="background:#e8f5e9;border:2px solid #4caf50">
-<datalist id="listCats"><option value="CABLE"><option value="CHARGEUR"><option value="FICHE"><option value="AMPOULE"><option value="SOCKET"><option value="INTERRUPTEUR"><option value="ACCESSOIRE"><option value="AUTRE"></datalist>
-<input id="newPV" type="number" placeholder="PV"><input id="newPA" type="number" placeholder="PA">
-<input id="newQte" type="number" placeholder="Qté"><input id="newSeuil" type="number" value="3">
-<label><input type="checkbox" id="newActif" checked> Actif</label>
-<div style="display:flex;gap:5px;margin-top:10px"><button class="btn btn-g" onclick="window.saveNewArt()">Créer</button><button class="btn" onclick="window.closeModal('modalArt')">Annuler</button></div>
-</div>`;
-    m.classList.add('active');
-    m.setAttribute('style','display:flex !important;position:fixed !important;inset:0 !important;background:rgba(0,0,0,.7) !important;z-index:9999999 !important;align-items:center !important;justify-content:center !important;opacity:1 !important;visibility:visible !important;');
-    console.log('✅ MODAL FORCE VISIBLE ULTIME');
-  };
-  window.closeModal = function(id){
-    var m=document.getElementById(id||'modalArt');
-    if(m){ m.classList.remove('active'); m.style.display='none'; }
-  };
-  console.log('✅ FIX ULTIME APRES TOUT - BOUTON +ARTICLE PRET');
-}, 500);
-</script>
+
 </body></html>
