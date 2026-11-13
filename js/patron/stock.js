@@ -1,9 +1,41 @@
-// STOCK V8.29 FINALE - V8.26 COMPLETE + CATEGORIE + BOUTON FORCE
+// STOCK V8.30 - V8.29 FINALE INTACTE + AUTO CODE CATEGORIE - 0 RACCOURCI
 import { esc } from "../common/utils.js";
 let DATA_MAP = {};
 function getShop(){ try{ if(window.STATE && window.STATE.SHOP) return window.STATE.SHOP; }catch(e){} try{ if(window.SHOP) return window.SHOP; }catch(e){} try{ if(typeof SHOP!=='undefined' && SHOP) return SHOP; }catch(e){} return localStorage.getItem('patron_shop')||'Menkao1'; }
 function getFilteredSafe(){ try{ if(typeof getFiltered==='function') return getFiltered(); }catch(e){} try{ if(window.getFiltered) return window.getFiltered(); }catch(e){} let shop = getShop(); let all = (window.ALL_DATA||{})[shop]||{stock:[]}; return {stock: all.stock||[], shop}; }
 function buildDataMap(stock){ DATA_MAP={}; stock.forEach(p=>{ let uid = p._id || p.CODE; if(uid) DATA_MAP[uid]=p; }); window.DATA_MAP=DATA_MAP; }
+
+// --- AUTO CODE PRO V8.30 - N'ECRASE RIEN, SEULEMENT NOUVEAUX ARTICLES ---
+function generateCode(cat){
+  try{
+    let c = (cat||'AUTRE').trim().toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,10)||'AUTRE';
+    if(!c) c='AUTRE';
+    let data = getFilteredSafe();
+    let stock = data.stock||[];
+    let max=0;
+    let prefix = c+'-';
+    stock.forEach(p=>{
+      let code = (p.CODE||'').toUpperCase().trim();
+      if(code.startsWith(prefix)){
+        let numPart = code.substring(prefix.length).replace(/[^0-9]/g,'');
+        let n = parseInt(numPart)||0;
+        if(n>max) max=n;
+      }
+    });
+    return prefix + String(max+1).padStart(4,'0');
+  }catch(e){ return 'AUTRE-0001'; }
+}
+window.generateCode = generateCode;
+window.autoCodeForce = function(){
+  let catEl = document.getElementById('newCatForce');
+  let codeEl = document.getElementById('newCodeForce');
+  if(!codeEl) return;
+  let cat = catEl?.value?.trim()||'AUTRE';
+  let newCode = generateCode(cat);
+  codeEl.value = newCode;
+  codeEl.style.background='#e8f5e9';
+  setTimeout(()=>{ codeEl.style.background=''; },800);
+};
 
 export function renderStock(){
   let data = getFilteredSafe(); let q=(document.getElementById('searchS')?.value||'').toLowerCase();
@@ -106,10 +138,10 @@ window.renderStock=renderStock; window.toggleActif=toggleActif; window.editField
 window.openNewArtForce=function(){
   let old=document.getElementById('modalForce'); if(old) old.remove();
   let m=document.createElement('div'); m.id='modalForce';
-  m.innerHTML=`<div style="background:#fff;padding:16px;border-radius:12px;width:95%;max-width:440px"><h3>+ Nouvel Article</h3><input id="newCodeForce" placeholder="CODE" style="width:100%;padding:8px;margin:4px 0;border:1px solid #ccc;border-radius:8px"><input id="newCatForce" list="listCatsForce" placeholder="CATEGORIE" style="width:100%;padding:8px;margin:4px 0;border:1px solid #a5d6a7;background:#e8f5e9;border-radius:8px"><datalist id="listCatsForce"><option value="CABLE"><option value="CHARGEUR"><option value="FICHE"><option value="AMPOULE"><option value="SOCKET"><option value="AUTRE"></datalist><input id="newDesForce" placeholder="Désignation" style="width:100%;padding:8px;margin:4px 0;border:1px solid #ccc;border-radius:8px"><div style="display:flex;gap:6px"><input id="newPVForce" type="number" placeholder="PV" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"><input id="newPAForce" type="number" placeholder="PA" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"></div><div style="display:flex;gap:6px;margin-top:4px"><input id="newQteForce" type="number" placeholder="Qté" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"><input id="newSeuilForce" type="number" value="3" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"></div><div style="display:flex;gap:6px;justify-content:end;margin-top:10px"><button class="btn" onclick="window.closeModal('modalForce')" style="background:#ccc;padding:8px 12px;border-radius:8px">Annuler</button><button class="btn btn-g" onclick="window.saveNewArt()" style="background:#0b5e2f;color:#fff;padding:8px 12px;border-radius:8px">Créer</button></div></div>`;
+  m.innerHTML=`<div style="background:#fff;padding:16px;border-radius:12px;width:95%;max-width:440px"><h3>+ Nouvel Article</h3><div style="display:flex;gap:6px"><input id="newCodeForce" placeholder="CODE" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"><button onclick="window.autoCodeForce()" style="padding:8px 10px;background:#1b5e20;color:#fff;border-radius:8px;border:none;font-weight:bold">⚡ AUTO</button></div><input id="newCatForce" list="listCatsForce" placeholder="CATEGORIE" style="width:100%;padding:8px;margin:4px 0;border:1px solid #a5d6a7;background:#e8f5e9;border-radius:8px"><datalist id="listCatsForce"><option value="CABLE"><option value="CHARGEUR"><option value="FICHE"><option value="AMPOULE"><option value="SOCKET"><option value="AUTRE"></datalist><input id="newDesForce" placeholder="Désignation" style="width:100%;padding:8px;margin:4px 0;border:1px solid #ccc;border-radius:8px"><div style="display:flex;gap:6px"><input id="newPVForce" type="number" placeholder="PV" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"><input id="newPAForce" type="number" placeholder="PA" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"></div><div style="display:flex;gap:6px;margin-top:4px"><input id="newQteForce" type="number" placeholder="Qté" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"><input id="newSeuilForce" type="number" value="3" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"></div><div style="display:flex;gap:6px;justify-content:end;margin-top:10px"><button class="btn" onclick="window.closeModal('modalForce')" style="background:#ccc;padding:8px 12px;border-radius:8px">Annuler</button><button class="btn btn-g" onclick="window.saveNewArt()" style="background:#0b5e2f;color:#fff;padding:8px 12px;border-radius:8px">Créer</button></div></div>`;
   m.style.cssText='display:flex !important;position:fixed !important;inset:0 !important;background:rgba(0,0,0,.75) !important;z-index:99999999 !important;align-items:center !important;justify-content:center !important;';
   document.body.appendChild(m);
 };
 window.openNewArt=window.openNewArtForce;
 window.closeModal=function(id){ let m=document.getElementById(id)||document.getElementById('modalForce')||document.getElementById('modalArt'); if(m) m.remove(); };
-console.log('✅ STOCK V8.29 FINALE COMPLETE - V8.26 + CATEGORIE + FORCE');
+console.log('✅ STOCK V8.30 AUTO CODE - V8.29 INTACTE + AUTO');
