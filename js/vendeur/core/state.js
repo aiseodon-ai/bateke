@@ -34,3 +34,12 @@ window.CONFIG_ENT = STATE.CONFIG_ENT;
 window.OFFLINE_QUEUE = STATE.OFFLINE_QUEUE;
 window.CURRENT_VENDEUR = STATE.CURRENT_VENDEUR;
 console.log("STATE V4.9.27 vendeur chargé - SHOP:", STATE.SHOP, "QUEUE:", STATE.OFFLINE_QUEUE.length);
+
+window.db.ref('shops/'+STATE.SHOP+'/config_entreprise').on('value', snap=>{
+  let cfg = snap.val();
+  if(cfg){
+    STATE.CONFIG_ENTREPRISE = cfg;
+    window.CURRENT_CONFIG = {...window.CURRENT_CONFIG, ...cfg};
+    localStorage.setItem('bateke_cfg_'+STATE.SHOP, JSON.stringify(cfg));
+  }
+});
