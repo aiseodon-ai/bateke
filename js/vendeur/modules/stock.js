@@ -31,9 +31,14 @@ export function searchArticle(){
   let q=document.getElementById('searchArt')?.value?.toLowerCase().trim()||''; 
   let sug=document.getElementById('suggest'); if(!sug) return;
   if(!q){ sug.style.display='none'; return; }
-  let f=STATE.STOCK.filter(p=>p.actif!==false).filter(p=>(p.CODE||'').toLowerCase().includes(q)||(p.Designation||'').toLowerCase().includes(q)||(p.Categorie||'').toLowerCase().includes(q)).slice(0,10);
+  let f=STATE.STOCK.filter(p=>p.actif!==false).filter(p=>
+    (p.CODE||'').toLowerCase().includes(q)||
+    (p.Designation||'').toLowerCase().includes(q)||
+    (p.EAN||'').toLowerCase().includes(q)|| // AJOUT EAN SEULEMENT
+    (p.Categorie||'').toLowerCase().includes(q)
+  ).slice(0,10);
   if(!f.length){ sug.style.display='none'; return; }
-  sug.innerHTML=f.map(p=>`<div onclick="selectArt('${esc(p.CODE)}')"><b>${esc(p.CODE)}</b> [${esc(p.Categorie||'AUTRE')}] - ${esc(p.Designation)} - ${formatPrix(p['Prix Unit']||0)} FC - Stock:${p.Quantite}</div>`).join('');
+  sug.innerHTML=f.map(p=>`<div onclick="selectArt('${esc(p.CODE)}')"><b>${esc(p.CODE)}</b> [${esc(p.EAN||'')}] - ${esc(p.Designation)} - ${formatPrix(p['Prix Unit']||0)} FC - Stock:${p.Quantite}</div>`).join('');
   sug.style.display='block';
 }
 export function selectArt(code){
