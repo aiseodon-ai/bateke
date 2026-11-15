@@ -1,20 +1,17 @@
-// js/vendeur/modules/ticket.js - VENDEUR 58MM - FIX ASCII PUR V5.6.4
+// js/vendeur/modules/ticket.js - VENDEUR 58MM - V5.6.5 QR SUPERMARCHE V1 - V5.6.4 INTACTE + QR
 import { STATE } from '../core/state.js';
 
 let BT_DEVICE = null; let BT_CHAR = null;
 function bytesToBase64(bytes){ let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b)); return btoa(bin); }
 
 function getTicketConfig(){
-  // FIX: Priorité à config_entreprise du patron
   let c = {};
   if(window.CURRENT_CONFIG) c = {...c, ...window.CURRENT_CONFIG};
   if(STATE.CONFIG_ENTREPRISE) c = {...c, ...STATE.CONFIG_ENTREPRISE};
   if(STATE.TICKET_CONFIG) c = {...c, ...STATE.TICKET_CONFIG};
-  // fallback local
   try{
     let saved = JSON.parse(localStorage.getItem('bateke_printer_cfg_'+STATE.SHOP)||'{}');
     c = {...saved, ...c};
-    // ESSENTIEL: charge aussi la config_entreprise sauvée par patron
     let cfgEnt = JSON.parse(localStorage.getItem('bateke_cfg_'+STATE.SHOP)||'{}');
     if(cfgEnt.nom) c.nom = cfgEnt.nom;
     if(cfgEnt.tel) c.tel = cfgEnt.tel;
@@ -23,20 +20,33 @@ function getTicketConfig(){
   }catch(e){}
   return c;
 }
-// ✅ FIX 1: Prix sans toLocaleString = ASCII pur
-function formatPrix(n){
-  n = Math.round(parseFloat(n)||0);
-  return String(n); // 2500 pas 2 500
-}
-
-// ✅ FIX 2: Nettoie accents et caractères bizarres pour imprimante thermique
+function formatPrix(n){ n = Math.round(parseFloat(n)||0); return String(n); }
 function cleanASCII(str){
   if(!str) return '';
-  return String(str)
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // é -> e, è -> e
-    .replace(/[^\x20-\x7E\n\r]/g, ' ') // enlève tout non-ASCII (espace insécable 202F etc)
-    .replace(/\s+/g, ' ')
-    .trim();
+  return String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// --- AJOUT V5.6.5 QR - 0 MODIF DE V5.6.4 ---
+function buildQRBytes(data){
+  data = String(data||'').substring(0,180);
+  let len = data.length + 3;
+  let pL = len % 256, pH = Math.floor(len/256);
+  let qr = '';
+  qr += '\x1D\x28\x6B\x04\x00\x31\x41\x32\x00';
+  qr += '\x1D\x28\x6B\x03\x00\x31\x43\x06';
+  qr += '\x1D\x28\x6B\x03\x00\x31\x45\x30';
+  qr += '\x1D\x28\x6B' + String.fromCharCode(pL) + String.fromCharCode(pH) + '\x31\x50\x30' + data;
+  qr += '\x1D\x28\x6B\x03\x00\x31\x51\x30';
+  return qr;
+}
+function getTicketQRData(vente, c){
+  let d = new Date();
+  let date = d.toLocaleDateString('fr-CD')+' '+d.toLocaleTimeString('fr-CD').slice(0,5);
+  let total = formatPrix(vente.total||0);
+  let nb = (vente.items||vente.panier||[]).length;
+  let shop = cleanASCII(STATE.SHOP||'BATEKE');
+  let ticketId = cleanASCII(String(vente.id||Date.now()).slice(-8));
+  return `BATEKE ${shop}|T:${ticketId}|${date}|TOTAL:${total}FC|${nb}ART`;
 }
 
 function buildTicketBytes(vente){
@@ -63,6 +73,11 @@ function buildTicketBytes(vente){
   });
   
   str+=line+'\x1B\x45\x01TOTAL: '+formatPrix(vente.total||0)+' FC\n\x1B\x45\x00'+line;
+  // --- AJOUT QR SUPERMARCHE V1 ICI - AVANT PIED ---
+  let qrData = getTicketQRData(vente, c);
+  str+='\x1B\x61\x01Scannez pour verifier\n';
+  str+=buildQRBytes(qrData);
+  str+='\n'+cleanASCII(String(vente.id||'').slice(-8))+'\n\x1B\x61\x00';
   str+=cleanASCII(c.piedFacture||c.pied||'Marchandise vendue non retournable. Merci.')+'\n\n\n\x1D\x56\x00';
   return new TextEncoder().encode(str);
 }
@@ -93,7 +108,7 @@ export async function imprimerVenteUniverselle(vente){
 }
 
 export async function testTicketUniversel(){
-  let vente={ id:'TEST', total:5000, items:[{CODE:'TEST',Designation:'BATEKE TEST '+STATE.SHOP+' OK',qty:1,Prix:5000}] };
+  let vente={ id:'TEST'+Date.now().toString().slice(-4), total:5000, items:[{CODE:'TEST',Designation:'BATEKE TEST '+STATE.SHOP+' OK',qty:1,Prix:5000}] };
   return imprimerVenteUniverselle(vente);
 }
 
@@ -123,4 +138,4 @@ export async function connecterImprimanteUniverselle(){
 window.imprimerVenteUniverselle=imprimerVenteUniverselle;
 window.testTicketUniversel=testTicketUniversel;
 window.connecterImprimanteUniverselle=connecterImprimanteUniverselle;
-console.log("🎫 ticket.js VENDEUR 58mm FIX ASCII OK");
+console.log("🎫 ticket.js VENDEUR 58mm V5.6.5 QR SUPERMARCHE OK");
