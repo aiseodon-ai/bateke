@@ -20,40 +20,33 @@ function wrapDesignation(des){
   let l2 = smartTruncate(des.substring(32), 24);
   return [l1, l2];
 }
-// --- FIX 1: PRIX 100% ASCII SANS ESPACE BIZARRE ---
-function formatPrix(n){
-  return String(Math.round(parseFloat(n)||0)); // 15000 pas 15 000
-}
-function cleanASCII(str){
-  if(!str) return '';
-  return String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E\n\r]/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
-}
-
-// --- FIX 2: ETIQUETTE SANS COMMANDE DOUBLE TAILLE QUI FAIT 1ГC» ---
+// --- ETIQUETTE BYTES 58MM - FIX PRIX ASCII PUR ---
 function buildEtiquetteBytes(p){
+  const shop = getShop();
   const cols = 32;
   let code = cleanASCII(p.CODE||'');
-  let des = cleanASCII(p.Designation||'');
-  // Wrap pro 2 lignes max
-  let d1 = des.substring(0,32);
-  let d2 = des.length>32 ? des.substring(32,56) : '';
-  let prix = formatPrix(p['Prix Unit']||p.Prix||0);
+  let desLines = wrapDesignation(p.Designation||'');
+  // FIX: pas de toLocaleString, ASCII pur
+  let prix = String(Math.round(p['Prix Unit']||p.Prix||0));
 
   let str = '\x1B\x40'; // init
   str += '\x1B\x61\x01'; // center
-  str += '\x1B\x45\x01' + cleanASCII(window.CURRENT_CONFIG?.nom||'ETS BATEKE').substring(0,cols) + '\n' + '\x1B\x45\x00';
+  str += '\x1B\x45\x01' + (window.CURRENT_CONFIG?.nom||'BATEKE').substring(0,16) + '\n' + '\x1B\x45\x00';
   str += 'CODE: ' + code + '\n';
-  str += d1 + '\n';
-  if(d2) str += d2 + '\n';
-  str += '\x1B\x45\x01' + prix + ' FC\n' + '\x1B\x45\x00'; // BOLD simple, pas double taille
+  desLines.forEach(l=>{ str += cleanASCII(l) + '\n'; });
+  // FIX: bold simple, pas \x1B\x21\x10 qui fait 1ГC»
+  str += '\x1B\x45\x01' + prix + ' FC\n' + '\x1B\x45\x00';
   
-  // BARCODE CODE128 - une seule fois
-  str += '\x1D\x6B\x49' + String.fromCharCode(code.length) + code + '\n';
-  str += code + '\n\n\n';
-  str += '\x1D\x56\x00';
+  // CODE128 - encode seulement CODE pour que scan = ADOO -> trouve article
+  try{
+    str += '\x1D\x6B\x49' + String.fromCharCode(code.length) + code;
+    str += '\n' + code + '\n';
+  }catch(e){
+    str += '\n*' + code + '*\n';
+  }
+  str += '\n\n' + '\x1D\x56\x00';
   return new TextEncoder().encode(str);
 }
-
 window.printEtiquette = async function(uid){
   let p = DATA_MAP[uid]; if(!p) return alert('Article non trouvé');
   let bytes = buildEtiquetteBytes(p);
