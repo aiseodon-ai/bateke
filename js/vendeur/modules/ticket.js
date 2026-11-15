@@ -5,11 +5,24 @@ let BT_DEVICE = null; let BT_CHAR = null;
 function bytesToBase64(bytes){ let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b)); return btoa(bin); }
 
 function getTicketConfig(){
-  let c = STATE.TICKET_CONFIG || STATE.CONFIG_ENTREPRISE || JSON.parse(localStorage.getItem('bateke_printer_cfg_'+STATE.SHOP)||'{}') || {};
+  // FIX: Priorité à config_entreprise du patron
+  let c = {};
   if(window.CURRENT_CONFIG) c = {...c, ...window.CURRENT_CONFIG};
+  if(STATE.CONFIG_ENTREPRISE) c = {...c, ...STATE.CONFIG_ENTREPRISE};
+  if(STATE.TICKET_CONFIG) c = {...c, ...STATE.TICKET_CONFIG};
+  // fallback local
+  try{
+    let saved = JSON.parse(localStorage.getItem('bateke_printer_cfg_'+STATE.SHOP)||'{}');
+    c = {...saved, ...c};
+    // ESSENTIEL: charge aussi la config_entreprise sauvée par patron
+    let cfgEnt = JSON.parse(localStorage.getItem('bateke_cfg_'+STATE.SHOP)||'{}');
+    if(cfgEnt.nom) c.nom = cfgEnt.nom;
+    if(cfgEnt.tel) c.tel = cfgEnt.tel;
+    if(cfgEnt.adresse) c.adresse = cfgEnt.adresse;
+    if(cfgEnt.piedFacture) c.piedFacture = cfgEnt.piedFacture;
+  }catch(e){}
   return c;
 }
-
 // ✅ FIX 1: Prix sans toLocaleString = ASCII pur
 function formatPrix(n){
   n = Math.round(parseFloat(n)||0);
