@@ -14,7 +14,7 @@ function buildEtiquetteBytes(p){
   let str = '\x1B\x40\x1B\x61\x01\x1B\x45\x01'+cleanASCII(window.CURRENT_CONFIG?.nom||'ETS BATEKE').substring(0,32)+'\n\x1B\x45\x00';
   str += 'CODE: '+code+'\n'+d1+'\n'; if(d2) str+=d2+'\n';
   str += '\x1B\x21\x10'+prix+' FC\n\x1B\x21\x00';
-  //str += '\x1D\x6B\x49'+String.fromCharCode(code.length)+code+'\n'+code+'\n\n\n\x1D\x56\x00';
+  str += '\x1D\x6B\x49'+String.fromCharCode(code.length)+code+'\n'+code+'\n\n\n\x1D\x56\x00';
   return new TextEncoder().encode(str);
 }
 
