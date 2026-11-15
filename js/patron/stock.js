@@ -20,35 +20,37 @@ function wrapDesignation(des){
   let l2 = smartTruncate(des.substring(32), 24);
   return [l1, l2];
 }
+// --- FIX 1: PRIX 100% ASCII SANS ESPACE BIZARRE ---
+function formatPrix(n){
+  return String(Math.round(parseFloat(n)||0)); // 15000 pas 15 000
+}
 function cleanASCII(str){
   if(!str) return '';
   return String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E\n\r]/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
 }
-function bytesToBase64(bytes){ let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b)); return btoa(bin); }
 
-// --- ETIQUETTE BYTES 58MM - CODE+DESIGNATION+PRIX+BARCODE ---
+// --- FIX 2: ETIQUETTE SANS COMMANDE DOUBLE TAILLE QUI FAIT 1ГC» ---
 function buildEtiquetteBytes(p){
-  const shop = getShop();
   const cols = 32;
   let code = cleanASCII(p.CODE||'');
-  let desLines = wrapDesignation(p.Designation||'');
-  let prix = Math.round(p['Prix Unit']||p.Prix||0);
+  let des = cleanASCII(p.Designation||'');
+  // Wrap pro 2 lignes max
+  let d1 = des.substring(0,32);
+  let d2 = des.length>32 ? des.substring(32,56) : '';
+  let prix = formatPrix(p['Prix Unit']||p.Prix||0);
 
   let str = '\x1B\x40'; // init
   str += '\x1B\x61\x01'; // center
-  str += '\x1B\x45\x01' + (window.CURRENT_CONFIG?.nom||'BATEKE').substring(0,16) + '\n' + '\x1B\x45\x00';
+  str += '\x1B\x45\x01' + cleanASCII(window.CURRENT_CONFIG?.nom||'ETS BATEKE').substring(0,cols) + '\n' + '\x1B\x45\x00';
   str += 'CODE: ' + code + '\n';
-  desLines.forEach(l=>{ str += cleanASCII(l) + '\n'; });
-  str += '\x1B\x21\x10' + prix.toLocaleString() + ' FC\n' + '\x1B\x21\x00'; // double height for prix
+  str += d1 + '\n';
+  if(d2) str += d2 + '\n';
+  str += '\x1B\x45\x01' + prix + ' FC\n' + '\x1B\x45\x00'; // BOLD simple, pas double taille
   
-  // CODE128 BARCODE - GS k 73
-  try{
-    str += '\x1D\x6B\x49' + String.fromCharCode(code.length) + code; // CODE128
-    str += '\n' + code + '\n';
-  }catch(e){
-    str += '\n*' + code + '*\n';
-  }
-  str += '\n\n' + '\x1D\x56\x00'; // cut
+  // BARCODE CODE128 - une seule fois
+  str += '\x1D\x6B\x49' + String.fromCharCode(code.length) + code + '\n';
+  str += code + '\n\n\n';
+  str += '\x1D\x56\x00';
   return new TextEncoder().encode(str);
 }
 
