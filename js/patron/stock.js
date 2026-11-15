@@ -1,37 +1,28 @@
-// STOCK V8.33 - V8.30 INTACTE + EAN13 PRO CHIFFRES - 0 PERTE
+// STOCK V8.35 - V8.30 INTACTE + BATCH x10 + xN POPUP - 0 PERTE
 import { esc } from "../common/utils.js";
 let DATA_MAP = {};
 function getShop(){ try{ if(window.STATE && window.STATE.SHOP) return window.STATE.SHOP; }catch(e){} try{ if(window.SHOP) return window.SHOP; }catch(e){} try{ if(typeof SHOP!=='undefined' && SHOP) return SHOP; }catch(e){} return localStorage.getItem('patron_shop')||'Menkao1'; }
 function getFilteredSafe(){ try{ if(typeof getFiltered==='function') return getFiltered(); }catch(e){} try{ if(window.getFiltered) return window.getFiltered(); }catch(e){} let shop = getShop(); let all = (window.ALL_DATA||{})[shop]||{stock:[]}; return {stock: all.stock||[], shop}; }
 function buildDataMap(stock){ DATA_MAP={}; stock.forEach(p=>{ let uid = p._id || p.CODE; if(uid) DATA_MAP[uid]=p; }); window.DATA_MAP=DATA_MAP; }
-
-// --- AJOUT V8.33 - RIEN DE V8.30 TOUCHE ---
 function formatPrix(n){ return String(Math.round(parseFloat(n)||0)); }
 function cleanASCII(str){ if(!str) return ''; return String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E\n\r]/g,' ').replace(/\s+/g,' ').trim().toUpperCase(); }
 function bytesToBase64(bytes){ let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b)); return btoa(bin); }
 function smartTruncate(str, max){ if(!str) return ''; str=String(str).trim(); if(str.length<=max) return str; return str.substring(0,max-3).trim()+'...'; }
 function wrapDesignation(des){ des=String(des||'').trim(); if(des.length<=32) return [des]; let l1=des.substring(0,32).trim(); let l2=smartTruncate(des.substring(32),24); return [l1,l2]; }
-function codeToEAN13(code){
-  code=cleanASCII(code||'ADOO'); let hash=0; for(let i=0;i<code.length;i++){ hash=(hash*31+code.charCodeAt(i))>>>0; }
-  let base='200'+String(hash).padStart(9,'0').slice(-9); base=base.substring(0,12);
-  let sum=0; for(let i=0;i<12;i++){ sum+=parseInt(base[i])*(i%2===0?1:3); }
-  let check=(10-(sum%10))%10; return base+check;
-}
+function codeToEAN13(code){ code=cleanASCII(code||'ADOO'); let hash=0; for(let i=0;i<code.length;i++){ hash=(hash*31+code.charCodeAt(i))>>>0; } let base='200'+String(hash).padStart(9,'0').slice(-9); base=base.substring(0,12); let sum=0; for(let i=0;i<12;i++){ sum+=parseInt(base[i])*(i%2===0?1:3); } let check=(10-(sum%10))%10; return base+check; }
 function buildEtiquetteBytes(p){
   let code=cleanASCII(p.CODE||''); let desLines=wrapDesignation(p.Designation||''); let prix=formatPrix(p['Prix Unit']||p.Prix||0); let ean13=codeToEAN13(code);
   let str='\x1B\x40\x1B\x61\x01\x1B\x45\x01'+cleanASCII(window.CURRENT_CONFIG?.nom||'ETS BATEKE').substring(0,32)+'\n\x1B\x45\x00';
   str+='CODE: '+code+'\n'; desLines.forEach(l=>{ str+=cleanASCII(l)+'\n'; });
-  //str+='\x1B\x45\x01'+prix+' FC\n\x1B\x45\x00';
-  str+='\x1D\x21\x22'+prix+' FC\n'+'\x1D\x21\x00';
+  str+='\x1D\x21\x11'+prix+' FC\n\x1D\x21\x00';
   str+='\x1D\x48\x02\x1D\x77\x02\x1D\x6B\x02'+ean13.substring(0,12)+'\x00\n\n\n\x1D\x56\x00';
-  return {bytes:new TextEncoder().encode(str), ean13};
+  return {bytes:new TextEncoder().encode(str), ean13, rawStr:str};
 }
 window.printEtiquette = async function(uid){
   let p=DATA_MAP[uid]||window.DATA_MAP?.[uid]; if(!p){ let data=getFilteredSafe(); p=(data.stock||[]).find(x=>(x._id||x.CODE)===uid); }
   if(!p){ alert('Article non trouvé: '+uid); return; }
   try{
     let res=buildEtiquetteBytes(p); let ean13=res.ean13;
-    // SAUVE EAN DANS FIREBASE - AJOUT SEULEMENT, PAS DE MODIF STOCK
     try{ let s=getShop(); let dbRef=window.db||firebase.database(); dbRef.ref('shops/'+s+'/stock/'+(p._id||p.CODE)+'/EAN').set(ean13); }catch(e){}
     let isAndroid=/Android/i.test(navigator.userAgent);
     if(isAndroid){ window.location.href=`rawbt:base64,${bytesToBase64(res.bytes)}`; return; }
@@ -44,8 +35,28 @@ window.printEtiquette = async function(uid){
     alert('✅ Étiquette EAN '+ean13+' pour '+p.CODE);
   }catch(e){ alert('Erreur: '+e.message); }
 };
-
-// --- TON V8.30 INTACT CI-DESSOUS, 0 MODIF ---
+window.printEtiquetteMultiple = async function(uid, count){
+  count=parseInt(count)||10; if(count>50){ alert('Max 50'); count=50; } if(count<1) count=1;
+  let p=DATA_MAP[uid]||window.DATA_MAP?.[uid]; if(!p){ let data=getFilteredSafe(); p=(data.stock||[]).find(x=>(x._id||x.CODE)===uid); }
+  if(!p){ alert('Article non trouvé'); return; }
+  try{
+    let res=buildEtiquetteBytes(p);
+    let batchStr=''; for(let i=0;i<count;i++) batchStr+=res.rawStr;
+    let batchBytes=new TextEncoder().encode(batchStr);
+    try{ let s=getShop(); let dbRef=window.db||firebase.database(); dbRef.ref('shops/'+s+'/stock/'+(p._id||p.CODE)+'/EAN').set(res.ean13); }catch(e){}
+    let isAndroid=/Android/i.test(navigator.userAgent);
+    if(isAndroid){ window.location.href=`rawbt:base64,${bytesToBase64(batchBytes)}`; return; }
+    let char=window.BT_CHAR; if(!char){ alert('Connecte imprimante d abord'); return; }
+    for(let i=0;i<batchBytes.length;i+=20){ let ch=batchBytes.slice(i,i+20); try{ if(char.writeValueWithoutResponse) await char.writeValueWithoutResponse(ch); else await char.writeValue(ch); }catch(e){} await new Promise(r=>setTimeout(r,20)); }
+    alert(`✅ ${count} étiquettes ${p.CODE}`);
+  }catch(e){ alert('Erreur batch: '+e.message); }
+}
+window.printEtiquette10 = function(uid){ return window.printEtiquetteMultiple(uid,10); }
+window.printEtiquetteAsk = function(uid){
+  let p=DATA_MAP[uid]; let code=p?.CODE||uid;
+  let q=prompt(`Combien d'étiquettes pour ${code} ?\n1 à 50`,'10');
+  if(!q) return; let n=parseInt(q)||10; window.printEtiquetteMultiple(uid,n);
+}
 function generateCode(cat){ try{ let c=(cat||'AUTRE').trim().toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,10)||'AUTRE'; if(!c) c='AUTRE'; let data=getFilteredSafe(); let stock=data.stock||[]; let max=0; let prefix=c+'-'; stock.forEach(p=>{ let code=(p.CODE||'').toUpperCase().trim(); if(code.startsWith(prefix)){ let numPart=code.substring(prefix.length).replace(/[^0-9]/g,''); let n=parseInt(numPart)||0; if(n>max) max=n; } }); return prefix+String(max+1).padStart(4,'0'); }catch(e){ return 'AUTRE-0001'; } }
 window.generateCode=generateCode;
 window.autoCodeForce=function(){ let catEl=document.getElementById('newCatForce'); let codeEl=document.getElementById('newCodeForce'); if(!codeEl) return; let cat=catEl?.value?.trim()||'AUTRE'; let newCode=generateCode(cat); codeEl.value=newCode; codeEl.style.background='#e8f5e9'; setTimeout(()=>{ codeEl.style.background=''; },800); };
@@ -63,7 +74,7 @@ export function renderStock(){
   let tbody=document.getElementById('stockT'); if(!tbody) return;
   tbody.innerHTML=list.map(p=>{
     let uid=p._id||p.CODE; let uidSafe=(uid+'').replace(/'/g,"\\'");
-    return `<tr style="${p.actif===false?'opacity:.5;background:#fee':''}"><td><b>${esc(p.CODE||'')}</b></td><td class="editable" style="background:#e8f5e9;cursor:pointer" onclick="window.editField('${uidSafe}','Categorie')">${esc(p.Categorie||'AUTRE')} ✏️</td><td class="editable" style="background:#fffde7;cursor:pointer" onclick="window.editField('${uidSafe}','Designation')">${esc(p.Designation||'')} ✏️</td><td class="editable" style="background:#fffde7;cursor:pointer" onclick="window.editField('${uidSafe}','Quantite')">${p.Quantite??0} ✏️</td><td class="editable" style="cursor:pointer" onclick="window.editField('${uidSafe}','seuil')">${p.seuil??3} ✏️</td><td class="editable" style="cursor:pointer" onclick="window.editField('${uidSafe}','Prix Unit')">${Number(p['Prix Unit']||p.Prix||0).toLocaleString()} ✏️</td><td class="editable" style="cursor:pointer" onclick="window.editField('${uidSafe}','Prix Achat')">${Number(p['Prix Achat']||0).toLocaleString()} ✏️</td><td>${(Number(p['Prix Unit']||0)-Number(p['Prix Achat']||0)).toLocaleString()}</td><td>${p.actif!==false?'✅ Actif':'🚫'}</td><td><button class="btn" style="width:auto;padding:4px 6px;font-size:11px;background:#111;color:#fff" onclick="window.printEtiquette('${uidSafe}')">🏷️</button> <button class="btn ${p.actif!==false?'btn-r':'btn-g'}" style="width:auto;padding:4px 8px;font-size:11px" onclick="window.toggleActif('${uidSafe}')">${p.actif!==false?'Désactiver':'Activer'}</button> <button class="btn btn-g" style="width:auto;padding:4px 8px;font-size:11px" onclick="window.entree('${uidSafe}')">+Entrée</button> <button class="btn btn-r" style="width:auto;padding:4px 6px;font-size:11px" onclick="window.supp('${uidSafe}')">X</button></td></tr>`;
+    return `<tr style="${p.actif===false?'opacity:.5;background:#fee':''}"><td><b>${esc(p.CODE||'')}</b></td><td class="editable" style="background:#e8f5e9;cursor:pointer" onclick="window.editField('${uidSafe}','Categorie')">${esc(p.Categorie||'AUTRE')} ✏️</td><td class="editable" style="background:#fffde7;cursor:pointer" onclick="window.editField('${uidSafe}','Designation')">${esc(p.Designation||'')} ✏️</td><td class="editable" style="background:#fffde7;cursor:pointer" onclick="window.editField('${uidSafe}','Quantite')">${p.Quantite??0} ✏️</td><td class="editable" style="cursor:pointer" onclick="window.editField('${uidSafe}','seuil')">${p.seuil??3} ✏️</td><td class="editable" style="cursor:pointer" onclick="window.editField('${uidSafe}','Prix Unit')">${Number(p['Prix Unit']||p.Prix||0).toLocaleString()} ✏️</td><td class="editable" style="cursor:pointer" onclick="window.editField('${uidSafe}','Prix Achat')">${Number(p['Prix Achat']||0).toLocaleString()} ✏️</td><td>${(Number(p['Prix Unit']||0)-Number(p['Prix Achat']||0)).toLocaleString()}</td><td>${p.actif!==false?'✅ Actif':'🚫'}</td><td><button class="btn" style="width:auto;padding:4px 6px;font-size:11px;background:#111;color:#fff" onclick="window.printEtiquette('${uidSafe}')">🏷️</button> <button class="btn" style="width:auto;padding:4px 6px;font-size:11px;background:#ff9800;color:#fff" onclick="window.printEtiquette10('${uidSafe}')">x10</button> <button class="btn" style="width:auto;padding:4px 6px;font-size:11px;background:#0b5e2f;color:#fff" onclick="window.printEtiquetteAsk('${uidSafe}')">xN</button> <button class="btn ${p.actif!==false?'btn-r':'btn-g'}" style="width:auto;padding:4px 8px;font-size:11px" onclick="window.toggleActif('${uidSafe}')">${p.actif!==false?'Désactiver':'Activer'}</button> <button class="btn btn-g" style="width:auto;padding:4px 8px;font-size:11px" onclick="window.entree('${uidSafe}')">+Entrée</button> <button class="btn btn-r" style="width:auto;padding:4px 6px;font-size:11px" onclick="window.supp('${uidSafe}')">X</button></td></tr>`;
   }).join('');
 }
 export function toggleActif(uid){ let s=getShop(); let p=DATA_MAP[uid]; let cur=p?.actif!==false; if(confirm(cur?'Désactiver '+(p?.CODE||uid)+'?':'Activer '+(p?.CODE||uid)+'?')){ let dbRef=window.db||firebase.database(); dbRef.ref('shops/'+s+'/stock/'+uid).update({actif:!cur}); } }
@@ -74,4 +85,4 @@ export function saveNewArt(){ let codeEl=document.getElementById('newCodeForce')
 window.renderStock=renderStock; window.toggleActif=toggleActif; window.editField=editField; window.entree=entree; window.supp=supp; window.saveNewArt=saveNewArt; window.buildDataMap=buildDataMap;
 window.openNewArtForce=function(){ let old=document.getElementById('modalForce'); if(old) old.remove(); let m=document.createElement('div'); m.id='modalForce'; m.innerHTML=`<div style="background:#fff;padding:16px;border-radius:12px;width:95%;max-width:440px"><h3>+ Nouvel Article</h3><div style="display:flex;gap:6px"><input id="newCodeForce" placeholder="CODE" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"><button onclick="window.autoCodeForce()" style="padding:8px 10px;background:#1b5e20;color:#fff;border-radius:8px;border:none;font-weight:bold">⚡ AUTO</button></div><input id="newCatForce" list="listCatsForce" placeholder="CATEGORIE" style="width:100%;padding:8px;margin:4px 0;border:1px solid #a5d6a7;background:#e8f5e9;border-radius:8px"><datalist id="listCatsForce"><option value="CABLE"><option value="CHARGEUR"><option value="FICHE"><option value="AMPOULE"><option value="SOCKET"><option value="AUTRE"></datalist><input id="newDesForce" placeholder="Désignation" style="width:100%;padding:8px;margin:4px 0;border:1px solid #ccc;border-radius:8px"><div style="display:flex;gap:6px"><input id="newPVForce" type="number" placeholder="PV" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"><input id="newPAForce" type="number" placeholder="PA" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"></div><div style="display:flex;gap:6px;margin-top:4px"><input id="newQteForce" type="number" placeholder="Qté" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"><input id="newSeuilForce" type="number" value="3" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px"></div><div style="display:flex;gap:6px;justify-content:end;margin-top:10px"><button class="btn" onclick="window.closeModal('modalForce')" style="background:#ccc;padding:8px 12px;border-radius:8px">Annuler</button><button class="btn btn-g" onclick="window.saveNewArt()" style="background:#0b5e2f;color:#fff;padding:8px 12px;border-radius:8px">Créer</button></div></div>`; m.style.cssText='display:flex !important;position:fixed !important;inset:0 !important;background:rgba(0,0,0,.75) !important;z-index:99999999 !important;align-items:center !important;justify-content:center !important;'; document.body.appendChild(m); };
 window.openNewArt=window.openNewArtForce; window.closeModal=function(id){ let m=document.getElementById(id)||document.getElementById('modalForce')||document.getElementById('modalArt'); if(m) m.remove(); };
-console.log('✅ STOCK V8.33 EAN PRO - V8.30 INTACT');
+console.log('✅ STOCK V8.35 xN OK');
