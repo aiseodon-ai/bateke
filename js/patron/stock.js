@@ -21,7 +21,8 @@ function buildEtiquetteBytes(p){
   let code=cleanASCII(p.CODE||''); let desLines=wrapDesignation(p.Designation||''); let prix=formatPrix(p['Prix Unit']||p.Prix||0); let ean13=codeToEAN13(code);
   let str='\x1B\x40\x1B\x61\x01\x1B\x45\x01'+cleanASCII(window.CURRENT_CONFIG?.nom||'ETS BATEKE').substring(0,32)+'\n\x1B\x45\x00';
   str+='CODE: '+code+'\n'; desLines.forEach(l=>{ str+=cleanASCII(l)+'\n'; });
-  str+='\x1B\x45\x01'+prix+' FC\n\x1B\x45\x00';
+  //str+='\x1B\x45\x01'+prix+' FC\n\x1B\x45\x00';
+  str+='\x1D\x21\x22'+prix+' FC\n'+'\x1D\x21\x00';
   str+='\x1D\x48\x02\x1D\x77\x02\x1D\x6B\x02'+ean13.substring(0,12)+'\x00\n\n\n\x1D\x56\x00';
   return {bytes:new TextEncoder().encode(str), ean13};
 }
