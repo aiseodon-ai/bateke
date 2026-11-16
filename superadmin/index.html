@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN V8.5 HISTORIQUE + V9 SUPPORT + V10 PIN SECURE</title><base href="/bateke/">
+<title>BATEKE - SUPERADMIN V8.6 BACKUP + V8.5 HISTORIQUE + V9 SUPPORT + V10 PIN SECURE</title><base href="/bateke/">
 <style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:16px}
  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
@@ -32,6 +32,8 @@
  <div class="card"><div>Actifs / Bloqués</div><div id="abos" class="kpi">...</div><div id="abosDetail" class="muted"></div></div>
  <div class="card"><div>Revenus validés (mois)</div><div id="revenus" class="kpi ok">...</div><div class="muted" id="revenusDetail"></div></div>
  <div class="card"><div>Prix Abonnement</div><div class="kpi" style="font-size:20px"><input id="inputPrixAbo" type="number" value="10000" style="width:100px"> FC</div><button class="btn-g" onclick="savePrixAbo()">💾 Sauver Prix</button><div id="msgPrix" class="muted"></div></div>
+ <!-- AJOUT BACKUP CARD - V8.6 SANS DERANGER -->
+ <div class="card" style="border-color:#22c55e"><div>💾 BACKUP SAAS</div><div id="backupStatus" class="kpi ok" style="font-size:14px">Prêt</div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn-g" onclick="backupShop(document.getElementById('shopBackupSel')?.value||'')" style="flex:1">💾 Backup boutique</button><button class="btn-b" onclick="backupAllShops()" style="flex:1">💾 Backup TOUT</button></div><div style="display:flex;gap:6px;margin-top:6px"><select id="shopBackupSel" style="flex:1"></select><input type="file" id="restoreFileGlobal" accept=".json" style="display:none"><button class="btn-r" onclick="document.getElementById('restoreFileGlobal').click()" style="flex:1">♻️ Restore JSON</button></div><div id="msgBackup" class="muted" style="margin-top:6px"></div></div>
 </div>
 
 <div class="card">
@@ -41,6 +43,7 @@
   <div class="tab" data-tab="paiements" id="tabPaiement" onclick="switchTab('paiements',this)">💳 Paiements <span id="notifPaiement" class="badge-notif">0</span></div>
   <div class="tab" data-tab="support" id="tabSupport" onclick="switchTab('support',this)">🛡️ Support <span id="notifSupport" class="badge-notif">0</span></div>
   <div class="tab" data-tab="historique" onclick="switchTab('historique',this)">📜 Historique</div>
+  <div class="tab" data-tab="backup" onclick="switchTab('backup',this)">💾 Backup</div>
   <div class="tab" data-tab="create" onclick="switchTab('create',this)">➕ Nouveau</div>
   <button class="btn-b" style="margin-left:auto" onclick="scanGlobal()">🔄</button>
 </div>
@@ -74,6 +77,16 @@
     <select id="filterStatut" onchange="filterHist()" style="width:130px"><option value="">Tous</option><option value="valide">✅ Validés</option><option value="rejete">❌ Rejetés</option></select>
   </div>
   <div style="overflow:auto"><table><thead><tr><th>Date</th><th>Boutique</th><th>TX ID</th><th>Payeur</th><th>Montant</th><th>Statut / DG</th></tr></thead><tbody id="tableHist"></tbody></table></div>
+</div>
+
+<!-- AJOUT TAB BACKUP V8.6 - SANS DERANGER -->
+<div id="tab-backup" style="display:none">
+  <h3>💾 BACKUP / RESTORE SAAS - PROD SECURE</h3>
+  <p class="muted">Conforme CGU Art.7 - Export données client sur demande. Sauvegarde automatique recommandée. Garde 2 copies: Drive + PC.</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+    <div class="card" style="margin-top:0"><h4>💾 Sauvegarde</h4><div style="display:flex;gap:6px;margin:8px 0"><select id="shopBackupSel2" style="flex:1"></select><button class="btn-g" onclick="backupShop(document.getElementById('shopBackupSel2').value)">Backup cette boutique</button></div><button class="btn-b" style="width:100%;padding:12px" onclick="backupAllShops()">💾 BACKUP DE TOUTES LES BOUTIQUES (ZIP logique)</button><div style="margin-top:10px"><b>Export CGU Client:</b><br><div style="display:flex;gap:6px;margin-top:6px"><input id="cguShop" placeholder="Nom boutique pour CGU" style="flex:1"><button class="btn-dark" onclick="backupShop(document.getElementById('cguShop').value)">📥 Export CGU JSON</button></div></div><div id="msgBackup2" class="muted" style="margin-top:8px"></div></div>
+    <div class="card" style="margin-top:0;border-color:#ef4444"><h4>♻️ Restauration Urgence</h4><p class="muted">Si tu supprimes la base par erreur, restaure avec le JSON backup. ÉCRASE les données actuelles.</p><input type="file" id="restoreFileTab" accept=".json"><div style="display:flex;gap:6px;margin-top:8px"><input id="restoreTargetShop" placeholder="Boutique cible restore" style="flex:1"><button class="btn-r" onclick="restoreFromFileTab()">♻️ RESTAURER</button></div><div style="margin-top:12px"><b>Historique backups (meta):</b><div id="listBackups" class="muted">Chargement...</div></div></div>
+  </div>
 </div>
 
 <div id="tab-create" style="display:none">
@@ -138,15 +151,16 @@ function switchTab(t, el){
   document.getElementById('tab-paiements').style.display = t==='paiements'?'block':'none';
   document.getElementById('tab-support').style.display = t==='support'?'block':'none';
   document.getElementById('tab-historique').style.display = t==='historique'?'block':'none';
+  document.getElementById('tab-backup').style.display = t==='backup'?'block':'none';
   document.getElementById('tab-create').style.display = t==='create'?'block':'none';
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   if(el) el.classList.add('active'); else document.querySelector(`[data-tab="${t}"]`)?.classList.add('active');
   if(t==='paiements') document.getElementById('tabPaiement').classList.remove('tab-notif');
+  if(t==='backup') loadBackupList();
 }
 function toTime(v){ if(!v) return 0; if(typeof v==='number') return v; if(typeof v==='string' && /^\d{12,}$/.test(v)) return parseInt(v,10); let d=new Date(v).getTime(); return isNaN(d)?0:d; }
 function trouverPatronDeShop(s, patrons){ for(let pid in patrons){ let p=patrons[pid]; if(p.boutiques && p.boutiques[s]) return pid; if((p.boutique||'').toLowerCase()===s.toLowerCase()) return pid; } return null; }
 
-// V10 SECURE HELPERS
 function hashPin(pin){ return btoa(pin+"|BATEKE_SALT_V10"); }
 function genTempPin(){ return Math.floor(1000+Math.random()*9000).toString(); }
 
@@ -199,6 +213,80 @@ function filterHist(){
   document.getElementById('tableHist').innerHTML=html||'<tr><td colspan=6 class="muted">Aucun historique</td></tr>';
 }
 
+// ===== BACKUP V8.6 PROD - AJOUT SEULEMENT - 0 SUPPRESSION =====
+async function backupShop(shopName){
+  if(!shopName || shopName.trim()===''){ let sel=document.getElementById('shopBackupSel')?.value || document.getElementById('shopBackupSel2')?.value || ''; if(!sel){ alert('Choisis une boutique'); return; } shopName=sel; }
+  let msgEl=document.getElementById('msgBackup')||document.getElementById('msgBackup2');
+  if(msgEl) msgEl.innerText='⏳ Sauvegarde '+shopName+'...';
+  try{
+    let db=firebase.database();
+    let paths=['stock','ventes','achats','compta','caisse','entrees','config_entreprise','abonnements','clients','dettes','retours'];
+    let backup={ _meta:{ shop:shopName, date:new Date().toISOString(), version:'V8.6', by:'DG SUPERADMIN' } };
+    for(let p of paths){
+      let snap=await db.ref(`shops/${shopName}/${p}`).once('value');
+      backup[p]=snap.val()||{};
+    }
+    try{ let snapPatId=await db.ref(`shops/${shopName}/patronId`).once('value'); let pid=snapPatId.val(); if(pid){ let snapPat=await db.ref(`patrons/${pid}`).once('value'); backup._patron={id:pid, data:snapPat.val()}; } }catch(e){}
+    let jsonStr=JSON.stringify(backup,null,2);
+    let fileName=`BATEKE_BACKUP_${shopName}_${new Date().toISOString().slice(0,10)}_${Date.now()}.json`;
+    let blob=new Blob([jsonStr],{type:'application/json'});
+    let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fileName; a.click();
+    try{ await db.ref(`backups/${shopName}/${Date.now()}`).set({date:new Date().toISOString(), shop:shopName, fileName, size:jsonStr.length, by:'DG'}); await db.ref(`shops/${shopName}/backups_meta/${Date.now()}`).set({fileName,date:new Date().toISOString(),size:jsonStr.length}); }catch(e){}
+    if(msgEl) msgEl.innerHTML=`<span class="ok">✅ ${fileName} (${(jsonStr.length/1024).toFixed(1)}KB)</span>`;
+    document.getElementById('backupStatus').innerText=`✅ ${shopName} ${new Date().toLocaleTimeString()}`;
+    return backup;
+  }catch(e){ if(msgEl) msgEl.innerHTML=`<span class="bad">❌ ${e.message}</span>`; alert('Backup fail: '+e.message); }
+}
+async function backupAllShops(){
+  if(!confirm('💾 BACKUP DE TOUTES LES BOUTIQUES? Cela va télécharger un JSON par boutique. Continuer?')) return;
+  let shops=Object.keys(G_SHOPS||{}).filter(k=>!['shops','Mbata','Itendance'].includes(k));
+  if(!shops.length){ alert('Aucune boutique trouvée, fais SCAN'); return; }
+  for(let s of shops){ await backupShop(s); await new Promise(r=>setTimeout(r,800)); }
+  alert(`✅ Backup de ${shops.length} boutiques terminé`);
+}
+async function restoreShop(shopName, backupJson){
+  if(!shopName){ shopName=document.getElementById('restoreTargetShop')?.value||document.getElementById('shopBackupSel')?.value; }
+  if(!shopName){ alert('Indique boutique cible'); return; }
+  if(!backupJson){ alert('Charge un fichier JSON d abord'); return; }
+  if(!confirm(`⚠️ RESTAURER ${shopName} avec ce backup? ÉCRASE stock, ventes, etc.`)) return;
+  if(!confirm(`CONFIRMATION 2/2: RESTAURER ${shopName} - IRREVERSIBLE`)) return;
+  try{
+    let db=firebase.database();
+    let paths=['stock','ventes','achats','compta','caisse','entrees','config_entreprise','abonnements','clients','dettes','retours'];
+    for(let p of paths){ if(backupJson[p]) await db.ref(`shops/${shopName}/${p}`).set(backupJson[p]); }
+    await db.ref(`logs_support/${shopName}`).push({date:Date.now(),action:`RESTORE par DG depuis ${backupJson._meta?.date||''}`,par:'DG'});
+    alert(`✅ RESTAURATION ${shopName} OK`); scanGlobal();
+  }catch(e){ alert('❌ Restore fail: '+e.message); }
+}
+function restoreFromFileTab(){
+  let fileInput=document.getElementById('restoreFileTab')||document.getElementById('restoreFileGlobal');
+  let target=document.getElementById('restoreTargetShop')?.value||document.getElementById('shopBackupSel2')?.value||document.getElementById('shopBackupSel')?.value;
+  if(!fileInput.files[0]){ alert('Choisis un fichier JSON backup'); return; }
+  let reader=new FileReader();
+  reader.onload=e=>{
+    try{ let json=JSON.parse(e.target.result); let shop=target||json._meta?.shop||prompt('Boutique cible restore?'); if(!shop) return; restoreShop(shop,json); }catch(err){ alert('JSON invalide: '+err.message); }
+  };
+  reader.readAsText(fileInput.files[0]);
+}
+function loadBackupList(){
+  let el=document.getElementById('listBackups'); if(!el) return;
+  firebase.database().ref('backups').limitToLast(20).once('value').then(s=>{
+    let v=s.val()||{}; let html='';
+    Object.entries(v).forEach(([shop, backs])=>{
+      Object.entries(backs||{}).forEach(([ts, b])=>{ html+=`<div>📦 ${shop} - ${b.fileName||''} - ${new Date(parseInt(ts)).toLocaleString()} - ${(b.size/1024).toFixed(1)}KB</div>`; });
+    });
+    el.innerHTML=html||'Aucun backup meta encore';
+  });
+}
+document.getElementById('restoreFileGlobal')?.addEventListener('change', function(){
+  if(!this.files[0]) return;
+  let reader=new FileReader();
+  reader.onload=e=>{
+    try{ let json=JSON.parse(e.target.result); let shop=json._meta?.shop||prompt('Boutique cible pour restore?'); if(!shop) return; restoreShop(shop,json); }catch(err){ alert('JSON invalide'); }
+  };
+  reader.readAsText(this.files[0]);
+});
+
 function scanGlobal(){
  const q=(document.getElementById('searchClient')?.value||'').toLowerCase();
  const db=firebase.database();
@@ -212,16 +300,13 @@ function scanGlobal(){
  ]).then(async ([shopsObj, paiementsObj, histObj, supportReqObj, supportAuthObj, logsSupObj])=>{
   G_SHOPS=shopsObj; G_SUPPORT_REQ=supportReqObj; G_SUPPORT_AUTH=supportAuthObj; G_LOGS_SUPPORT=logsSupObj;
   
-  // V10.6 FIX: On récupère les patrons un par un via leur ID (autorisé par $pid)
   let patronIds = new Set();
   Object.values(G_SHOPS).forEach(s=>{ if(s.patronId) patronIds.add(s.patronId); });
-  // ajoute aussi ceux déjà en cache
   let patronsObj = {};
   let promises = Array.from(patronIds).map(pid => db.ref('patrons/'+pid).once('value').then(snap=>{
     if(snap.exists()) patronsObj[pid]=snap.val();
   }));
   await Promise.all(promises);
-  // Si recherche, essaie aussi de trouver par pin (pour les nouveaux non liés à un shop encore)
   if(q && Object.keys(patronsObj).length < 5){
     try{
       let byPin = await db.ref('patrons').orderByChild('pin').equalTo(q).once('value');
@@ -231,6 +316,13 @@ function scanGlobal(){
   G_PATRONS = patronsObj;
 
   let shopNames=Object.keys(G_SHOPS).filter(k=>!['shops','Mbata','Itendance'].includes(k));
+  // MAJ selects backup
+  try{
+    let sel1=document.getElementById('shopBackupSel'); let sel2=document.getElementById('shopBackupSel2');
+    let opts=shopNames.map(n=>`<option value="${n}">${n}</option>`).join('');
+    if(sel1) sel1.innerHTML='<option value="">-- Choisir boutique --</option>'+opts;
+    if(sel2) sel2.innerHTML='<option value="">-- Choisir boutique --</option>'+opts;
+  }catch(e){}
   let actifs=0, bloques=0;
   shopNames.forEach(n=>{ let shop=G_SHOPS[n]||{}; let exp=toTime(shop.abonnements?.expire); if(exp && exp>Date.now()) actifs++; else bloques++; });
   document.getElementById('totalBoutiques').innerText=shopNames.length;
@@ -257,11 +349,11 @@ function scanGlobal(){
    }).join('') || '<span class="muted">—</span>';
    let pinDisplay = p.mustChangePin ? '<span class="warn">•••• À CHANGER</span>' : '<span style="background:#333;padding:3px 8px;border-radius:10px;font-size:11px">•••• SECURE</span>';
    if(p.pinHash) pinDisplay += '<br><span class="muted" style="font-size:9px">HASHÉ</span>';
-   htmlClients+=`<tr><td><b>${p.nom||'—'}</b><br><span class="muted">ID:${pid}</span></td><td>${p.phone?`<a href="https://wa.me/${p.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366">📱 ${p.phone}</a><br>`:''}${p.email||''}<br><span class="muted">${p.adresse||''}</span></td><td>${boutiques.map(b=>`<span class="muted">${b}</span>`).join('<br>')||'—'}</td><td>${pinDisplay}</td><td>${statut}</td><td><div style="display:flex;gap:4px;margin-bottom:6px"><button class="btn-b" onclick="openClient('${pid}')">Fiche</button><button class="btn-o" onclick="resetPin('${pid}')">🔑 Reset</button><button class="btn-r" onclick="supprimerClient('${pid}')">🗑️</button></div><div style="max-height:120px;overflow:auto">${actionsBoutiques}</div></td></tr>`;
+   htmlClients+=`<tr><td><b>${p.nom||'—'}</b><br><span class="muted">ID:${pid}</span></td><td>${p.phone?`<a href="https://wa.me/${p.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366">📱 ${p.phone}</a><br>`:''}${p.email||''}<br><span class="muted">${p.adresse||''}</span></td><td>${boutiques.map(b=>`<span class="muted">${b}</span>`).join('<br>')||'—'}</td><td>${pinDisplay}</td><td>${statut}</td><td><div style="display:flex;gap:4px;margin-bottom:6px"><button class="btn-b" onclick="openClient('${pid}')">Fiche</button><button class="btn-o" onclick="resetPin('${pid}')">🔑 Reset</button><button class="btn-r" onclick="supprimerClient('${pid}')">🗑️</button><button class="btn-g" onclick="backupShop('${boutiques[0]||''}')">💾</button></div><div style="max-height:120px;overflow:auto">${actionsBoutiques}</div></td></tr>`;
   });
   document.getElementById('tableClients').innerHTML=htmlClients||'<tr><td colspan=6 class="muted">Aucun client</td></tr>';
 
-  let htmlAbo=''; shopNames.forEach(name=>{ let shop=G_SHOPS[name]||{}; let pid=shop.patronId||trouverPatronDeShop(name,G_PATRONS)||'—'; let exp=toTime(shop.abonnements?.expire); let jours=exp?Math.ceil((exp-Date.now())/86400000):-999; let statut=!exp?'<span class="bad">JAMAIS</span>':jours<0?`<span class="bad">BLOQUÉ ${jours}j</span>`:`<span class="ok">ACTIF ${jours}j</span>`; let aff=exp?new Date(exp).toLocaleDateString():'—'; htmlAbo+=`<tr><td><b>${name}</b></td><td>${pid}</td><td>${aff}</td><td>${statut}</td><td><button class="btn-g" onclick="activer('${name}')">+30J</button> <button class="btn-r" onclick="bloquer('${name}')">BLOQUER</button></td></tr>`; });
+  let htmlAbo=''; shopNames.forEach(name=>{ let shop=G_SHOPS[name]||{}; let pid=shop.patronId||trouverPatronDeShop(name,G_PATRONS)||'—'; let exp=toTime(shop.abonnements?.expire); let jours=exp?Math.ceil((exp-Date.now())/86400000):-999; let statut=!exp?'<span class="bad">JAMAIS</span>':jours<0?`<span class="bad">BLOQUÉ ${jours}j</span>`:`<span class="ok">ACTIF ${jours}j</span>`; let aff=exp?new Date(exp).toLocaleDateString():'—'; htmlAbo+=`<tr><td><b>${name}</b></td><td>${pid}</td><td>${aff}</td><td>${statut}</td><td><button class="btn-g" onclick="activer('${name}')">+30J</button> <button class="btn-r" onclick="bloquer('${name}')">BLOQUER</button> <button class="btn-dark" onclick="backupShop('${name}')">💾</button></td></tr>`; });
   document.getElementById('tableAbo').innerHTML=htmlAbo||'<tr><td colspan=5>Aucune</td></tr>';
 
   let htmlPay=''; let countAttente=0; let newPayments=[];
@@ -286,12 +378,11 @@ function closeModal(){ document.getElementById('modalClient').style.display='non
 function editClient(){ let p=G_PATRONS[G_CURRENT_PID]; let nom=prompt('Nom:',p.nom||''); if(nom===null) return; firebase.database().ref(`patrons/${G_CURRENT_PID}`).update({nom}).then(()=>{ alert('✅'); closeModal(); scanGlobal(); }); }
 function supprimerClient(pidArg){ let pid=pidArg||G_CURRENT_PID; if(!confirm(`Supprimer ${pid}?`)) return; if(!confirm('Dernière confirmation')) return; firebase.database().ref(`patrons/${pid}`).remove().then(()=>{ alert('✅ Supprimé'); closeModal(); scanGlobal(); }); }
 
-// V10 SECURE RESET
 function resetPin(pid){
  if(!confirm(`Générer un nouveau PIN temporaire pour ${pid}? L'ancien PIN ne sera plus valable et le patron devra le changer.`)) return;
  let newTemp = genTempPin();
  let u={};
- u[`patrons/${pid}/pin`] = newTemp; // temporaire pour compatibilité
+ u[`patrons/${pid}/pin`] = newTemp;
  u[`patrons/${pid}/pinHash`] = hashPin(newTemp);
  u[`patrons/${pid}/mustChangePin`] = true;
  u[`patrons/${pid}/tempPinExpire`] = Date.now()+10*60000;
@@ -302,16 +393,15 @@ function resetPin(pid){
  });
 }
 
-// V10.4 - UNE SEULE PORTE
 function creerPatron(){
- let pinIdInput=document.getElementById('newPatronId').value.trim(); // ID métier, PAS un PIN
+ let pinIdInput=document.getElementById('newPatronId').value.trim();
  let nom=document.getElementById('newPatronNom').value.trim();
  let boutique=document.getElementById('newBoutiqueNom').value.trim().replace(/[^a-zA-Z0-9]/g,'');
  let phone=document.getElementById('newPatronPhone').value.trim();
  let email=document.getElementById('newPatronEmail')?.value.trim()||'';
  if(!nom||!boutique||!phone){ alert('Requis: Nom, Boutique, Téléphone'); return; }
  
- let tempPin = genTempPin(); // SEUL CODE VALABLE
+ let tempPin = genTempPin();
  let finalId = pinIdInput || phone.replace(/[^0-9]/g,'').slice(-4) + Math.floor(Math.random()*90+10);
 
  let u={};
