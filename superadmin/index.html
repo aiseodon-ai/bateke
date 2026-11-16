@@ -143,7 +143,7 @@ let G_LAST_PAY_COUNT=0, G_SOUND_ENABLED=false;
 let G_SUPPORT_AUTH={}, G_SUPPORT_REQ={}, G_LOGS_SUPPORT={};
 
 // ===== DRIVE V9.1 - AJOUT SANS DERANGER STABLE =====
-const DRIVE_CLIENT_ID = '321333206282-sle6iothet3v925p3pro2q991b6alnvp.apps.googleusercontent.com';
+const DRIVE_CLIENT_ID = '321333206282-m6f4fuau3p60v35psaaelergbrrijs0g.apps.googleusercontent.com';
 let DRIVE_TOKEN = localStorage.getItem('BATEKE_DRIVE_TOKEN')||'';
 let DRIVE_FOLDER_ID = localStorage.getItem('BATEKE_DRIVE_FOLDER_ID')||'';
 function updateDriveStatus(){ let el=document.getElementById('driveStatus'); if(!el) return; el.innerText = DRIVE_TOKEN ? '✅ Drive connecté - Auto backup actif' : '🔴 Drive non connecté - Clique CONNECT'; el.style.color = DRIVE_TOKEN ? '#22c55e' : '#f59e0b'; let btn=document.getElementById('btnDrive'); if(btn) btn.innerText = DRIVE_TOKEN ? '✅ Drive OK' : '🔗 CONNECT DRIVE'; }
