@@ -268,14 +268,43 @@ function restoreFromFileTab(){
   };
   reader.readAsText(fileInput.files[0]);
 }
+// FIX V8.7 - LISTE BACKUP PROD - A REMPLACER
 function loadBackupList(){
-  let el=document.getElementById('listBackups'); if(!el) return;
-  firebase.database().ref('backups').limitToLast(20).once('value').then(s=>{
-    let v=s.val()||{}; let html='';
+  let el=document.getElementById('listBackups'); 
+  if(!el) return;
+  el.innerHTML='⏳ Chargement...';
+  let db=firebase.database();
+  Promise.all([
+    db.ref('backups').once('value'),
+    db.ref('shops').once('value')
+  ]).then(([snapBackups, snapShops])=>{
+    let v=snapBackups.val()||{};
+    let shopsVal=snapShops.val()||{};
+    let html='';
+    let count=0;
+    // 1. Liste depuis backups/{shop}/{timestamp}
     Object.entries(v).forEach(([shop, backs])=>{
-      Object.entries(backs||{}).forEach(([ts, b])=>{ html+=`<div>📦 ${shop} - ${b.fileName||''} - ${new Date(parseInt(ts)).toLocaleString()} - ${(b.size/1024).toFixed(1)}KB</div>`; });
+      Object.entries(backs||{}).forEach(([ts, b])=>{
+        let d=new Date(parseInt(ts)); 
+        if(isNaN(d.getTime())) d=new Date(b.date||Date.now());
+        html=`<div style="padding:4px 0;border-bottom:1px solid #222">📦 <b>${shop}</b> - ${b.fileName||'backup.json'} - ${d.toLocaleString()} - ${((b.size||0)/1024).toFixed(1)}KB - par ${b.by||'DG'}</div>`+html;
+        count++;
+      });
     });
-    el.innerHTML=html||'Aucun backup meta encore';
+    // 2. Si vide, check aussi shops/{shop}/backups_meta
+    if(count===0){
+      Object.entries(shopsVal).forEach(([shop, data])=>{
+        let metas=data.backups_meta||{};
+        Object.entries(metas).forEach(([ts, b])=>{
+          let d=new Date(parseInt(ts));
+          html=`<div style="padding:4px 0;border-bottom:1px solid #222">📦 <b>${shop}</b> - ${b.fileName||''} - ${d.toLocaleString()} - ${((b.size||0)/1024).toFixed(1)}KB (meta)</div>`+html;
+          count++;
+        });
+      });
+    }
+    el.innerHTML=html||'Aucun backup meta encore - Clique Backup boutique pour créer le 1er';
+  }).catch(e=>{
+    el.innerHTML='Erreur: '+e.message;
   });
 }
 document.getElementById('restoreFileGlobal')?.addEventListener('change', function(){
