@@ -180,14 +180,14 @@ async function backupAllAutoDrive(){
  }
  alert('✅ BACKUP AUTO DRIVE OK'); document.getElementById('msgBackup').innerText='✅ Drive OK '+new Date().toLocaleTimeString();
 }
- function openDriveFolder(){
- if(!DRIVE_FOLDER_ID){
-   alert('Clique d\'abord ☁️ DRIVE une fois pour créer le dossier, puis re-clique Voir Drive');
-   window.open('https://drive.google.com/drive/search?q=BATEKE_SAAS_BACKUPS_V9','_blank');
-   return;
- }
- window.open(`https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}`,'_blank');
-}
+// function openDriveFolder(){
+// if(!DRIVE_FOLDER_ID){
+ //  alert('Clique d\'abord ☁️ DRIVE une fois pour créer le dossier, puis re-clique Voir Drive');
+ //  window.open('https://drive.google.com/drive/search?q=BATEKE_SAAS_BACKUPS_V9','_blank');
+  // return;
+// }
+// window.open(`https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}`,'_blank');
+//}
 // ===== FIN DRIVE =====
 
 function enableSound(){ G_SOUND_ENABLED=true; document.getElementById('btnSound').innerText='🔊 Son activé'; document.getElementById('btnSound').style.background='#22c55e'; if('Notification' in window) Notification.requestPermission(); try{ new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{}); }catch(e){} }
