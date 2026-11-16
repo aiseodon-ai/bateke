@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATEKE - SUPERADMIN V8.6 BACKUP + V8.5 HISTORIQUE + V9 SUPPORT + V10 PIN SECURE</title><base href="/bateke/">
+<title>BATEKE - SUPERADMIN V8.6 BACKUP + V8.5 HISTORIQUE + V9 SUPPORT + V10 PIN SECURE + V9.1 DRIVE</title><base href="/bateke/">
 <style>
  body{background:#0a0a0a;color:#eee;font-family:Inter,system-ui;padding:16px}
  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
@@ -22,7 +22,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head><body>
-<h1>👑 BATEKE SUPERADMIN V10 PIN SECURE
+<h1>👑 BATEKE SUPERADMIN V10 PIN SECURE + V9.1 DRIVE
 <button id="btnSound" class="btn-dark" style="font-size:11px;margin-left:10px" onclick="enableSound()">🔔 Son</button>
 </h1>
 
@@ -32,8 +32,8 @@
  <div class="card"><div>Actifs / Bloqués</div><div id="abos" class="kpi">...</div><div id="abosDetail" class="muted"></div></div>
  <div class="card"><div>Revenus validés (mois)</div><div id="revenus" class="kpi ok">...</div><div class="muted" id="revenusDetail"></div></div>
  <div class="card"><div>Prix Abonnement</div><div class="kpi" style="font-size:20px"><input id="inputPrixAbo" type="number" value="10000" style="width:100px"> FC</div><button class="btn-g" onclick="savePrixAbo()">💾 Sauver Prix</button><div id="msgPrix" class="muted"></div></div>
- <!-- AJOUT BACKUP CARD - V8.6 SANS DERANGER -->
- <div class="card" style="border-color:#22c55e"><div>💾 BACKUP SAAS</div><div id="backupStatus" class="kpi ok" style="font-size:14px">Prêt</div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn-g" onclick="backupShop(document.getElementById('shopBackupSel')?.value||'')" style="flex:1">💾 Backup boutique</button><button class="btn-b" onclick="backupAllShops()" style="flex:1">💾 Backup TOUT</button></div><div style="display:flex;gap:6px;margin-top:6px"><select id="shopBackupSel" style="flex:1"></select><input type="file" id="restoreFileGlobal" accept=".json" style="display:none"><button class="btn-r" onclick="document.getElementById('restoreFileGlobal').click()" style="flex:1">♻️ Restore JSON</button></div><div id="msgBackup" class="muted" style="margin-top:6px"></div></div>
+ <!-- CARD BACKUP V9.1 DRIVE SANS DERANGER -->
+ <div class="card" style="border-color:#22c55e"><div>💾 BACKUP SAAS V9.1</div><div id="backupStatus" class="kpi ok" style="font-size:14px">Prêt</div><div id="driveStatus" class="muted" style="margin-top:4px;color:#f59e0b">Drive: Non connecté</div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn-g" onclick="backupShop(document.getElementById('shopBackupSel')?.value||'')" style="flex:1">💾 Boutique</button><button class="btn-b" onclick="backupAllShops()" style="flex:1">💾 TOUT</button><button class="btn-b" onclick="backupAllAutoDrive()" style="flex:1;background:#0ea5e9">☁️ DRIVE</button></div><div style="display:flex;gap:6px;margin-top:6px"><select id="shopBackupSel" style="flex:1"></select><button class="btn-dark" onclick="connectDrive()" id="btnDrive" style="flex:1;background:#f59e0b">🔗 CONNECT DRIVE</button></div><div style="display:flex;gap:6px;margin-top:6px"><input type="file" id="restoreFileGlobal" accept=".json" style="display:none"><button class="btn-r" onclick="document.getElementById('restoreFileGlobal').click()" style="flex:1">♻️ Restore JSON</button></div><div id="msgBackup" class="muted" style="margin-top:6px"></div></div>
 </div>
 
 <div class="card">
@@ -79,13 +79,12 @@
   <div style="overflow:auto"><table><thead><tr><th>Date</th><th>Boutique</th><th>TX ID</th><th>Payeur</th><th>Montant</th><th>Statut / DG</th></tr></thead><tbody id="tableHist"></tbody></table></div>
 </div>
 
-<!-- AJOUT TAB BACKUP V8.6 - SANS DERANGER -->
 <div id="tab-backup" style="display:none">
-  <h3>💾 BACKUP / RESTORE SAAS - PROD SECURE</h3>
-  <p class="muted">Conforme CGU Art.7 - Export données client sur demande. Sauvegarde automatique recommandée. Garde 2 copies: Drive + PC.</p>
+  <h3>💾 BACKUP / RESTORE SAAS - V9.1 DRIVE</h3>
+  <p class="muted">1 fichier par jour par boutique, garde 5 max, envoi auto Drive. Conforme CGU Art.7</p>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
-    <div class="card" style="margin-top:0"><h4>💾 Sauvegarde</h4><div style="display:flex;gap:6px;margin:8px 0"><select id="shopBackupSel2" style="flex:1"></select><button class="btn-g" onclick="backupShop(document.getElementById('shopBackupSel2').value)">Backup cette boutique</button></div><button class="btn-b" style="width:100%;padding:12px" onclick="backupAllShops()">💾 BACKUP DE TOUTES LES BOUTIQUES (ZIP logique)</button><div style="margin-top:10px"><b>Export CGU Client:</b><br><div style="display:flex;gap:6px;margin-top:6px"><input id="cguShop" placeholder="Nom boutique pour CGU" style="flex:1"><button class="btn-dark" onclick="backupShop(document.getElementById('cguShop').value)">📥 Export CGU JSON</button></div></div><div id="msgBackup2" class="muted" style="margin-top:8px"></div></div>
-    <div class="card" style="margin-top:0;border-color:#ef4444"><h4>♻️ Restauration Urgence</h4><p class="muted">Si tu supprimes la base par erreur, restaure avec le JSON backup. ÉCRASE les données actuelles.</p><input type="file" id="restoreFileTab" accept=".json"><div style="display:flex;gap:6px;margin-top:8px"><input id="restoreTargetShop" placeholder="Boutique cible restore" style="flex:1"><button class="btn-r" onclick="restoreFromFileTab()">♻️ RESTAURER</button></div><div style="margin-top:12px"><b>Historique backups (meta):</b><div id="listBackups" class="muted">Chargement...</div></div></div>
+    <div class="card" style="margin-top:0"><h4>💾 Sauvegarde</h4><div style="display:flex;gap:6px;margin:8px 0"><select id="shopBackupSel2" style="flex:1"></select><button class="btn-g" onclick="backupShop(document.getElementById('shopBackupSel2').value)">Backup cette boutique</button></div><button class="btn-b" style="width:100%;padding:12px" onclick="backupAllShops()">💾 BACKUP DE TOUTES</button><button class="btn-b" style="width:100%;padding:12px;margin-top:8px;background:#0ea5e9" onclick="backupAllAutoDrive()">☁️ BACKUP TOUT -> DRIVE</button><div id="msgBackup2" class="muted" style="margin-top:8px"></div></div>
+    <div class="card" style="margin-top:0;border-color:#ef4444"><h4>♻️ Restauration Urgence</h4><p class="muted">ÉCRASE les données actuelles.</p><input type="file" id="restoreFileTab" accept=".json"><div style="display:flex;gap:6px;margin-top:8px"><input id="restoreTargetShop" placeholder="Boutique cible restore" style="flex:1"><button class="btn-r" onclick="restoreFromFileTab()">♻️ RESTAURER</button></div><div style="margin-top:12px"><b>Historique backups (5 max):</b><div id="listBackups" class="muted">Chargement...</div></div></div>
   </div>
 </div>
 
@@ -143,6 +142,46 @@ let G_SHOPS={}, G_PATRONS={}, G_CURRENT_PID=null, G_HIST=[];
 let G_LAST_PAY_COUNT=0, G_SOUND_ENABLED=false;
 let G_SUPPORT_AUTH={}, G_SUPPORT_REQ={}, G_LOGS_SUPPORT={};
 
+// ===== DRIVE V9.1 - AJOUT SANS DERANGER STABLE =====
+const DRIVE_CLIENT_ID = '321333206282-sle6iothet3v925p3pro2q991b6alnvp.apps.googleusercontent.com';
+let DRIVE_TOKEN = localStorage.getItem('BATEKE_DRIVE_TOKEN')||'';
+let DRIVE_FOLDER_ID = localStorage.getItem('BATEKE_DRIVE_FOLDER_ID')||'';
+function updateDriveStatus(){ let el=document.getElementById('driveStatus'); if(!el) return; el.innerText = DRIVE_TOKEN ? '✅ Drive connecté - Auto backup actif' : '🔴 Drive non connecté - Clique CONNECT'; el.style.color = DRIVE_TOKEN ? '#22c55e' : '#f59e0b'; let btn=document.getElementById('btnDrive'); if(btn) btn.innerText = DRIVE_TOKEN ? '✅ Drive OK' : '🔗 CONNECT DRIVE'; }
+setTimeout(updateDriveStatus, 1200);
+function connectDrive(){
+ let redirect = location.origin + location.pathname;
+ let scope = 'https://www.googleapis.com/auth/drive.file';
+ let url=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${DRIVE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${encodeURIComponent(scope)}&prompt=consent`;
+ window.location.href=url;
+}
+(function(){ if(location.hash.includes('access_token')){ let p=new URLSearchParams(location.hash.substring(1)); let tok=p.get('access_token'); if(tok){ localStorage.setItem('BATEKE_DRIVE_TOKEN',tok); DRIVE_TOKEN=tok; alert('✅ DRIVE CONNECTÉ V9.1'); history.replaceState(null,'',location.pathname); updateDriveStatus(); } } })();
+async function uploadToDrive(fileName, jsonStr){
+ if(!DRIVE_TOKEN) return {ok:false};
+ try{
+  if(!DRIVE_FOLDER_ID){
+   let r=await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{'Authorization':'Bearer '+DRIVE_TOKEN,'Content-Type':'application/json'},body:JSON.stringify({name:'BATEKE_SAAS_BACKUPS_V9',mimeType:'application/vnd.google-apps.folder'})});
+   let d=await r.json(); DRIVE_FOLDER_ID=d.id; localStorage.setItem('BATEKE_DRIVE_FOLDER_ID',d.id);
+  }
+  let metadata={name:fileName, parents:[DRIVE_FOLDER_ID]};
+  let form=new FormData(); form.append('metadata', new Blob([JSON.stringify(metadata)],{type:'application/json'})); form.append('file', new Blob([jsonStr],{type:'application/json'}));
+  await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Authorization':'Bearer '+DRIVE_TOKEN},body:form});
+  return {ok:true};
+ }catch(e){ console.warn(e); return {ok:false}; }
+}
+async function backupAllAutoDrive(){
+ if(!DRIVE_TOKEN){ alert('Clique d\'abord 🔗 CONNECT DRIVE'); connectDrive(); return; }
+ let shops=Object.keys(G_SHOPS||{}).filter(k=>!['shops','Mbata','Itendance'].includes(k));
+ if(!shops.length){ alert('Fais SCAN d\'abord'); return; }
+ document.getElementById('msgBackup').innerText='⏳ Envoi Drive...';
+ for(let s of shops){ 
+   let b=await backupShop(s); 
+   if(b){ let str=JSON.stringify(b,null,2); let fn=`BATEKE_AUTO_${s}_${new Date().toISOString().slice(0,10)}.json`; await uploadToDrive(fn,str); }
+   await new Promise(r=>setTimeout(r,600));
+ }
+ alert('✅ BACKUP AUTO DRIVE OK'); document.getElementById('msgBackup').innerText='✅ Drive OK '+new Date().toLocaleTimeString();
+}
+// ===== FIN DRIVE =====
+
 function enableSound(){ G_SOUND_ENABLED=true; document.getElementById('btnSound').innerText='🔊 Son activé'; document.getElementById('btnSound').style.background='#22c55e'; if('Notification' in window) Notification.requestPermission(); try{ new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{}); }catch(e){} }
 function playNotif(boutique, tx){ if(!G_SOUND_ENABLED) return; try{ let a=new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'); a.volume=1; a.play(); }catch(e){} try{ navigator.vibrate([300,100,300,100,500]); }catch(e){} if('Notification' in window && Notification.permission==='granted'){ new Notification('💳 Nouveau paiement BATEKE', {body:`${boutique} - TX ${tx}`}); } let tab=document.getElementById('tabPaiement'); tab.classList.add('tab-notif'); setTimeout(()=>tab.classList.remove('tab-notif'), 5000); }
 function switchTab(t, el){
@@ -160,10 +199,8 @@ function switchTab(t, el){
 }
 function toTime(v){ if(!v) return 0; if(typeof v==='number') return v; if(typeof v==='string' && /^\d{12,}$/.test(v)) return parseInt(v,10); let d=new Date(v).getTime(); return isNaN(d)?0:d; }
 function trouverPatronDeShop(s, patrons){ for(let pid in patrons){ let p=patrons[pid]; if(p.boutiques && p.boutiques[s]) return pid; if((p.boutique||'').toLowerCase()===s.toLowerCase()) return pid; } return null; }
-
 function hashPin(pin){ return btoa(pin+"|BATEKE_SALT_V10"); }
 function genTempPin(){ return Math.floor(1000+Math.random()*9000).toString(); }
-
 function demanderSupport(shop, pid){
  if(!shop){ alert('Pas de boutique'); return; }
  let motif = prompt(`Motif support pour ${shop}:`,'Assistance technique');
@@ -213,7 +250,7 @@ function filterHist(){
   document.getElementById('tableHist').innerHTML=html||'<tr><td colspan=6 class="muted">Aucun historique</td></tr>';
 }
 
-// ===== BACKUP V8.6 PROD - AJOUT SEULEMENT - 0 SUPPRESSION =====
+// ===== BACKUP V9.1 CORRIGÉ - NE SATURE PAS + DRIVE =====
 async function backupShop(shopName){
   if(!shopName || shopName.trim()===''){ let sel=document.getElementById('shopBackupSel')?.value || document.getElementById('shopBackupSel2')?.value || ''; if(!sel){ alert('Choisis une boutique'); return; } shopName=sel; }
   let msgEl=document.getElementById('msgBackup')||document.getElementById('msgBackup2');
@@ -221,28 +258,35 @@ async function backupShop(shopName){
   try{
     let db=firebase.database();
     let paths=['stock','ventes','achats','compta','caisse','entrees','config_entreprise','abonnements','clients','dettes','retours'];
-    let backup={ _meta:{ shop:shopName, date:new Date().toISOString(), version:'V8.6', by:'DG SUPERADMIN' } };
+    let backup={ _meta:{ shop:shopName, date:new Date().toISOString(), version:'V9.1', by:'DG SUPERADMIN' } };
     for(let p of paths){
       let snap=await db.ref(`shops/${shopName}/${p}`).once('value');
       backup[p]=snap.val()||{};
     }
     try{ let snapPatId=await db.ref(`shops/${shopName}/patronId`).once('value'); let pid=snapPatId.val(); if(pid){ let snapPat=await db.ref(`patrons/${pid}`).once('value'); backup._patron={id:pid, data:snapPat.val()}; } }catch(e){}
     let jsonStr=JSON.stringify(backup,null,2);
-    let fileName=`BATEKE_BACKUP_${shopName}_${new Date().toISOString().slice(0,10)}_${Date.now()}.json`;
+    let fileName=`BATEKE_BACKUP_${shopName}_${new Date().toISOString().slice(0,10)}.json`;
     let blob=new Blob([jsonStr],{type:'application/json'});
     let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fileName; a.click();
-    try{ await db.ref(`backups/${shopName}/${Date.now()}`).set({date:new Date().toISOString(), shop:shopName, fileName, size:jsonStr.length, by:'DG'}); await db.ref(`shops/${shopName}/backups_meta/${Date.now()}`).set({fileName,date:new Date().toISOString(),size:jsonStr.length}); }catch(e){}
-    if(msgEl) msgEl.innerHTML=`<span class="ok">✅ ${fileName} (${(jsonStr.length/1024).toFixed(1)}KB)</span>`;
+    try{ 
+      await db.ref(`backups/${shopName}/${Date.now()}`).set({date:new Date().toISOString(), shop:shopName, fileName, size:jsonStr.length, by:'DG V9.1'});
+      // ROTATION 5 MAX - NE SATURE PAS
+      let snapAll=await db.ref(`backups/${shopName}`).once('value'); let all=snapAll.val()||{}; let keys=Object.keys(all).sort().reverse(); if(keys.length>5){ for(let i=5;i<keys.length;i++) await db.ref(`backups/${shopName}/${keys[i]}`).remove(); }
+      localStorage.setItem('BATEKE_LAST_BACKUP', Date.now().toString());
+      // DRIVE AUTO si connecté
+      if(DRIVE_TOKEN){ await uploadToDrive(fileName, jsonStr); }
+    }catch(e){ console.warn(e); }
+    if(msgEl) msgEl.innerHTML=`<span class="ok">✅ ${fileName} (${(jsonStr.length/1024).toFixed(1)}KB)${DRIVE_TOKEN?' + Drive':''}</span>`;
     document.getElementById('backupStatus').innerText=`✅ ${shopName} ${new Date().toLocaleTimeString()}`;
     return backup;
   }catch(e){ if(msgEl) msgEl.innerHTML=`<span class="bad">❌ ${e.message}</span>`; alert('Backup fail: '+e.message); }
 }
 async function backupAllShops(){
-  if(!confirm('💾 BACKUP DE TOUTES LES BOUTIQUES? Cela va télécharger un JSON par boutique. Continuer?')) return;
+  if(!confirm('💾 BACKUP DE TOUTES LES BOUTIQUES?')) return;
   let shops=Object.keys(G_SHOPS||{}).filter(k=>!['shops','Mbata','Itendance'].includes(k));
   if(!shops.length){ alert('Aucune boutique trouvée, fais SCAN'); return; }
   for(let s of shops){ await backupShop(s); await new Promise(r=>setTimeout(r,800)); }
-  alert(`✅ Backup de ${shops.length} boutiques terminé`);
+  alert(`✅ Backup de ${shops.length} boutiques terminé${DRIVE_TOKEN?' + Drive':''}`);
 }
 async function restoreShop(shopName, backupJson){
   if(!shopName){ shopName=document.getElementById('restoreTargetShop')?.value||document.getElementById('shopBackupSel')?.value; }
@@ -268,7 +312,6 @@ function restoreFromFileTab(){
   };
   reader.readAsText(fileInput.files[0]);
 }
-// FIX V8.7 - LISTE BACKUP PROD - A REMPLACER
 function loadBackupList(){
   let el=document.getElementById('listBackups'); 
   if(!el) return;
@@ -282,7 +325,6 @@ function loadBackupList(){
     let shopsVal=snapShops.val()||{};
     let html='';
     let count=0;
-    // 1. Liste depuis backups/{shop}/{timestamp}
     Object.entries(v).forEach(([shop, backs])=>{
       Object.entries(backs||{}).forEach(([ts, b])=>{
         let d=new Date(parseInt(ts)); 
@@ -291,7 +333,6 @@ function loadBackupList(){
         count++;
       });
     });
-    // 2. Si vide, check aussi shops/{shop}/backups_meta
     if(count===0){
       Object.entries(shopsVal).forEach(([shop, data])=>{
         let metas=data.backups_meta||{};
@@ -345,7 +386,6 @@ function scanGlobal(){
   G_PATRONS = patronsObj;
 
   let shopNames=Object.keys(G_SHOPS).filter(k=>!['shops','Mbata','Itendance'].includes(k));
-  // MAJ selects backup
   try{
     let sel1=document.getElementById('shopBackupSel'); let sel2=document.getElementById('shopBackupSel2');
     let opts=shopNames.map(n=>`<option value="${n}">${n}</option>`).join('');
@@ -406,9 +446,8 @@ function openClient(pid){ G_CURRENT_PID=pid; let p=G_PATRONS[pid]; let boutiques
 function closeModal(){ document.getElementById('modalClient').style.display='none'; }
 function editClient(){ let p=G_PATRONS[G_CURRENT_PID]; let nom=prompt('Nom:',p.nom||''); if(nom===null) return; firebase.database().ref(`patrons/${G_CURRENT_PID}`).update({nom}).then(()=>{ alert('✅'); closeModal(); scanGlobal(); }); }
 function supprimerClient(pidArg){ let pid=pidArg||G_CURRENT_PID; if(!confirm(`Supprimer ${pid}?`)) return; if(!confirm('Dernière confirmation')) return; firebase.database().ref(`patrons/${pid}`).remove().then(()=>{ alert('✅ Supprimé'); closeModal(); scanGlobal(); }); }
-
 function resetPin(pid){
- if(!confirm(`Générer un nouveau PIN temporaire pour ${pid}? L'ancien PIN ne sera plus valable et le patron devra le changer.`)) return;
+ if(!confirm(`Générer un nouveau PIN temporaire pour ${pid}?`)) return;
  let newTemp = genTempPin();
  let u={};
  u[`patrons/${pid}/pin`] = newTemp;
@@ -417,11 +456,10 @@ function resetPin(pid){
  u[`patrons/${pid}/tempPinExpire`] = Date.now()+10*60000;
  u[`patrons/${pid}/tempPinGenBy`] = 'DG';
  firebase.database().ref().update(u).then(()=>{
-   alert(`✅ Nouveau PIN temporaire pour ${pid}: ${newTemp}\n\nCommunique-le UNE SEULE FOIS au patron.\nValable 10min, il devra le changer à la connexion.`);
+   alert(`✅ Nouveau PIN temporaire pour ${pid}: ${newTemp}\n\nValable 10min.`);
    scanGlobal();
  });
 }
-
 function creerPatron(){
  let pinIdInput=document.getElementById('newPatronId').value.trim();
  let nom=document.getElementById('newPatronNom').value.trim();
@@ -429,10 +467,8 @@ function creerPatron(){
  let phone=document.getElementById('newPatronPhone').value.trim();
  let email=document.getElementById('newPatronEmail')?.value.trim()||'';
  if(!nom||!boutique||!phone){ alert('Requis: Nom, Boutique, Téléphone'); return; }
- 
  let tempPin = genTempPin();
  let finalId = pinIdInput || phone.replace(/[^0-9]/g,'').slice(-4) + Math.floor(Math.random()*90+10);
-
  let u={};
  u[`patrons/${finalId}/pin`] = tempPin;
  u[`patrons/${finalId}/pinHash`] = hashPin(tempPin);
@@ -449,15 +485,15 @@ function creerPatron(){
  u[`shops/${boutique}/patronId`] = finalId;
  u[`shops/${boutique}/abonnements/expire`] = 0;
  firebase.database().ref().update(u).then(()=>{
-   document.getElementById('msgCreate').innerHTML=`<span class="ok">✅ Créé</span><br><b style="font-size:20px;background:#f59e0b;color:#000;padding:6px 12px;border-radius:10px">ID: ${finalId} | PIN TEMP UNIQUE: ${tempPin}</b><br><span class="warn">ID ne marche PAS pour se connecter. Seul ${tempPin} marche, puis patron le changera.</span><br><a href="https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=Bienvenue%20BATEKE%20${boutique}%20PIN%20unique:%20${tempPin}%20ID:%20${finalId}%20Change-le%20vite" target="_blank" style="color:#25D366">📱 Envoyer WhatsApp</a>`;
-   alert(`✅ Client ${nom} créé.\n\nID base (non secret): ${finalId}\nSEUL PIN VALABLE: ${tempPin}\n\nPatron se connecte avec ${tempPin} uniquement.`);
+   document.getElementById('msgCreate').innerHTML=`<span class="ok">✅ Créé</span><br><b style="font-size:20px;background:#f59e0b;color:#000;padding:6px 12px;border-radius:10px">ID: ${finalId} | PIN TEMP: ${tempPin}</b>`;
+   alert(`✅ Client ${nom} créé.\nID: ${finalId}\nPIN: ${tempPin}`);
    scanGlobal();
  });
 }
 function activer(b){ firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let fin=Date.now()+30*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=fin; up[`patrons/${pid}/boutiques/${b}/expire`]=fin; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='actif'; up[`shops/${b}/abonnements/expireISO`]=new Date(fin).toISOString(); firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
 function bloquer(b){ if(!confirm(`Bloquer ${b}?`)) return; firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let past=Date.now()-10*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=past; up[`patrons/${pid}/boutiques/${b}/expire`]=past; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='bloqué'; firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
 function activerPaiement(key,boutique,pid){
- if(!confirm(`Activer ${boutique} +30J?\nVérifie Airtel/Mpesa!`)) return;
+ if(!confirm(`Activer ${boutique} +30J?`)) return;
  let pidFinal=pid||trouverPatronDeShop(boutique,G_PATRONS)||'7832';
  if(!pidFinal || pidFinal==='—') pidFinal='7832';
  let fin=Date.now()+30*86400000;
@@ -477,7 +513,13 @@ firebase.auth().signInAnonymously().then(()=>{
   scanGlobal();
   try{ firebase.database().ref('paiements_abonnements').orderByChild('statut').equalTo('en_attente').on('child_added', ()=>setTimeout(()=>scanGlobal(),1000)); }catch(e){}
   setInterval(()=>scanGlobal(),20000);
+  // AUTO BACKUP FERMETURE V9.1
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden'){ let last=parseInt(localStorage.getItem('BATEKE_LAST_BACKUP')||0); if(Date.now()-last > 60*60*1000){ backupAllShops(); } } });
 });
+
+// AUTO SAUVEGARDE À LA FERMETURE
+window.addEventListener('beforeunload', ()=>{ let last=parseInt(localStorage.getItem('BATEKE_LAST_BACKUP')||0); if(Date.now()-last > 2*60*60*1000){ localStorage.setItem('BATEKE_LAST_BACKUP_PENDING','1'); } });
+
 </script>
  <script>
 function loadPrixAbo(){ firebase.database().ref('config_global/prix_abonnement').once('value').then(s=>{ if(s.exists()) document.getElementById('inputPrixAbo').value = s.val(); }); }
