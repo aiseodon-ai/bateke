@@ -88,9 +88,16 @@ export function genRapport(){
  } else if(type==='top'){
    let map={}; vPeriode.forEach(v=>(v.items||[]).forEach(i=>{let code=i.CODE||i.code; if(!map[code])map[code]={CODE:code,Categorie:getCat(code),Des:i.Designation||stockMap[code]?.Designation||code,qty:0,ca:0,stock:stockMap[code]?.Quantite||0}; map[code].qty+=parseFloat(i.qty||0)||0; map[code].ca+= (parseFloat(i.qty||0)||0)*parseFloat(i.Prix||0);})); let top=Object.values(map).sort((a,b)=>b.qty-a.qty).slice(0,20); window._tmpParArticle=map;
    html=`<h3>🏆 TOP 20 + STOCK ACTUEL</h3><table><tr><th>#</th><th>CODE</th><th>Catégorie</th><th>Dés</th><th>Qté</th><th>CA</th><th>Stock</th></tr>`+top.map((t,i)=>`<tr><td>${i+1}</td><td><b>${escFn(t.CODE)}</b></td><td style="background:#e8f5e9">${escFn(t.Categorie)}</td><td>${escFn(t.Des)}</td><td><b>${t.qty}</b></td><td>${t.ca.toLocaleString()}</td><td style="background:#fef3c7;text-align:center">${t.stock}</td></tr>`).join('')+`</table>`;
- } else if(type==='invendu' || type==='invendus'){
-   let vendus=new Set(); vPeriode.forEach(v=>(v.items||[]).forEach(i=>vendus.add(i.CODE||i.code))); let inv=data.stock.filter(p=>!vendus.has(p.CODE));
-   html=`<h3>💤 INVENDUS + STOCK - ${inv.length} refs</h3><table><tr><th>CODE</th><th>Catégorie</th><th>Dés</th><th>Stock</th><th>PA</th><th>Valeur bloquée</th></tr>`+inv.slice(0,300).map(p=>{let val=(p.Quantite||0)*(p['Prix Achat']||0); return `<tr><td>${escFn(p.CODE)}</td><td style="background:#e8f5e9">${escFn(p.Categorie||'AUTRE')}</td><td>${escFn(p.Designation)}</td><td style="background:#fee;text-align:center"><b>${p.Quantite}</b></td><td>${(p['Prix Achat']||0).toLocaleString()}</td><td style="color:red"><b>${val.toLocaleString()}</b></td></tr>`;}).join('')+`</table>`;
+ } else if(type==='invendu'){
+   let vendus=new Set(); vPeriode.forEach(v=>(v.items||[]).forEach(i=>vendus.add(i.CODE)));
+   let inv=data.stock.filter(p=>!vendus.has(p.CODE));
+   html=`<h3>💤 STOCK MORT - INVENDUS DEPUIS ${nbJours} JOURS - ${inv.length} réf bloquent ton cash</h3>
+   <table><tr><th>CODE</th><th>Catégorie</th><th>Dés</th><th>Stock</th><th>PA</th><th>Valeur bloquée</th><th>Action commerciale</th></tr>`+
+   inv.map(p=>{
+     let val=(p.Quantite||0)*(p['Prix Achat']||0);
+     return `<tr><td>${esc(p.CODE)}</td><td style="background:#e8f5e9">${esc(p.Categorie||'AUTRE')}</td><td>${esc(p.Designation)}</td><td style="background:#fee;text-align:center"><b>${p.Quantite}</b></td><td>${(p['Prix Achat']||0).toLocaleString()}</td><td style="color:red"><b>${val.toLocaleString()}</b></td><td>Promo / Déstockage</td></tr>`;
+   }).join('')+`</table><p>Total cash bloqué: <b style="color:red">${inv.reduce((s,p)=>s+(p.Quantite||0)*(p['Prix Achat']||0),0).toLocaleString()} FC</b></p>`; 
+  
  } else if(type==='ca_client'){
    let byC={}; vPeriode.forEach(v=>{let k=v.client||v.clientNom||'Inconnu'; if(codeFiltre&&!k.toLowerCase().includes(codeFiltre))return; if(!byC[k])byC[k]={ca:0,nb:0}; byC[k].ca+=parseFloat(v.total||0)||0; byC[k].nb++;}); window._tmpByV=byC;
    html=`<h3>👤 CA PAR CLIENT</h3><table><tr><th>Client</th><th>Nb</th><th>CA</th></tr>`+Object.entries(byC).sort((a,b)=>b[1].ca-a[1].ca).slice(0,200).map(([k,v])=>`<tr><td>${escFn(k)}</td><td>${v.nb}</td><td>${v.ca.toLocaleString()}</td></tr>`).join('')+`</table>`;
