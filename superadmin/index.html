@@ -33,8 +33,22 @@
  <div class="card"><div>Revenus validés (mois)</div><div id="revenus" class="kpi ok">...</div><div class="muted" id="revenusDetail"></div></div>
  <div class="card"><div>Prix Abonnement</div><div class="kpi" style="font-size:20px"><input id="inputPrixAbo" type="number" value="10000" style="width:100px"> FC</div><button class="btn-g" onclick="savePrixAbo()">💾 Sauver Prix</button><div id="msgPrix" class="muted"></div></div>
  <!-- CARD BACKUP V9.1 DRIVE SANS DERANGER -->
-
-
+<div class="card" style="border-color:#22c55e;display:flex;flex-direction:column;gap:8px"><div>💾 BACKUP SAAS V9.1</div><div id="backupStatus" class="kpi ok" style="font-size:13px">Prêt</div><div id="driveStatus" class="muted">Drive: Non connecté</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<button class="btn-g" onclick="backupShop(document.getElementById('shopBackupSel')?.value||'')">💾 Boutique</button>
+<button class="btn-b" onclick="backupAllShops()">💾 TOUT</button>
+<button class="btn-b" onclick="backupAllAutoDrive()" style="background:#0ea5e9">☁️ DRIVE</button>
+<button class="btn-dark" onclick="openDriveFolder()" style="border-color:#0ea5e9;color:#0ea5e9">📁 Voir Drive</button>
+</div>
+<select id="shopBackupSel" style="width:100%"></select>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<button class="btn-dark" onclick="connectDrive()" id="btnDrive" style="background:#f59e0b">🔗 CONNECT</button>
+<button class="btn-r" onclick="document.getElementById('restoreFileGlobal').click()">♻️ Restore</button>
+</div>
+<input type="file" id="restoreFileGlobal" accept=".json" style="display:none">
+<div id="msgBackup" class="muted"></div>
+</div>
+</div>
 
 <div class="card">
 <div class="tabs">
@@ -180,14 +194,14 @@ async function backupAllAutoDrive(){
  }
  alert('✅ BACKUP AUTO DRIVE OK'); document.getElementById('msgBackup').innerText='✅ Drive OK '+new Date().toLocaleTimeString();
 }
-// function openDriveFolder(){
-// if(!DRIVE_FOLDER_ID){
- //  alert('Clique d\'abord ☁️ DRIVE une fois pour créer le dossier, puis re-clique Voir Drive');
- //  window.open('https://drive.google.com/drive/search?q=BATEKE_SAAS_BACKUPS_V9','_blank');
-  // return;
-// }
-// window.open(`https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}`,'_blank');
-//}
+ function openDriveFolder(){
+ if(!DRIVE_FOLDER_ID){
+   alert('Clique d\'abord ☁️ DRIVE une fois pour créer le dossier, puis re-clique Voir Drive');
+   window.open('https://drive.google.com/drive/search?q=BATEKE_SAAS_BACKUPS_V9','_blank');
+   return;
+ }
+ window.open(`https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}`,'_blank');
+}
 // ===== FIN DRIVE =====
 
 function enableSound(){ G_SOUND_ENABLED=true; document.getElementById('btnSound').innerText='🔊 Son activé'; document.getElementById('btnSound').style.background='#22c55e'; if('Notification' in window) Notification.requestPermission(); try{ new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{}); }catch(e){} }
