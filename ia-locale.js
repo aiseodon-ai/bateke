@@ -54,10 +54,16 @@
       let ca = lignes.reduce(function(s,l){ return s+l.TOTAL; },0);
       let stockAvecQte = stock.filter(function(p){ return IA_hasQty(p); });
       let rupturesToutes = stockAvecQte.filter(function(p){ return IA_qty(p) <= 0; });
-      // Vraie rupture = Qté 0 ET vendu dans les 30 derniers jours (seuil=3 partout, donc seuil inutile)
-      let codesVendus30j = {}; let limite30j = now - 30*86400000;
-      lignes.forEach(function(l){ if(l.CODE && l.DATE>=limite30j) codesVendus30j[l.CODE]=true; });
-      let ruptures = rupturesToutes.filter(function(p){ return codesVendus30j[IA_code(p)]; });
+       // Vraie rupture = Qté 0 ET vendu dans les 30 derniers jours + proposition de réappro
+      let limite30j = now - 30*86400000;
+      let ventes30j = {}; lignes.forEach(function(l){ if(l.CODE && l.DATE>=limite30j){ if(!ventes30j[l.CODE]) ventes30j[l.CODE]=0; ventes30j[l.CODE]+=l.QTE; } });
+      let ruptures = rupturesToutes.filter(function(p){ return ventes30j[IA_code(p)]>0; }).map(function(p){
+        let code = IA_code(p); let q30 = ventes30j[code]||0; let vit = q30/30; let pa = IA_pa(p);
+        let prop7 = Math.max(1, Math.ceil(vit*7)); let prop30 = Math.max(1, Math.ceil(vit*30));
+        return { CODE: code, DES: p.Designation||p.designation||p.Nom||'', PA: pa, Q30: q30, VIT: vit, PROP7: prop7, PROP30: prop30, COUT7: prop7*pa, COUT30: prop30*pa };
+      }).sort(function(a,b){ return b.Q30-a.Q30; });
+      let totalCout7 = ruptures.reduce(function(s,r){ return s+r.COUT7; },0);
+      let totalCout30 = ruptures.reduce(function(s,r){ return s+r.COUT30; },0);
       let dormants = stockAvecQte.filter(function(p){ return IA_qty(p) > 20; });
       // Cash bloqué = Somme(Qté x PA) - doit être proche de 3 135 245 FC sur Menkao2
       let cashBloque = stockAvecQte.reduce(function(s,p){ return s + IA_qty(p) * IA_pa(p); },0);
@@ -81,8 +87,9 @@
       let debug = '<div style="margin-top:12px;font-size:10px;color:#888;border-top:1px solid #eee;padding-top:6px">Vérif IA vs ton onglet Stock : Stock IA = '+stockAvecQte.length+' réf / '+totalPcs+' pcs | Valeur Achat IA = '+IA_fmt(cashBloque)+' (attendu ~3 135 245 FC) | Valeur Vente IA = '+IA_fmt(valVente)+' (attendu ~4 662 350 FC) | Ex. 1er : '+IA_esc(IA_code(first))+' Qté IA='+IA_qty(first)+' PA IA='+IA_pa(first)+' PV IA='+IA_pv(first)+' (attendu AD00 : Qté 4, PA 700, PV 1000)</div>';
 
       let html = '';
-      if(module==='conseil'){
-        html = '<h4>⭐ CONSEIL DU JOUR</h4><p>🔴 <b>1. Ruptures :</b> '+ruptures.length+' vraies ruptures (sur '+rupturesToutes.length+' à 0, le reste = refs inactives).<br>🟡 <b>2. Cash bloqué :</b> '+IA_fmt(cashBloque)+' dans le stock, dont '+dormants.length+' articles à +20 pcs qui dorment.<br>❤️ <b>3. Clients :</b> '+aRelancer.length+' clients absents depuis 14j+ à relancer.<br>🎯 <b>Action :</b> '+(aRelancer[0] ? 'Appelle d’abord <b>'+IA_esc(aRelancer[0].nom)+'</b> ('+Math.floor((now-aRelancer[0].dernier)/86400000)+'j absent).' : 'Aucun client en danger. Concentre-toi sur tes VIP.')+'</p>' + debug;
+           if(module==='conseil'){
+        let rowsR = ruptures.map(function(r){ return '<tr><td><b>'+IA_esc(r.CODE)+'</b><br><span style="font-size:11px;color:#555">'+IA_esc(r.DES)+'</span></td><td>'+IA_fmt(r.PA)+'</td><td>'+r.Q30+' pcs / 30j<br><span style="font-size:11px">'+r.VIT.toFixed(1)+' / jour</span></td><td><b>'+r.PROP7+' pcs</b><br><span style="font-size:11px">'+IA_fmt(r.COUT7)+'</span></td><td><b>'+r.PROP30+' pcs</b><br><span style="font-size:11px">'+IA_fmt(r.COUT30)+'</span></td></tr>'; }).join('') || '<tr><td colspan="5">Aucune vraie rupture. Bravo.</td></tr>';
+        html = '<h4>⭐ CONSEIL DU JOUR</h4><p>🔴 <b>1. Ruptures :</b> '+ruptures.length+' vraies ruptures (sur '+rupturesToutes.length+' à 0).<br>🟡 <b>2. Cash bloqué :</b> '+IA_fmt(cashBloque)+' dont '+dormants.length+' articles à +20 pcs qui dorment.<br>❤️ <b>3. Clients :</b> '+aRelancer.length+' clients absents depuis 14j+ à relancer.</p><h4>🛒 COMMANDE URGENTE - RUPTURES RÉELLES</h4><div style="overflow:auto"><table><tr><th>Article</th><th>PA</th><th>Vitesse vente</th><th>Pour 7 jours</th><th>Pour 30 jours</th></tr>'+rowsR+'</table></div><p><b>Total à payer pour tenir 7 jours :</b> '+IA_fmt(totalCout7)+' | <b>Pour 30 jours :</b> '+IA_fmt(totalCout30)+'<br>🎯 <b>Action :</b> '+(ruptures[0] ? 'Commande d’abord <b>'+IA_esc(ruptures[0].CODE)+' - '+IA_esc(ruptures[0].DES)+'</b> : '+ruptures[0].PROP7+' pcs pour 7j ('+IA_fmt(ruptures[0].COUT7)+').' : 'Aucune rupture. Concentre-toi sur tes VIP.')+'</p>' + debug;
       } else if(module==='marketing'){
         html = '<h4>📣 MARKETING</h4><p>⭐ <b>Star :</b> '+IA_esc(topP.CODE)+' - '+topP.qte+' vendus.<br>💤 <b>Dormant :</b> Fais un pack : Star + 1 dormant à -10%.<br>🚫 Ruptures vraies : '+ruptures.length+' (ne fais pas de pub dessus).</p>' + debug;
       } else if(module==='tresorerie'){
