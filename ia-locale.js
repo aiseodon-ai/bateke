@@ -15,7 +15,7 @@
   // On lit DIRECT, sans flou. Priorité : PA exact, sinon "Prix Achat", sinon "Prix Unit" = NON.
   function IA_qty(p){ if(!p) return 0; if(p.Quantite!=null && String(p.Quantite).trim()!=='') return IA_num(p.Quantite); if(p['Qté']!=null) return IA_num(p['Qté']); if(p.QTE!=null) return IA_num(p.QTE); return 0; }
   function IA_pa(p){ if(!p) return 0; if(p.PA!=null && String(p.PA).trim()!=='' && IA_num(p.PA)!==0) return IA_num(p.PA); if(p['Prix Achat']!=null && IA_num(p['Prix Achat'])!==0) return IA_num(p['Prix Achat']); return IA_num(p.PA); }
-  function IA_pv(p){ if(!p) return 0; if(p.Prix!=null && IA_num(p.Prix)!==0) return IA_num(p.Prix); if(p.PV!=null) return IA_num(p.PV); if(p['Prix Vente']!=null) return IA_num(p['Prix Vente']); return 0; }
+  function IA_pv(p){ if(!p) return 0; if(p['Prix Unit']!=null && IA_num(p['Prix Unit'])!==0) return IA_num(p['Prix Unit']); if(p.Prix!=null && IA_num(p.Prix)!==0) return IA_num(p.Prix); if(p.PV!=null && IA_num(p.PV)!==0) return IA_num(p.PV); if(p['Prix Vente']!=null) return IA_num(p['Prix Vente']); return 0; }
   function IA_code(p){ if(!p) return ''; return String(p.CODE || p.Code || p.code || ''); }
   function IA_seuil(p){ if(!p) return 0; return IA_num(p.seuil ?? p.Seuil ?? p.SEUIL); }
   function IA_hasQty(p){ return p && (p.Quantite!=null || p['Qté']!=null || p.QTE!=null); }
@@ -54,9 +54,10 @@
       let ca = lignes.reduce(function(s,l){ return s+l.TOTAL; },0);
       let stockAvecQte = stock.filter(function(p){ return IA_hasQty(p); });
       let rupturesToutes = stockAvecQte.filter(function(p){ return IA_qty(p) <= 0; });
-      // Vraie rupture = Qté 0 ET déjà vendu OU seuil > 0 (sinon = ref inactive importée)
-      let codesVendus = {}; lignes.forEach(function(l){ if(l.CODE) codesVendus[l.CODE]=true; });
-      let ruptures = rupturesToutes.filter(function(p){ return codesVendus[IA_code(p)] || IA_seuil(p)>0; });
+      // Vraie rupture = Qté 0 ET vendu dans les 30 derniers jours (seuil=3 partout, donc seuil inutile)
+      let codesVendus30j = {}; let limite30j = now - 30*86400000;
+      lignes.forEach(function(l){ if(l.CODE && l.DATE>=limite30j) codesVendus30j[l.CODE]=true; });
+      let ruptures = rupturesToutes.filter(function(p){ return codesVendus30j[IA_code(p)]; });
       let dormants = stockAvecQte.filter(function(p){ return IA_qty(p) > 20; });
       // Cash bloqué = Somme(Qté x PA) - doit être proche de 3 135 245 FC sur Menkao2
       let cashBloque = stockAvecQte.reduce(function(s,p){ return s + IA_qty(p) * IA_pa(p); },0);
