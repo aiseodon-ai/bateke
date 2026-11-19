@@ -70,11 +70,7 @@
       }).sort(function(a,b){ return a.JDEPUIS-b.JDEPUIS; });
       let totalCout7 = ruptures.reduce(function(s,r){ return s+r.COUT7; },0);
       //
-     let dormantsDetail = stock.filter(function(p){ let qq = (p.QTE!=null ? p.QTE : (p.Qte!=null ? p.Qte : (p.Quantite!=null ? p.Quantite : (p.STOCK!=null ? p.STOCK : 0)))); return qq>=20; }).map(function(p){
-        let code = IA_code(p); let q = (p.QTE!=null ? p.QTE : (p.Qte!=null ? p.Qte : (p.Quantite!=null ? p.Quantite : (p.STOCK!=null ? p.STOCK : 0)))); let pa = IA_pa(p);
-        let jDepuis = derniereVente[code] ? Math.floor((now-derniereVente[code])/86400000) : 999;
-        return { CODE: code, DES: p.Designation||p.designation||p.Nom||'', QTE: q, PA: pa, VALEUR: q*pa, JDEPUIS: jDepuis };
-      }).sort(function(a,b){ return b.JDEPUIS-a.JDEPUIS; }).slice(0,10);
+   let dormantsDetail = stock.filter(function(p){ let qq = (p.QTE!=null ? p.QTE : (p.Qte!=null ? p.Qte : (p.Quantite!=null ? p.Quantite : (p.STOCK!=null ? p.STOCK : 0)))); return qq>=20; }).map(function(p){
         let code = IA_code(p); let q = (p.QTE!=null ? p.QTE : (p.Qte!=null ? p.Qte : (p.Quantite!=null ? p.Quantite : (p.STOCK!=null ? p.STOCK : 0)))); let pa = IA_pa(p);
         let jDepuis = derniereVente[code] ? Math.floor((now-derniereVente[code])/86400000) : 999;
         return { CODE: code, DES: p.Designation||p.designation||p.Nom||'', QTE: q, PA: pa, VALEUR: q*pa, JDEPUIS: jDepuis };
