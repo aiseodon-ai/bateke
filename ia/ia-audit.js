@@ -1,0 +1,1 @@
+(function(){ window.IA_render_audit=function(c){ let eff = c.lignes.length>0 ? Math.min(100, Math.round(50 + c.lignes.length)) : 0; return '<h4>📊 AUDIT EFFICACITÉ</h4><p>Efficacité : <b>'+eff+'%</b><br>🔴 Ruptures vraies : '+c.ruptures.length+'<br>🟡 Dormants : '+c.dormants.length+'<br>❤️ À relancer : '+c.aRelancer.length+'.</p>' + c.debug; }; })();
