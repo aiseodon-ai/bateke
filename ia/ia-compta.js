@@ -1,14 +1,10 @@
-// ia-compta.js - V2.2 - CA = QTE x Prix Vente du STOCK (la ligne IA n'a pas le prix)
+// ia-compta.js - V2.3 - CA depuis getFiltered().ventes comme calcCompta V4.9.10, pas depuis lignes IA
 (function(){
   function IA_getVal(id, def){
     let el = document.getElementById(id);
     if(!el || el.value==null || el.value==='') return def;
     let n = parseFloat(String(el.value).replace(/\s/g,'').replace(',','.'));
     return isNaN(n)?def:n;
-  }
-  function IA_pvStock(p){
-    if(!p) return 0;
-    return IA_num(p['Prix Vente'] ?? p.PV ?? p.pv ?? p['Prix'] ?? p.Prix ?? p.PRIX ?? 0);
   }
   function IA_getDates(){
     let duEl = document.getElementById('cDu'), auEl = document.getElementById('cAu');
@@ -21,9 +17,6 @@
       au = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59,999);
     }
     return {du:du, au:au, isFiltre: !!(duEl && duEl.value)};
-  }
-  function IA_filtrePeriode(lignes, du, au){
-    return lignes.filter(function(l){ return l.DATE && l.DATE>=du.getTime() && l.DATE<=au.getTime(); });
   }
 
   window.IA_render_compta = function(c){
@@ -41,53 +34,63 @@
     let patronPct = IA_getVal('cPatron', 45);
     let devPct = IA_getVal('cDev', 30);
 
-    // 1. MAP STOCK D'ABORD - c'est ici qu'est le Prix Vente
-    let mapStock = {};
-    c.stock.forEach(function(p){ mapStock[IA_code(p)] = p; });
+    // === SOURCE UNIQUE = getFiltered(), comme calcCompta ===
+    let gf = {};
+    try{ gf = (typeof getFiltered==='function' ? getFiltered() : window.getFiltered?.()) || {}; }catch(e){ gf={}; }
+    let ventesBrutes = gf.ventes || [];
+    let depBrutes = gf.dep || [];
+    let stockBrut = gf.stock || c.stock || [];
 
-    // 2. TOTAL LIGNE = QTE x Prix Vente du stock, sauf si la ligne a deja un TOTAL >0
-    function IA_totalLigne(l){
-      if(l.TOTAL && l.TOTAL>0) return l.TOTAL;
-      if(l.PV && l.PV>0) return (l.QTE||0)*l.PV;
-      if(l.Prix && l.Prix>0) return (l.QTE||0)*l.Prix;
-      let p = mapStock[String(l.CODE)];
-      let pv = IA_pvStock(p);
-      return (l.QTE||0)*pv;
-    }
+    // Map PA par CODE - meme logique que calcCompta : CODE || _id
+    let fullMap = {};
+    stockBrut.forEach(function(p){ let code = p.CODE || p._id; if(code) fullMap[String(code)] = p; });
 
-    let lignesPer = IA_filtrePeriode(c.lignes, du, au);
-    let caPer = lignesPer.reduce(function(s,l){ return s+IA_totalLigne(l); },0);
-    let qtePer = lignesPer.reduce(function(s,l){ return s+l.QTE; },0);
+    // Ventes de la periode - filtre sur v.date comme calcCompta
+    let vPeriode = ventesBrutes.filter(function(v){ let d=new Date(v.date); return d>=du && d<=au; });
+    let depPeriode = depBrutes.filter(function(d){ let dt=new Date(d.date); return dt>=du && dt<=au; });
 
-    let coutMarch = 0; let benefBrut = 0;
-    lignesPer.forEach(function(l){
-      let p = mapStock[String(l.CODE)];
-      let pa = p ? IA_pa(p) : 0;
-      let tot = IA_totalLigne(l);
-      coutMarch += l.QTE * pa;
-      benefBrut += (tot - l.QTE*pa);
+    // CA, Qte, Benef brut - depuis v.total et v.items[].Prix et PA du stock
+    let caPer = 0; let qtePer = 0; let benefBrut = 0; let coutMarch = 0;
+    let vendeursPer = {};
+    vPeriode.forEach(function(v){
+      caPer += IA_num(v.total ?? v.TOTAL ?? 0);
+      (v.items||[]).forEach(function(i){
+        let qty = IA_num(i.qty ?? i.QTE ?? 0);
+        let prix = IA_num(i.Prix ?? i.prix ?? i.PV ?? i.PRIX ?? 0);
+        // Si l'item n'a pas de Prix, on prend le Prix Vente du stock
+        if(prix===0){
+          let p = fullMap[String(i.CODE)];
+          if(p) prix = IA_num(p['Prix Vente'] ?? p.PV ?? p['Prix'] ?? p.Prix ?? 0);
+        }
+        // Si v.total est a 0, on reconstruit le CA depuis les items
+        qtePer += qty;
+        let pa = fullMap[String(i.CODE)] ? IA_pa(fullMap[String(i.CODE)]) : 0;
+        coutMarch += qty * pa;
+        benefBrut += qty * (prix - pa);
+        // Vendeurs
+        let nomRaw = String(v.vendeurNom || v.vendeur || 'Inconnu').trim();
+        if(nomRaw && nomRaw.toLowerCase()!=='comptoir'){
+          if(!vendeursPer[nomRaw]) vendeursPer[nomRaw]={nom:nomRaw,ca:0,benef:0};
+          vendeursPer[nomRaw].ca += qty*prix;
+          vendeursPer[nomRaw].benef += qty*(prix-pa);
+        }
+      });
+      // Si la vente n'a pas d'items mais a un total + benefice, on le prend
+      if(!(v.items||[]).length && v.benefice){
+        benefBrut += IA_num(v.benefice);
+        coutMarch += IA_num(v.total) - IA_num(v.benefice);
+        qtePer += 0;
+      }
     });
+    // Securite : si caPer est encore 0 mais qu'on a des items, on reconstruit depuis items
+    if(caPer===0 && qtePer>0){
+      caPer = 0;
+      vPeriode.forEach(function(v){ (v.items||[]).forEach(function(i){ let qty=IA_num(i.qty); let prix=IA_num(i.Prix ?? i.PV ?? 0); if(prix===0){ let p=fullMap[String(i.CODE)]; if(p) prix=IA_num(p['Prix Vente'] ?? p.PV ?? 0); } caPer += qty*prix; }); });
+    }
     let margePct = caPer>0 ? (benefBrut/caPer*100) : 0;
 
-    let depPer = [];
-    try{
-      let gf = (typeof getFiltered==='function' ? getFiltered() : null) || {};
-      (gf.dep||[]).forEach(function(d){
-        let dt = IA_time(d.date || d.Date || d.created);
-        if(dt>=du.getTime() && dt<=au.getTime()) depPer.push(d);
-      });
-    }catch(e){}
-    let totalDep = depPer.reduce(function(s,d){ return s + IA_num(d.montant ?? d.Montant ?? 0); },0);
+    let totalDep = depPeriode.reduce(function(s,d){ return s + IA_num(d.montant ?? d.Montant ?? 0); },0);
 
-    let vendeursPer = {};
-    lignesPer.forEach(function(l){
-      let v=String(l.VENDEUR||'Inconnu'); if(v.toLowerCase()==='comptoir') return;
-      if(!vendeursPer[v]) vendeursPer[v]={nom:v,ca:0,benef:0};
-      let tot = IA_totalLigne(l);
-      vendeursPer[v].ca+=tot;
-      let p=mapStock[String(l.CODE)]; let pa=p?IA_pa(p):0;
-      vendeursPer[v].benef += (tot - l.QTE*pa);
-    });
     let nbVendeurs = Object.keys(vendeursPer).length;
     let totalBase = nbVendeurs * base;
     let totalCom = benefBrut * (comPct/100);
@@ -121,16 +124,14 @@
     if(c.cashBloque > 3000000) alertes.push('💰 Cash bloqué en stock '+IA_fmt(c.cashBloque)+' : ne commande plus de dormants, vends d\'abord.');
     if(alertes.length===0) alertes.push('✅ Compta saine sur la période. Marge, résultat et dettes sous contrôle.');
 
-    // DEBUG visible - pour vérifier le prix
-    let ex = lignesPer[0];
-    let debugPrix = ex ? 'Exemple ligne : CODE='+ex.CODE+' QTE='+ex.QTE+' TOTAL_ligne='+IA_totalLigne(ex)+' PV_stock='+IA_pvStock(mapStock[String(ex.CODE)]) : 'Aucune ligne';
+    let debugPrix = 'Source ventes brutes : '+vPeriode.length+' ventes | stock brut : '+stockBrut.length+' articles | ex vente total='+(vPeriode[0]?vPeriode[0].total:'-')+' items='+(vPeriode[0]&&vPeriode[0].items?vPeriode[0].items.length:'-');
 
     let filtreHtml = '<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-bottom:10px">📅 <b>Période analysée :</b> '+labelPeriode+' | '+nbJours+' jours<br><span style="font-size:11px;color:#555">'+debugPrix+'</span></div>';
     let compteResHtml = '<h4>📊 COMPTE DE RÉSULTAT - '+labelPeriode+'</h4><div style="overflow:auto"><table><tr><th>Poste</th><th>Montant</th><th>Lecture comptable</th></tr>'
       +'<tr><td>CA - Chiffre d\'affaires</td><td><b>'+IA_fmt(caPer)+'</b></td><td>'+qtePer+' pcs vendus</td></tr>'
       +'<tr><td>- Coût des marchandises vendues (PA x Qté)</td><td>- '+IA_fmt(coutMarch)+'</td><td>Ce que tes produits t\'ont coûté</td></tr>'
       +'<tr style="background:#dcfce7"><td><b>= MARGE BRUTE</b></td><td><b>'+IA_fmt(benefBrut)+' ('+margePct.toFixed(1)+'%)</b></td><td>'+(margePct>=30?'Bonne marge':'Marge faible')+'</td></tr>'
-      +'<tr><td>- Dépenses (dep)</td><td>- '+IA_fmt(totalDep)+'</td><td>'+depPer.length+' dépenses sur la période</td></tr>'
+      +'<tr><td>- Dépenses (dep)</td><td>- '+IA_fmt(totalDep)+'</td><td>'+depPeriode.length+' dépenses sur la période</td></tr>'
       +'<tr><td>- Loyer</td><td>- '+IA_fmt(loyer)+'</td><td>Fixe</td></tr>'
       +'<tr><td>- Autres fixes</td><td>- '+IA_fmt(autreFixe)+'</td><td>Fixe</td></tr>'
       +'<tr><td>- Emprunt</td><td>- '+IA_fmt(emprunt)+'</td><td>À rembourser</td></tr>'
