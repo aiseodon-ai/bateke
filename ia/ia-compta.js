@@ -1,4 +1,4 @@
-// ia-compta.js - V2.1 CORRIGE CA - Lit PV/Prix si TOTAL=0
+// ia-compta.js - V2.2 - CA = QTE x Prix Vente du STOCK (la ligne IA n'a pas le prix)
 (function(){
   function IA_getVal(id, def){
     let el = document.getElementById(id);
@@ -6,11 +6,9 @@
     let n = parseFloat(String(el.value).replace(/\s/g,'').replace(',','.'));
     return isNaN(n)?def:n;
   }
-  // CORRECTION V2.1 : TOTAL fiable = TOTAL si >0, sinon QTE x PV/Prix
-  function IA_totalLigne(l){
-    if(l.TOTAL && l.TOTAL>0) return l.TOTAL;
-    let prix = l.PV ?? l.Prix ?? l.PRIX ?? l.prix ?? 0;
-    return (l.QTE||0) * IA_num(prix);
+  function IA_pvStock(p){
+    if(!p) return 0;
+    return IA_num(p['Prix Vente'] ?? p.PV ?? p.pv ?? p['Prix'] ?? p.Prix ?? p.PRIX ?? 0);
   }
   function IA_getDates(){
     let duEl = document.getElementById('cDu'), auEl = document.getElementById('cAu');
@@ -43,14 +41,25 @@
     let patronPct = IA_getVal('cPatron', 45);
     let devPct = IA_getVal('cDev', 30);
 
+    // 1. MAP STOCK D'ABORD - c'est ici qu'est le Prix Vente
+    let mapStock = {};
+    c.stock.forEach(function(p){ mapStock[IA_code(p)] = p; });
+
+    // 2. TOTAL LIGNE = QTE x Prix Vente du stock, sauf si la ligne a deja un TOTAL >0
+    function IA_totalLigne(l){
+      if(l.TOTAL && l.TOTAL>0) return l.TOTAL;
+      if(l.PV && l.PV>0) return (l.QTE||0)*l.PV;
+      if(l.Prix && l.Prix>0) return (l.QTE||0)*l.Prix;
+      let p = mapStock[String(l.CODE)];
+      let pv = IA_pvStock(p);
+      return (l.QTE||0)*pv;
+    }
+
     let lignesPer = IA_filtrePeriode(c.lignes, du, au);
-    // CORRECTION : on utilise IA_totalLigne partout, plus l.TOTAL seul
     let caPer = lignesPer.reduce(function(s,l){ return s+IA_totalLigne(l); },0);
     let qtePer = lignesPer.reduce(function(s,l){ return s+l.QTE; },0);
 
     let coutMarch = 0; let benefBrut = 0;
-    let mapStock = {};
-    c.stock.forEach(function(p){ mapStock[IA_code(p)] = p; });
     lignesPer.forEach(function(l){
       let p = mapStock[String(l.CODE)];
       let pa = p ? IA_pa(p) : 0;
@@ -112,7 +121,11 @@
     if(c.cashBloque > 3000000) alertes.push('💰 Cash bloqué en stock '+IA_fmt(c.cashBloque)+' : ne commande plus de dormants, vends d\'abord.');
     if(alertes.length===0) alertes.push('✅ Compta saine sur la période. Marge, résultat et dettes sous contrôle.');
 
-    let filtreHtml = '<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-bottom:10px">📅 <b>Période analysée :</b> '+labelPeriode+' | '+nbJours+' jours<br><span style="font-size:11px;color:#555">L\'IA lit les mêmes champs que ton onglet Compta principal : Loyer, Base, Commission, Emprunt, Autres Fixes. Change les dates dans Compta principal (Du/Au) et re-clique sur Compta IA, elle recalcule.</span></div>';
+    // DEBUG visible - pour vérifier le prix
+    let ex = lignesPer[0];
+    let debugPrix = ex ? 'Exemple ligne : CODE='+ex.CODE+' QTE='+ex.QTE+' TOTAL_ligne='+IA_totalLigne(ex)+' PV_stock='+IA_pvStock(mapStock[String(ex.CODE)]) : 'Aucune ligne';
+
+    let filtreHtml = '<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-bottom:10px">📅 <b>Période analysée :</b> '+labelPeriode+' | '+nbJours+' jours<br><span style="font-size:11px;color:#555">'+debugPrix+'</span></div>';
     let compteResHtml = '<h4>📊 COMPTE DE RÉSULTAT - '+labelPeriode+'</h4><div style="overflow:auto"><table><tr><th>Poste</th><th>Montant</th><th>Lecture comptable</th></tr>'
       +'<tr><td>CA - Chiffre d\'affaires</td><td><b>'+IA_fmt(caPer)+'</b></td><td>'+qtePer+' pcs vendus</td></tr>'
       +'<tr><td>- Coût des marchandises vendues (PA x Qté)</td><td>- '+IA_fmt(coutMarch)+'</td><td>Ce que tes produits t\'ont coûté</td></tr>'
