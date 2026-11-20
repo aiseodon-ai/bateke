@@ -1,0 +1,1 @@
+(function(){ window.IA_render_rh=function(c){ let txt = c.vendeurs.map(function(v){ return IA_esc(v.nom)+' : '+IA_fmt(v.total)+' ('+v.nb+' lignes)'; }).join('<br>') || 'Aucune vente avec vendeur.'; return '<h4>👥 RH / VENDEURS</h4><p>'+txt+'<br><br>Conseil : Mets le meilleur avec le plus faible 2 jours pour formation.</p>' + c.debug; }; })();
