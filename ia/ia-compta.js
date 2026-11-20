@@ -1,12 +1,16 @@
-// ia-compta.js - V2 COMPTABLE BATEKE - Lit les memes champs que calcCompta V4.9.10
-// Champs lus : cDu, cAu, cBase, cCom, cLoyer, cAutresFixe, cEmprunt, cPrime, cPatron, cDev
-// Donnees : getFiltered() ventes / dep / stock + IA_buildContext pour stock / dettes
+// ia-compta.js - V2.1 CORRIGE CA - Lit PV/Prix si TOTAL=0
 (function(){
   function IA_getVal(id, def){
     let el = document.getElementById(id);
     if(!el || el.value==null || el.value==='') return def;
     let n = parseFloat(String(el.value).replace(/\s/g,'').replace(',','.'));
     return isNaN(n)?def:n;
+  }
+  // CORRECTION V2.1 : TOTAL fiable = TOTAL si >0, sinon QTE x PV/Prix
+  function IA_totalLigne(l){
+    if(l.TOTAL && l.TOTAL>0) return l.TOTAL;
+    let prix = l.PV ?? l.Prix ?? l.PRIX ?? l.prix ?? 0;
+    return (l.QTE||0) * IA_num(prix);
   }
   function IA_getDates(){
     let duEl = document.getElementById('cDu'), auEl = document.getElementById('cAu');
@@ -15,7 +19,6 @@
     if(duEl && duEl.value && auEl && auEl.value){
       du = new Date(duEl.value); au = new Date(auEl.value); au.setHours(23,59,59,999);
     } else {
-      // Defaut : mois en cours
       du = new Date(now.getFullYear(), now.getMonth(), 1);
       au = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59,999);
     }
@@ -31,7 +34,6 @@
     let nbJours = Math.max(1, Math.ceil((au-du)/86400000)+1);
     let labelPeriode = du.toLocaleDateString('fr-FR')+' au '+au.toLocaleDateString('fr-FR') + (periode.isFiltre?'':' (mois en cours auto)');
 
-    // 1. PARAMETRES COMPTA - memes champs que ton onglet principal
     let base = IA_getVal('cBase', 50000);
     let comPct = IA_getVal('cCom', 10);
     let loyer = IA_getVal('cLoyer', 100000);
@@ -41,24 +43,23 @@
     let patronPct = IA_getVal('cPatron', 45);
     let devPct = IA_getVal('cDev', 30);
 
-    // 2. VENTES DE LA PERIODE - on refiltre les lignes IA sur Du/Au
     let lignesPer = IA_filtrePeriode(c.lignes, du, au);
-    let caPer = lignesPer.reduce(function(s,l){ return s+l.TOTAL; },0);
+    // CORRECTION : on utilise IA_totalLigne partout, plus l.TOTAL seul
+    let caPer = lignesPer.reduce(function(s,l){ return s+IA_totalLigne(l); },0);
     let qtePer = lignesPer.reduce(function(s,l){ return s+l.QTE; },0);
 
-    // 3. COUT DES MARCHANDISES VENDUES = PA x Qte vendue
     let coutMarch = 0; let benefBrut = 0;
     let mapStock = {};
     c.stock.forEach(function(p){ mapStock[IA_code(p)] = p; });
     lignesPer.forEach(function(l){
       let p = mapStock[String(l.CODE)];
       let pa = p ? IA_pa(p) : 0;
+      let tot = IA_totalLigne(l);
       coutMarch += l.QTE * pa;
-      benefBrut += (l.TOTAL - l.QTE*pa);
+      benefBrut += (tot - l.QTE*pa);
     });
     let margePct = caPer>0 ? (benefBrut/caPer*100) : 0;
 
-    // 4. DEPENSES DE LA PERIODE - depuis getFiltered().dep
     let depPer = [];
     try{
       let gf = (typeof getFiltered==='function' ? getFiltered() : null) || {};
@@ -69,40 +70,40 @@
     }catch(e){}
     let totalDep = depPer.reduce(function(s,d){ return s + IA_num(d.montant ?? d.Montant ?? 0); },0);
 
-    // 5. SALAIRES - nb vendeurs actifs sur periode x base + commission
     let vendeursPer = {};
-    lignesPer.forEach(function(l){ let v=String(l.VENDEUR||'Inconnu'); if(v.toLowerCase()==='comptoir') return; if(!vendeursPer[v]) vendeursPer[v]={nom:v,ca:0,benef:0}; vendeursPer[v].ca+=l.TOTAL; let p=mapStock[String(l.CODE)]; let pa=p?IA_pa(p):0; vendeursPer[v].benef += (l.TOTAL - l.QTE*pa); });
+    lignesPer.forEach(function(l){
+      let v=String(l.VENDEUR||'Inconnu'); if(v.toLowerCase()==='comptoir') return;
+      if(!vendeursPer[v]) vendeursPer[v]={nom:v,ca:0,benef:0};
+      let tot = IA_totalLigne(l);
+      vendeursPer[v].ca+=tot;
+      let p=mapStock[String(l.CODE)]; let pa=p?IA_pa(p):0;
+      vendeursPer[v].benef += (tot - l.QTE*pa);
+    });
     let nbVendeurs = Object.keys(vendeursPer).length;
     let totalBase = nbVendeurs * base;
     let totalCom = benefBrut * (comPct/100);
     let totalSalaires = totalBase + totalCom;
 
-    // 6. TOTAL CHARGES ET RESULTAT NET
     let totalChargesFixes = loyer + autreFixe + emprunt + totalBase;
     let chargesTotales = totalChargesFixes + totalDep + totalCom;
     let resultatNet = benefBrut - totalDep - totalChargesFixes - totalCom;
     let repart = resultatNet>0 ? resultatNet : 0;
 
-    // 7. SEUIL DE RENTABILITE
     let seuilCA = margePct>0 ? chargesTotales/(margePct/100) : 0;
     let seuilJour = seuilCA / nbJours;
     let resteAfaire = Math.max(0, seuilCA - caPer);
     let joursRestants = Math.max(0, Math.ceil((au.getTime()-Date.now())/86400000));
 
-    // 8. BILAN A MI-PARCOURS - ce que tu as / ce que tu dois, a la date Au
-    let stockAchat = c.cashBloque; // deja Qte x PA
-    let stockVente = c.valVente; // Qte x PV
+    let stockAchat = c.cashBloque;
+    let stockVente = c.valVente;
     let dettesClients = c.totalDettes;
     let actifTotal = stockAchat + dettesClients;
-    let passifCharges = chargesTotales;
-    let fondsPropresEst = actifTotal - passifCharges + resultatNet;
+    let fondsPropresEst = actifTotal - chargesTotales + resultatNet;
 
-    // 9. ANALYSE MARGE PAR VENDEUR - pour le conseil du comptable
     let vendeursArr = Object.values(vendeursPer).sort(function(a,b){ return b.benef-a.benef; });
     let meilleur = vendeursArr[0] || null;
     let plusFaible = vendeursArr[vendeursArr.length-1] || null;
 
-    // 10. ALERTES COMPTABLE
     let alertes = [];
     if(margePct < 20) alertes.push('⚠️ Marge à '+margePct.toFixed(1)+'% : en dessous de 20%. Tu vends trop pas cher ou tu achètes trop cher. Vérifie tes PA.');
     if(resultatNet < 0) alertes.push('🔴 PERTE de '+IA_fmt(Math.abs(resultatNet))+' sur la période. Tu dois vendre '+IA_fmt(resteAfaire)+' avant le '+au.toLocaleDateString('fr-FR')+' pour être à zéro.');
@@ -111,7 +112,6 @@
     if(c.cashBloque > 3000000) alertes.push('💰 Cash bloqué en stock '+IA_fmt(c.cashBloque)+' : ne commande plus de dormants, vends d\'abord.');
     if(alertes.length===0) alertes.push('✅ Compta saine sur la période. Marge, résultat et dettes sous contrôle.');
 
-    // 11. AFFICHAGE
     let filtreHtml = '<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-bottom:10px">📅 <b>Période analysée :</b> '+labelPeriode+' | '+nbJours+' jours<br><span style="font-size:11px;color:#555">L\'IA lit les mêmes champs que ton onglet Compta principal : Loyer, Base, Commission, Emprunt, Autres Fixes. Change les dates dans Compta principal (Du/Au) et re-clique sur Compta IA, elle recalcule.</span></div>';
     let compteResHtml = '<h4>📊 COMPTE DE RÉSULTAT - '+labelPeriode+'</h4><div style="overflow:auto"><table><tr><th>Poste</th><th>Montant</th><th>Lecture comptable</th></tr>'
       +'<tr><td>CA - Chiffre d\'affaires</td><td><b>'+IA_fmt(caPer)+'</b></td><td>'+qtePer+' pcs vendus</td></tr>'
