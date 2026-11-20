@@ -1,0 +1,1 @@
+(function(){ window.IA_render_tresorerie=function(c){ return '<h4>💧 TRÉSORERIE</h4><p>💳 <b>Dettes :</b> '+IA_fmt(c.totalDettes)+' à récupérer.<br>💰 <b>Cash bloqué stock :</b> '+IA_fmt(c.cashBloque)+' (Valeur Achat).<br>Conseil : Récupère 2 dettes avant de commander.</p>' + c.debug; }; })();
