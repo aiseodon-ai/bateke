@@ -1,0 +1,1 @@
+(function(){ window.IA_render_marketing=function(c){ return '<h4>📣 MARKETING</h4><p>⭐ <b>Star :</b> '+IA_esc(c.topP.CODE)+' - '+c.topP.qte+' vendus.<br>💤 <b>Dormant :</b> Fais un pack : Star + 1 dormant à -10%.<br>🚫 Ruptures vraies : '+c.ruptures.length+' (ne fais pas de pub dessus).</p>' + c.debug; }; })();
