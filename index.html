@@ -277,6 +277,35 @@ window.switchShop = function(){ if(oldSwitchShopV9) oldSwitchShopV9.apply(this, 
 <script src="ia/ia-clients.js"></script>
 <script src="ia/ia-audit.js"></script>
 <script src="ia/ia-locale.js"></script>
- 
+<script>
+// FIX ONGLETS IA - L'onglet cliqué reste allumé
+(function(){
+  // On cherche tous les boutons d'onglets IA - adapte selon ton HTML
+  // Si tes boutons ont déjà une classe, ça marche tout seul
+  document.addEventListener('click', function(e){
+    let btn = e.target.closest('button');
+    if(!btn) return;
+    // On ne touche que les boutons qui sont dans la barre des onglets IA
+    // Ils contiennent un de ces mots
+    let txt = btn.textContent || '';
+    if(/Conseil du Jour|Marketing|Trésorerie|Compta|RH|Clients|Audit/i.test(txt)){
+      // 1. On éteint tous les autres
+      document.querySelectorAll('button').forEach(function(b){
+        if(/Conseil du Jour|Marketing|Trésorerie|Compta|RH|Clients|Audit/i.test(b.textContent||'')){
+          b.style.background = '';
+          b.style.color = '';
+          b.style.fontWeight = '';
+          b.style.boxShadow = '';
+        }
+      });
+      // 2. On allume celui cliqué
+      btn.style.background = '#16a34a'; // Vert Menkao2
+      btn.style.color = '#fff';
+      btn.style.fontWeight = 'bold';
+      btn.style.boxShadow = '0 0 0 2px #14532d';
+    }
+  });
+})();
+</script> 
 
 </body></html>
