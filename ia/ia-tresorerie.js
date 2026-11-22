@@ -253,6 +253,7 @@
     if(prevCashFinMois < 0) decisions.push('🔴 PRÉVISION FIN DE MOIS NÉGATIVE : '+IA_fmt(prevCashFinMois)+'. Tu vas manquer de cash pour payer loyer + salaires. Réduis les dépenses et relance les dettes 0-7j en priorité.');
     if(decisions.length===0) decisions.push('✅ Trésorerie saine. Continue à ce rythme, et garde ta réserve loyer + salaires intacte.');
 
+    
     // === HTML ===
     let filtreHtml = '<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-bottom:10px">📅 <b>Période :</b> '+labelPeriode+' | '+nbJours+' jours<br>CA = <b>'+IA_fmt(caPer)+'</b> (v.total) | Encaissé = <b>'+IA_fmt(encaisseVentes)+'</b> (Payé) | Dettes créées = <b>'+IA_fmt(dettesCreeesPer)+'</b><br><span style="font-size:11px;color:#555">Le CA n\'est pas du cash. Le cash, c\'est ce qui est vraiment entré. Différence CA - Encaissé = Dettes clients.</span></div>';
 
@@ -307,6 +308,22 @@
       + decisions.map(function(d){ return '<p>'+d+'</p>'; }).join('')
       + '<p><b>Priorité n°1 cette semaine :</b> '+(dettes15plus>0 ? 'Récupérer '+IA_fmt(dettes15plus)+' chez les clients +15j avant de commander.' : soldeBoutique < reserveObligatoire ? 'Ne pas toucher à la réserve loyer + salaires.' : 'Garder ta réserve intacte et commander max '+IA_fmt(capaciteCommande)+'.')+'</p></div>';
 
+        // === OBJECTIFS FINANCIERS - NORME DIRECTEUR FINANCIER ===
+    let objectifReserve = loyer + autreFixe + totalBase;
+    let tauxEncaissement = caPer>0 ? (encaisseVentes/caPer*100) : 0;
+    let tauxDettes = caPer>0 ? (totalDettes/caPer*100) : 0;
+    let depJour = totalDep>0 ? (totalDep/nbJours) : 1;
+    let joursCash = Math.floor(soldeBoutique / Math.max(1, depJour + (chargesFixesMois/nbJours)));
+    
+    let objectifsHtml = '<h4>🎯 OBJECTIFS FINANCIERS - Où tu dois être</h4><div style="overflow:auto"><table><tr><th>Objectif</th><th>Cible</th><th>Tu es à</th><th>Statut</th></tr>'
+    +'<tr><td>1. Réserve de sécurité</td><td>'+IA_fmt(objectifReserve)+'</td><td>'+IA_fmt(soldeBoutique)+'</td><td>'+(soldeBoutique>=objectifReserve ? '🟢 Atteint' : '🔴 En dessous, ne commande pas')+'</td></tr>'
+    +'<tr><td>2. Taux d\'encaissement</td><td>≥ 90%</td><td>'+tauxEncaissement.toFixed(0)+'%</td><td>'+(tauxEncaissement>=90 ? '🟢 Bon, tu encaisses' : '🟠 Trop de crédit, récupère')+'</td></tr>'
+    +'<tr><td>3. Dettes clients / CA</td><td>≤ 10%</td><td>'+tauxDettes.toFixed(0)+'%</td><td>'+(tauxDettes<=10 ? '🟢 Sain' : '🔴 Trop de dettes, stop crédit')+'</td></tr>'
+    +'<tr><td>4. Jours de cash devant toi</td><td>≥ 15 jours</td><td>'+joursCash+' jours</td><td>'+(joursCash>=15 ? '🟢 Tu peux tenir' : '🔴 Tu es à '+joursCash+' jours, danger')+'</td></tr>'
+    +'<tr><td>5. Capacité de commande</td><td>Solde - Réserve</td><td>'+IA_fmt(capaciteCommande)+'</td><td>'+(capaciteCommande>0 ? '🟢 Tu peux commander' : '🔴 Commande 0 FC')+'</td></tr>'
+    +'</table></div>'
+    +'<p style="font-size:12px;color:#555">Un Directeur Financier ne regarde pas que le passé. Il te dit si tu vas tenir le mois prochain. Si tu rates 2 objectifs sur 5, ton entreprise est en danger, même si ton CA est beau.</p>';
+      
     return filtreHtml + soldeHtml + fluxHtml + dettesHtml + chargesHtml + prevHtml + avisHtml + c.debug;
   };
 })();
