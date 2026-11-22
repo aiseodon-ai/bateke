@@ -295,6 +295,7 @@
       +'<tr><td>Salaires - Bases ('+nbVendeurs+' x '+IA_fmt(base)+')</td><td>'+IA_fmt(totalBase)+'</td><td>À payer</td></tr>'
       +'<tr><td>Commissions ('+comPct+'% sur marge '+IA_fmt(benefBrut)+')</td><td>'+IA_fmt(totalCom)+'</td><td>Variable</td></tr>'
       +'<tr><td>Dépenses déjà faites (dep)</td><td>'+IA_fmt(totalDep)+'</td><td>'+depParTypeArr.slice(0,3).map(function(d){ return d.type+' : '+IA_fmt(d.montant); }).join(' | ')+'</td></tr>'
+      +'<tr><td>🛒 Achats stock payés ce mois</td><td>'+IA_fmt(totalAchats)+'</td><td>Déjà payé aux fournisseurs, '+achatsPeriode.length+' achats</td></tr>'
       +'<tr style="background:#fef3c7"><td><b>Total à payer fixes + salaires</b></td><td><b>'+IA_fmt(resteAPayerFixes)+'</b></td><td>Si ton solde est inférieur, tu es en danger</td></tr>'
       +'</table></div>';
 
@@ -324,6 +325,6 @@
     +'</table></div>'
     +'<p style="font-size:12px;color:#555">Un Directeur Financier ne regarde pas que le passé. Il te dit si tu vas tenir le mois prochain. Si tu rates 2 objectifs sur 5, ton entreprise est en danger, même si ton CA est beau.</p>';
       
-    return filtreHtml + soldeHtml + fluxHtml + dettesHtml + chargesHtml + prevHtml + avisHtml + c.debug;
+    return filtreHtml + soldeHtml + fluxHtml + dettesHtml + chargesHtml + objectifsHtml + prevHtml + avisHtml + c.debug;
   };
 })();
