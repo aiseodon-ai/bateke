@@ -39,17 +39,17 @@ window.CURRENT_CONFIG = STATE.CURRENT_CONFIG;
 window.PANIER_ACHAT = STATE.PANIER_ACHAT; // maintenant synchro
 window.DATA_MAP = STATE.DATA_MAP;
 
-// Helper pour changer de boutique partout
+// state.js - V4.9.28 - setShop prévient tous les onglets, y compris IA
 STATE.setShop = function(newShop){
   STATE.SHOP = newShop;
   window.SHOP = newShop;
   localStorage.setItem('patron_shop', newShop);
-  // recharge le panier de la nouvelle boutique
   STATE.PANIER_ACHAT = JSON.parse(localStorage.getItem('panier_achat_'+newShop) || '[]');
   window.PANIER_ACHAT = STATE.PANIER_ACHAT;
   console.log("📦 Shop changé ->", newShop, "Panier:", STATE.PANIER_ACHAT.length);
+  // CORRECTION V4.9.28 : On prévient tous les onglets, y compris IA, qu'on a changé de boutique
+  try{ window.dispatchEvent(new CustomEvent('menkao-shop-changed', {detail:{shop:newShop}})); }catch(e){}
 };
-
 STATE.savePanier = function(){
   localStorage.setItem('panier_achat_'+STATE.SHOP, JSON.stringify(STATE.PANIER_ACHAT));
   window.PANIER_ACHAT = STATE.PANIER_ACHAT;
