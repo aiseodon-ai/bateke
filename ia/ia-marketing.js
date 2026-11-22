@@ -1,4 +1,4 @@
-// ia-marketing.js - V2.1 - Désignation + Vraies Ruptures (Conseil du Jour) + Vrais Dormants
+// ia-marketing.js - V2.2 - Désignation + Vraies Ruptures + Vrais Dormants + Date par défaut 1er -> Aujourd'hui
 (function(){
   function MK_getDates(){
     let duEl = document.getElementById('cDu'), auEl = document.getElementById('cAu');
@@ -8,7 +8,9 @@
       du = new Date(duEl.value); au = new Date(auEl.value); au.setHours(23,59,59,999);
     } else {
       du = new Date(now.getFullYear(), now.getMonth(), 1);
-      au = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59,999);
+      du.setHours(0,0,0,0);
+      au = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      au.setHours(23,59,59,999);
     }
     return {du:du, au:au};
   }
