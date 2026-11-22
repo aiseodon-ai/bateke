@@ -277,6 +277,56 @@ window.switchShop = function(){ if(oldSwitchShopV9) oldSwitchShopV9.apply(this, 
 <script src="ia/ia-clients.js"></script>
 <script src="ia/ia-audit.js"></script>
 <script src="ia/ia-locale.js"></script>
+
+<script>
+// FIX IA V4.9.28 - IA se recharge toute seule au changement de boutique
+(function(){
+  // 1. On mémorise le dernier bouton IA cliqué, pour le ré-afficher après changement de boutique
+  window.__IA_LAST_VIEW = window.__IA_LAST_VIEW || 'conseil';
+  let _oldIASwitch = window.IA_switch;
+  if(_oldIASwitch && !_oldIASwitch.__wrappedIA){
+    let wrapped = function(view){
+      window.__IA_LAST_VIEW = view || 'conseil';
+      return _oldIASwitch.apply(this, arguments);
+    };
+    wrapped.__wrappedIA = true;
+    window.IA_switch = wrapped;
+  }
+
+  // 2. Fonction de rechargement IA - elle relance le même onglet IA que tu regardais
+  window.refreshIA = function(){
+    try{
+      if(typeof window.IA_switch !== 'function') return;
+      // Si l'onglet IA n'est même pas ouvert, on ne force pas l'affichage,
+      // mais on prépare quand même le prochain affichage en rechargeant la vue en fond
+      // IA_switch lit getFiltered() qui lit déjà la nouvelle boutique, donc ça suffit
+      window.IA_switch(window.__IA_LAST_VIEW || 'conseil');
+      console.log('✅ IA rechargée pour', window.SHOP, 'vue:', window.__IA_LAST_VIEW);
+    }catch(e){ console.log('refreshIA error', e); }
+  };
+
+  // 3. Quand la boutique change (événement envoyé par state.js / boutiques.js), on recharge IA
+  window.addEventListener('menkao-shop-changed', function(){
+    // Petit délai pour laisser getFiltered() prendre la nouvelle boutique
+    setTimeout(window.refreshIA, 300);
+  });
+
+  // 4. Quand tu re-cliques sur l'onglet IA, on recharge aussi, au cas où tu as changé de boutique sans passer par le select
+  let _oldSwitchTab = window.switchTab;
+  if(_oldSwitchTab && !_oldSwitchTab.__wrappedIA){
+    let wrappedTab = function(section){
+      let r = _oldSwitchTab.apply(this, arguments);
+      if(section === 'ia'){
+        setTimeout(window.refreshIA, 100);
+      }
+      return r;
+    };
+    wrappedTab.__wrappedIA = true;
+    window.switchTab = wrappedTab;
+  }
+})();
+</script>
+  
 <script>
 // FIX ONGLETS IA - L'onglet cliqué reste allumé
 (function(){
