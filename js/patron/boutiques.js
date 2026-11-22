@@ -140,6 +140,17 @@ export function selectShop(shop){
   try{ if(window.updateLabels) window.updateLabels(); }catch(e){}
   try{ if(window.refreshAll) window.refreshAll(); }catch(e){}
   try{ renderBoutiques(); }catch(e){}
+  // CORRECTION V4.9.28 DG : Recharger IA au changement de boutique, comme les autres onglets
+  try{
+    // Si tu as une fonction globale IA qui recharge tout, on l'appelle en priorité
+    if(typeof window.refreshIA === 'function') window.refreshIA();
+    else if(typeof window.IA_reload === 'function') window.IA_reload();
+    else if(typeof window.renderIA === 'function') window.renderIA();
+    else {
+      // Sinon, on prévient l'onglet IA par un événement, il se rechargera tout seul
+      window.dispatchEvent(new CustomEvent('menkao-shop-changed', {detail:{shop:shop}}));
+    }
+  }catch(e){ console.log('IA reload shop', e); }
 }
 export function switchShop(){ let sel=document.getElementById('shopSel'); if(!sel) return; selectShop(sel.value); }
 export function createShop(){ let n=document.getElementById('newShop').value.trim(); if(!n) return; let sid=n.replace(/[^a-zA-Z0-9_-]/g,'')||n; if(window.ALL_DATA && window.ALL_DATA[sid]){ alert('Existe déjà'); return; } firebase.database().ref('shops/'+sid+'/config').set({nom:n,id:sid,created:new Date().toISOString(),owner:localStorage.getItem('BATEKE_PIN')||''}).then(()=> firebase.database().ref('shops/'+sid+'/abonnements').set({expire:0, statut:'bloqué'})).then(()=>{ alert('✅ Créée: '+n+' (à payer)'); location.reload(); }); }
