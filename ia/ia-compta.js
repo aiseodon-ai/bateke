@@ -1,4 +1,4 @@
-// ia-compta.js - V2.4 - CA depuis getFiltered().ventes comme calcCompta V4.9.10, pas depuis lignes IA + Date par défaut 1er -> Aujourd'hui
+// ia-compta.js - V2.5 - CA UNIQUE = v.total comme calcCompta V4.9.14 + Marge corrigée remise + Période 1er -> Aujourd'hui LOCALE
 (function(){
   function IA_getVal(id, def){
     let el = document.getElementById(id);
@@ -6,17 +6,28 @@
     let n = parseFloat(String(el.value).replace(/\s/g,'').replace(',','.'));
     return isNaN(n)?def:n;
   }
+  function IA_fmtLocal(d){
+    let y = d.getFullYear();
+    let m = String(d.getMonth()+1).padStart(2,'0');
+    let j = String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+j;
+  }
   function IA_getDates(){
     let duEl = document.getElementById('cDu'), auEl = document.getElementById('cAu');
     let now = new Date();
     let du, au;
     if(duEl && duEl.value && auEl && auEl.value){
-      du = new Date(duEl.value); au = new Date(auEl.value); au.setHours(23,59,59,999);
+      // CORRECTION V2.5 : Heure locale, pas UTC. Sinon 01/11 devient 31/10 à Kinshasa
+      du = new Date(duEl.value + 'T00:00:00');
+      au = new Date(auEl.value + 'T23:59:59');
     } else {
       du = new Date(now.getFullYear(), now.getMonth(), 1);
       du.setHours(0,0,0,0);
       au = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       au.setHours(23,59,59,999);
+      // On remplit les champs pour que tu voies la période par défaut 1er -> Aujourd'hui
+      if(duEl && !duEl.value) duEl.value = IA_fmtLocal(du);
+      if(auEl && !auEl.value) auEl.value = IA_fmtLocal(au);
     }
     return {du:du, au:au, isFiltre: !!(duEl && duEl.value)};
   }
@@ -36,60 +47,78 @@
     let patronPct = IA_getVal('cPatron', 45);
     let devPct = IA_getVal('cDev', 30);
 
-    // === SOURCE UNIQUE = getFiltered(), comme calcCompta ===
     let gf = {};
     try{ gf = (typeof getFiltered==='function' ? getFiltered() : window.getFiltered?.()) || {}; }catch(e){ gf={}; }
     let ventesBrutes = gf.ventes || [];
     let depBrutes = gf.dep || [];
     let stockBrut = gf.stock || c.stock || [];
 
-    // Map PA par CODE - meme logique que calcCompta : CODE || _id
     let fullMap = {};
     stockBrut.forEach(function(p){ let code = p.CODE || p._id; if(code) fullMap[String(code)] = p; });
 
-    // Ventes de la periode - filtre sur v.date comme calcCompta
     let vPeriode = ventesBrutes.filter(function(v){ let d=new Date(v.date); return d>=du && d<=au; });
     let depPeriode = depBrutes.filter(function(d){ let dt=new Date(d.date); return dt>=du && dt<=au; });
 
-    // CA, Qte, Benef brut - depuis v.total et v.items[].Prix et PA du stock
+    // CORRECTION V2.5 : Même exclus que calcCompta, sinon les vendeurs exclus reviennent dans IA
+    let exclus = window.CURRENT_CONFIG?.compta?.exclus || [];
+
+    // CA, Qte, Benef brut - CA UNIQUE = v.total
     let caPer = 0; let qtePer = 0; let benefBrut = 0; let coutMarch = 0;
+    let caComptoir = 0;
     let vendeursPer = {};
     vPeriode.forEach(function(v){
-      caPer += IA_num(v.total ?? v.TOTAL ?? 0);
+      let caVente = IA_num(v.total ?? v.TOTAL ?? 0);
+      let nomRaw = String(v.vendeurNom || v.vendeur || 'Inconnu').trim();
+      let isComptoir = !nomRaw || nomRaw.toLowerCase()==='comptoir';
+      let keyExclus = nomRaw.toLowerCase().replace(/\s+/g,'').replace(/[^a-z]/g,'');
+      let isExclus = exclus.includes(keyExclus);
+      // Si vente sans items mais avec total + benefice
+      if(!(v.items||[]).length){
+        if(caVente>0 || v.benefice){
+          let b = IA_num(v.benefice || 0);
+          caPer += caVente;
+          benefBrut += b;
+          coutMarch += (caVente - b);
+          if(isComptoir) caComptoir += caVente;
+        }
+        return;
+      }
+      // Avec items : on calcule caItems et benefItems, puis on corrige la remise
+      let caItems = 0, benefItems = 0, coutItems = 0, qteVente = 0;
       (v.items||[]).forEach(function(i){
         let qty = IA_num(i.qty ?? i.QTE ?? 0);
         let prix = IA_num(i.Prix ?? i.prix ?? i.PV ?? i.PRIX ?? 0);
-        // Si l'item n'a pas de Prix, on prend le Prix Vente du stock
         if(prix===0){
           let p = fullMap[String(i.CODE)];
           if(p) prix = IA_num(p['Prix Vente'] ?? p.PV ?? p['Prix'] ?? p.Prix ?? 0);
         }
-        // Si v.total est a 0, on reconstruit le CA depuis les items
-        qtePer += qty;
         let pa = fullMap[String(i.CODE)] ? IA_pa(fullMap[String(i.CODE)]) : 0;
-        coutMarch += qty * pa;
-        benefBrut += qty * (prix - pa);
-        // Vendeurs
-        let nomRaw = String(v.vendeurNom || v.vendeur || 'Inconnu').trim();
-        if(nomRaw && nomRaw.toLowerCase()!=='comptoir'){
-          if(!vendeursPer[nomRaw]) vendeursPer[nomRaw]={nom:nomRaw,ca:0,benef:0};
-          vendeursPer[nomRaw].ca += qty*prix;
-          vendeursPer[nomRaw].benef += qty*(prix-pa);
-        }
+        qteVente += qty;
+        caItems += qty * prix;
+        benefItems += qty * (prix - pa);
+        coutItems += qty * pa;
       });
-      // Si la vente n'a pas d'items mais a un total + benefice, on le prend
-      if(!(v.items||[]).length && v.benefice){
-        benefBrut += IA_num(v.benefice);
-        coutMarch += IA_num(v.total) - IA_num(v.benefice);
-        qtePer += 0;
+      // Si v.total est à 0, on reconstruit depuis les items (cas ancien)
+      if(caVente===0 && caItems>0) caVente = caItems;
+      // CORRECTION REMISE : si caItems > v.total, c'est une remise, on l'enlève de la marge
+      let remise = (caItems > caVente) ? (caItems - caVente) : 0;
+      let benefVente = benefItems - remise;
+      let coutVente = caVente - benefVente; // = coutItems + remise, donc CA - Coût = Marge, toujours vrai
+      caPer += caVente;
+      qtePer += qteVente;
+      benefBrut += benefVente;
+      coutMarch += coutVente;
+      if(isComptoir){
+        caComptoir += caVente;
+      } else if(!isExclus){
+        if(!vendeursPer[nomRaw]) vendeursPer[nomRaw]={nom:nomRaw,ca:0,benef:0};
+        // CORRECTION : CA vendeur = v.total, pas qty*prix. La somme des vendeurs + Comptoir = caPer
+        vendeursPer[nomRaw].ca += caVente;
+        vendeursPer[nomRaw].benef += benefVente;
       }
     });
-    // Securite : si caPer est encore 0 mais qu'on a des items, on reconstruit depuis items
-    if(caPer===0 && qtePer>0){
-      caPer = 0;
-      vPeriode.forEach(function(v){ (v.items||[]).forEach(function(i){ let qty=IA_num(i.qty); let prix=IA_num(i.Prix ?? i.PV ?? 0); if(prix===0){ let p=fullMap[String(i.CODE)]; if(p) prix=IA_num(p['Prix Vente'] ?? p.PV ?? 0); } caPer += qty*prix; }); });
-    }
     let margePct = caPer>0 ? (benefBrut/caPer*100) : 0;
+    let caVendeurs = Object.values(vendeursPer).reduce(function(s,v){ return s+v.ca; },0);
 
     let totalDep = depPeriode.reduce(function(s,d){ return s + IA_num(d.montant ?? d.Montant ?? 0); },0);
 
@@ -128,10 +157,10 @@
 
     let debugPrix = 'Source ventes brutes : '+vPeriode.length+' ventes | stock brut : '+stockBrut.length+' articles | ex vente total='+(vPeriode[0]?vPeriode[0].total:'-')+' items='+(vPeriode[0]&&vPeriode[0].items?vPeriode[0].items.length:'-');
 
-    let filtreHtml = '<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-bottom:10px">📅 <b>Période analysée :</b> '+labelPeriode+' | '+nbJours+' jours<br><span style="font-size:11px;color:#555">'+debugPrix+'</span></div>';
+    let filtreHtml = '<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-bottom:10px">📅 <b>Période analysée :</b> '+labelPeriode+' | '+nbJours+' jours<br>CA Vendeurs: <b>'+IA_fmt(caVendeurs)+'</b> + Comptoir: <b>'+IA_fmt(caComptoir)+'</b> = CA Total: <b>'+IA_fmt(caPer)+'</b> ✅ UNIQUE<br><span style="font-size:11px;color:#555">'+debugPrix+'</span></div>';
     let compteResHtml = '<h4>📊 COMPTE DE RÉSULTAT - '+labelPeriode+'</h4><div style="overflow:auto"><table><tr><th>Poste</th><th>Montant</th><th>Lecture comptable</th></tr>'
-      +'<tr><td>CA - Chiffre d\'affaires</td><td><b>'+IA_fmt(caPer)+'</b></td><td>'+qtePer+' pcs vendus</td></tr>'
-      +'<tr><td>- Coût des marchandises vendues (PA x Qté)</td><td>- '+IA_fmt(coutMarch)+'</td><td>Ce que tes produits t\'ont coûté</td></tr>'
+      +'<tr><td>CA - Chiffre d\'affaires (v.total)</td><td><b>'+IA_fmt(caPer)+'</b></td><td>'+qtePer+' pcs vendus</td></tr>'
+      +'<tr><td>- Coût des marchandises vendues (CA - Marge)</td><td>- '+IA_fmt(coutMarch)+'</td><td>Ce que tes produits t\'ont coûté</td></tr>'
       +'<tr style="background:#dcfce7"><td><b>= MARGE BRUTE</b></td><td><b>'+IA_fmt(benefBrut)+' ('+margePct.toFixed(1)+'%)</b></td><td>'+(margePct>=30?'Bonne marge':'Marge faible')+'</td></tr>'
       +'<tr><td>- Dépenses (dep)</td><td>- '+IA_fmt(totalDep)+'</td><td>'+depPeriode.length+' dépenses sur la période</td></tr>'
       +'<tr><td>- Loyer</td><td>- '+IA_fmt(loyer)+'</td><td>Fixe</td></tr>'
@@ -160,7 +189,7 @@
       +'<div style="background:#0b5e2f;color:#fff;padding:12px;border-radius:12px;text-align:center">PATRON '+patronPct+'%<br><b>'+IA_fmt(repart*(patronPct/100))+'</b></div>'
       +'<div style="background:#0ea5e9;color:#fff;padding:12px;border-radius:12px;text-align:center">DEV '+devPct+'%<br><b>'+IA_fmt(repart*(devPct/100))+'</b></div></div>';
 
-    let salairesHtml = '<h4>👥 SALAIRES - '+nbVendeurs+' vendeurs actifs</h4><div style="overflow:auto"><table><tr><th>Vendeur</th><th>CA période</th><th>Marge générée</th><th>Base + Com</th><th>Salaire à payer</th></tr>'
+    let salairesHtml = '<h4>👥 SALAIRES - '+nbVendeurs+' vendeurs actifs</h4><div style="overflow:auto"><table><tr><th>Vendeur</th><th>CA période (v.total)</th><th>Marge générée</th><th>Base + Com</th><th>Salaire à payer</th></tr>'
       + vendeursArr.map(function(v){ let com = v.benef*(comPct/100); let sal = base+com; return '<tr><td><b>'+IA_esc(v.nom)+'</b></td><td>'+IA_fmt(v.ca)+'</td><td>'+IA_fmt(v.benef)+'</td><td>'+IA_fmt(base)+' + '+IA_fmt(com)+'</td><td><b>'+IA_fmt(sal)+'</b></td></tr>'; }).join('') + '</table></div>'
       + (meilleur ? '<p>🏆 Meilleur vendeur : <b>'+IA_esc(meilleur.nom)+'</b> avec '+IA_fmt(meilleur.benef)+' de marge.</p>' : '')
       + (plusFaible && vendeursArr.length>1 ? '<p>📉 À coacher : <b>'+IA_esc(plusFaible.nom)+'</b> avec '+IA_fmt(plusFaible.benef)+' de marge. Mets-le 2 jours avec '+IA_esc(meilleur.nom)+'.</p>' : '');
