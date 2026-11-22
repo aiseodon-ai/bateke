@@ -1,4 +1,4 @@
-// ia-compta.js - V2.3 - CA depuis getFiltered().ventes comme calcCompta V4.9.10, pas depuis lignes IA
+// ia-compta.js - V2.4 - CA depuis getFiltered().ventes comme calcCompta V4.9.10, pas depuis lignes IA + Date par défaut 1er -> Aujourd'hui
 (function(){
   function IA_getVal(id, def){
     let el = document.getElementById(id);
@@ -14,7 +14,9 @@
       du = new Date(duEl.value); au = new Date(auEl.value); au.setHours(23,59,59,999);
     } else {
       du = new Date(now.getFullYear(), now.getMonth(), 1);
-      au = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59,999);
+      du.setHours(0,0,0,0);
+      au = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      au.setHours(23,59,59,999);
     }
     return {du:du, au:au, isFiltre: !!(duEl && duEl.value)};
   }
