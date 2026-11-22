@@ -1,11 +1,13 @@
-// ia-marketing.js - V2.2 - Désignation + Vraies Ruptures + Vrais Dormants + Date par défaut 1er -> Aujourd'hui
+// ia-marketing.js - V2.3 - CA UNIQUE = v.total + CA Produit corrigé remise + Période 1er -> Aujourd'hui LOCALE
 (function(){
   function MK_getDates(){
     let duEl = document.getElementById('cDu'), auEl = document.getElementById('cAu');
     let now = new Date();
     let du, au;
     if(duEl && duEl.value && auEl && auEl.value){
-      du = new Date(duEl.value); au = new Date(auEl.value); au.setHours(23,59,59,999);
+      // CORRECTION V2.3 : Heure locale, pas UTC
+      du = new Date(duEl.value + 'T00:00:00');
+      au = new Date(auEl.value + 'T23:59:59');
     } else {
       du = new Date(now.getFullYear(), now.getMonth(), 1);
       du.setHours(0,0,0,0);
@@ -17,7 +19,6 @@
   function MK_clientName(v){
     return String(v.clientNom || v.client || v.nomClient || v.customer || v.telephone || v.phone || 'Client inconnu').trim();
   }
-  // CORRECTION V2.1 : On essaie TOUS les noms possibles de champs
   function MK_qteStock(p){
     if(!p) return 0;
     return IA_num(p['Qte Restante'] ?? p['Qté Restante'] ?? p.QTE ?? p.qte ?? p.Qte ?? p.Stock ?? p.stock ?? p['Quantité'] ?? p['Quantite'] ?? p.quantite ?? p['Qté'] ?? p.QTY ?? 0);
@@ -57,25 +58,50 @@
     let parProduit = {};
     let parClient = {};
     let caTotal = 0;
+    let caProduitsControle = 0; // Pour vérifier que somme produits = caTotal
     vPeriode.forEach(function(v){
       let d = new Date(v.date).getTime();
-      caTotal += IA_num(v.total);
+      let caVente = IA_num(v.total);
+      caTotal += caVente;
       let cli = MK_clientName(v);
       if(!parClient[cli]) parClient[cli]={nom:cli, ca:0, nb:0, derniere:0};
-      parClient[cli].ca += IA_num(v.total);
+      parClient[cli].ca += caVente;
       parClient[cli].nb += 1;
       parClient[cli].derniere = Math.max(parClient[cli].derniere, d);
-      (v.items||[]).forEach(function(i){
-        let code = String(i.CODE);
-        if(!parProduit[code]) parProduit[code]={CODE:code, qte:0, ca:0, benef:0, derniere:0};
+      // CORRECTION V2.3 : On calcule d'abord caItems pour répartir la remise au prorata
+      let items = v.items || [];
+      if(!items.length) return;
+      let caItems = 0;
+      let lignes = items.map(function(i){
         let qty = IA_num(i.qty ?? i.QTE ?? 0);
         let prix = IA_num(i.Prix ?? i.PV ?? 0);
-        if(prix===0){ let p=fullMap[code]; if(p) prix=MK_prixVente(p); }
-        let pa = fullMap[code] ? IA_pa(fullMap[code]) : 0;
-        parProduit[code].qte += qty;
-        parProduit[code].ca += qty*prix;
-        parProduit[code].benef += qty*(prix-pa);
-        parProduit[code].derniere = Math.max(parProduit[code].derniere, d);
+        if(prix===0){ let p=fullMap[String(i.CODE)]; if(p) prix=MK_prixVente(p); }
+        let pa = fullMap[String(i.CODE)] ? IA_pa(fullMap[String(i.CODE)]) : 0;
+        let caLigneBrut = qty * prix;
+        caItems += caLigneBrut;
+        return {CODE:String(i.CODE), qty:qty, prix:prix, pa:pa, caBrut:caLigneBrut};
+      });
+      // Si v.total est à 0, on prend caItems. Sinon ratio = v.total / caItems pour répartir la remise
+      let ratio = (caVente>0 && caItems>0) ? (caVente / caItems) : 1;
+      if(caVente===0 && caItems>0) caVente = caItems; // Déjà compté dans caTotal ? Non, caTotal a pris 0, on corrige
+      // Correction caTotal si v.total était 0 : on a ajouté 0, il faut ajouter caItems
+      if(IA_num(v.total)===0 && caItems>0){
+        caTotal += caItems;
+        parClient[cli].ca += caItems;
+        caVente = caItems;
+        ratio = 1;
+      }
+      lignes.forEach(function(l){
+        if(!parProduit[l.CODE]) parProduit[l.CODE]={CODE:l.CODE, qte:0, ca:0, benef:0, derniere:0};
+        // CA corrigé = CA brut * ratio. Ex : article 55 000, vente totale avec remise -> 50 000
+        let caCorr = l.caBrut * ratio;
+        // Marge corrigée = CA corrigé - Coût réel (Qté x PA). Le coût ne change pas avec la remise.
+        let benefCorr = caCorr - (l.qty * l.pa);
+        parProduit[l.CODE].qte += l.qty;
+        parProduit[l.CODE].ca += caCorr;
+        parProduit[l.CODE].benef += benefCorr;
+        parProduit[l.CODE].derniere = Math.max(parProduit[l.CODE].derniere, d);
+        caProduitsControle += caCorr;
       });
     });
 
@@ -85,8 +111,6 @@
     let star3 = produitsVendus[2];
 
     let nowTs = Date.now();
-    // CORRECTION DORMANTS : comme Conseil du Jour - Qte >= 5 pcs, pas vendu depuis 14j, tri par cash bloqué
-    // Avant, MK_qteStock lisait le mauvais champ, donc tout etait a 0, donc 0 dormant.
     let dormants = [];
     stockBrut.forEach(function(p){
       let code = String(p.CODE || p._id);
@@ -103,8 +127,6 @@
     let dormant1 = dormants[0];
     let dormant2 = dormants[1];
 
-    // CORRECTION RUPTURES VRAIES : comme Conseil du Jour - Qte=0 ET vendu sur la periode (il se vendait, il est tombe a 0)
-    // Avant, je comptais les 644 fiches a 0, meme celles jamais vendues. Maintenant seulement les vraies.
     let rupturesVraies = [];
     let totalZero = 0;
     stockBrut.forEach(function(p){
@@ -126,7 +148,6 @@
     let caJourMoyen = caTotal / nbJours;
     let objectifSemaine = Math.round(caJourMoyen*7*1.2);
 
-    // Messages avec Désignation, pas juste CODE
     let nomStar = star ? MK_nom(star.CODE, fullMap) : 'Ton produit Star';
     let pvStar = star ? MK_prixVente(fullMap[star.CODE]) : 0;
     let nomDormant = dormant1 ? dormant1.nom : '';
@@ -142,7 +163,7 @@
       +'<div style="background:#fef3c7;padding:12px;border-radius:12px"><b>🚫 RUPTURES VRAIES</b><br><b style="font-size:18px">'+rupturesVraies.length+' vraies ruptures</b><br>sur '+totalZero+' articles à 0<br><span style="font-size:11px">Les autres à 0 ne se vendaient pas, ce ne sont pas des ruptures. Commande les '+rupturesVraies.length+' en priorité. Ex : '+(rupturesVraies[0]?IA_esc(rupturesVraies[0].nom):'-')+'</span></div>'
       +'<div style="background:#dbeafe;padding:12px;border-radius:12px"><b>💰 CA / JOUR MOYEN</b><br><b style="font-size:18px">'+IA_fmt(Math.round(caJourMoyen))+'</b><br><span style="font-size:11px;color:#333">'+IA_fmt(Math.round(caTotal))+' / '+nbJours+' jours = '+IA_fmt(Math.round(caJourMoyen))+' / jour</span><br><b>Objectif semaine : '+IA_fmt(objectifSemaine)+'</b><br><span style="font-size:11px;color:#333">'+IA_fmt(Math.round(caJourMoyen))+' x 7 jours x 1,20 (+20%) = '+IA_fmt(objectifSemaine)+'</span></div>'
       +'</div>'
-      +'<p style="font-size:11px;color:#555">Dormants détectés : '+dormants.length+' articles à +5 pcs qui dorment depuis 14j+. Top 3 : '+dormants.slice(0,3).map(function(d){ return IA_esc(d.nom)+' ('+d.qteStock+' pcs, '+IA_fmt(d.cashBloque)+')'; }).join(' | ')+'</p>';
+      +'<p style="font-size:11px;color:#555">CA Total: '+IA_fmt(caTotal)+' | Somme CA produits: '+IA_fmt(caProduitsControle)+' ✅ Doivent être égaux | Dormants détectés : '+dormants.length+' articles à +5 pcs qui dorment depuis 14j+. Top 3 : '+dormants.slice(0,3).map(function(d){ return IA_esc(d.nom)+' ('+d.qteStock+' pcs, '+IA_fmt(d.cashBloque)+')'; }).join(' | ')+'</p>';
 
     let top3Html = '<h4>🏆 TOP 3 PRODUITS À POUSSER</h4><div style="overflow:auto"><table><tr><th>#</th><th>Produit</th><th>Vendus</th><th>CA</th><th>Marge</th><th>Décision du Directeur</th></tr>'
       + [star, star2, star3].map(function(pr, idx){ if(!pr) return ''; let dec = idx===0 ? '⭐ STAR : Vitrine + Statut + Ne baisse pas le prix' : idx===1 ? '🔥 À POUSSER : Mets-le à côté du Star' : '✅ BON : Garde-le en stock, il se vend bien'; return '<tr><td><b>'+(idx+1)+'</b></td><td><b>'+IA_esc(MK_nom(pr.CODE, fullMap))+'</b></td><td>'+pr.qte+'</td><td>'+IA_fmt(pr.ca)+'</td><td>'+IA_fmt(pr.benef)+'</td><td>'+dec+'</td></tr>'; }).join('')
