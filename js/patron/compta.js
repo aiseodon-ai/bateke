@@ -1,12 +1,15 @@
-// VERSION SAFE CORRIGÉE - V4.9.10 EXACT + garde-fous V8.27 - ne bloque pas SYNC
+// VERSION SAFE CORRIGÉE - V4.9.11 - Date par défaut 1er -> Aujourd'hui + Vide champs valeurs après calcul - ne bloque pas SYNC
 export function calcCompta(){
  try{
   let duEl=document.getElementById('cDu'), auEl=document.getElementById('cAu');
   if(!duEl||!auEl){ console.log("cDu/cAu manquant"); return; }
+  // CORRECTION V4.9.11 DG : Par défaut 1er -> Aujourd'hui. Si tu choisis, on respecte ton choix.
   if(!duEl.value || !auEl.value){
-    let r=document.getElementById('comptaResult');
-    if(r) r.innerHTML='<p style="color:red">Choisis dates Du/Au</p>';
-    return;
+    let now = new Date();
+    let premier = new Date(now.getFullYear(), now.getMonth(), 1);
+    let aujourdhui = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if(!duEl.value) duEl.value = premier.toISOString().slice(0,10);
+    if(!auEl.value) auEl.value = aujourdhui.toISOString().slice(0,10);
   }
   let du=new Date(duEl.value), au=new Date(auEl.value);
   au.setHours(23,59,59);
@@ -104,6 +107,13 @@ export function calcCompta(){
   let cr=document.getElementById('compteResultat'); if(cr) cr.innerHTML=crHtml;
   let tb=document.getElementById('tresorerieBox'); if(tb) tb.innerHTML=`<div style="background:#dcfce7;padding:10px;border-radius:10px">Encaissé: <b>${totalEncaisse.toLocaleString()}</b> | Charges: <b>${chargesPourSeuil.toLocaleString()} FC</b> | NET: <b style="color:${resultatNet>=0?'#0b5e2f':'red'}">${resultatNet.toLocaleString()}</b></div>`;
   let sb=document.getElementById('seuilBox'); if(sb) sb.innerHTML=`<div style="background:#fffbeb;padding:10px;border-radius:10px">Objectif/jour: <b style="font-size:18px;color:#dc2626">${seuilParJour.toLocaleString()} FC</b><br>Marge ${margePct.toFixed(1)}%<br>Seuil ${seuilRentabilite.toLocaleString()} vs CA ${totalCA.toLocaleString()} ${totalCA>=seuilRentabilite?'✅':'❌'}</div>`;
+
+  // CORRECTION V4.9.11 DG : Après calcul réussi, on vide les champs de saisie de valeurs pour repartir propre.
+  // On ne vide PAS cDu / cAu, pour garder la période. Au prochain calcul sans saisie, les valeurs par défaut (50000, 10, 100000...) seront reprises.
+  ['cBase','cCom','cLoyer','cAutresFixe','cEmprunt','cPrime','cPatron','cDev'].forEach(function(id){
+    let el = document.getElementById(id);
+    if(el) el.value = '';
+  });
 
  }catch(e){
   console.error("calcCompta SAFE error", e);
