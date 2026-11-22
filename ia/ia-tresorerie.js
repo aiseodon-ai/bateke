@@ -63,7 +63,17 @@
     let depBrutes = gf.dep || [];
     let caisseBrutes = gf.caisse || [];
     let versBrutes = gf.vers || [];
-    let achatsBruts = gf.achats || [];
+    // ✅ CORRECTION 1 - SANS TOUCHER AU STABLE : Achats = entrees (Rapport V8.30)
+    // getFiltered() ne renvoie pas achats, il renvoie entrees : { CODE, qty, date }
+    // On garde gf.achats en 1er au cas où, sinon on prend entrees, sinon ALL_DATA
+    let achatsBruts = gf.achats || gf.entrees || [];
+    if(!achatsBruts.length){
+      try{
+        let SHOP = window.SHOP || window.STATE?.SHOP || 'Menkao2';
+        let ALL_DATA = window.ALL_DATA || window.STATE?.ALL_DATA || {};
+        if(ALL_DATA[SHOP] && ALL_DATA[SHOP].entrees) achatsBruts = ALL_DATA[SHOP].entrees;
+      }catch(e){}
+    }
     let stockBrut = gf.stock || c.stock || [];
     let dettesBrutes = gf.dettes || [];
 
@@ -135,7 +145,23 @@
 
     // === 2. DÉPENSES / CAISSE / VERSEMENTS / ACHATS ===
     let totalDep = depPeriode.reduce(function(s,d){ return s + TR_montant(d); },0);
-    let totalAchats = achatsPeriode.reduce(function(s,a){ return s + TR_montant(a); },0);
+    // ✅ CORRECTION 2 - SANS TOUCHER AU STABLE : Montant Achat = Qté x Prix Achat
+    // Une entree n'a pas de montant. On fait comme Rapport synthese_achats.
+    // Si c'est un vrai achat avec montant, on prend le montant. Sinon Qté x PA.
+    let totalAchats = 0;
+    achatsPeriode.forEach(function(a){
+      let mDirect = TR_montant(a);
+      if(mDirect > 0){ totalAchats += mDirect; return; }
+      let code = String(a.CODE || a.code || '');
+      let q = IA_num(a.qty ?? a.qte ?? a.QTE ?? a.Quantite ?? 0);
+      let p = fullMap[code];
+      let pa = 0;
+      if(p){
+        pa = IA_num(p['Prix Achat'] ?? p.PA ?? p.pa ?? p['PrixAchat'] ?? 0);
+        if(pa===0 && typeof IA_pa==='function'){ try{ pa = IA_pa(p); }catch(e){} }
+      }
+      totalAchats += (q * pa);
+    });
 
     let caisseEntrees = 0, caisseSorties = 0;
     caissePeriode.forEach(function(x){
