@@ -212,4 +212,38 @@ ${comptaHtml}
 }
 
 window.pdfCompta = pdfCompta;
+
+// V4.9.13 DG : La fonction manquante du bouton 💾 Sauver + Fix chargement + Fix TOTAL
+window.saveComptaParams = function(){
+  // On lit ce qui est dans les champs, même si c'est vide, on garde la sauvegarde précédente pour ce champ
+  let old = {};
+  try{ old = JSON.parse(localStorage.getItem('menkao_compta_config') || '{}'); }catch(e){ old = {}; }
+  let get = function(id, def){
+    let el = document.getElementById(id);
+    if(el && el.value !== '' && el.value != null) return el.value;
+    return old[id] !== undefined ? old[id] : def;
+  };
+  let cfg = {
+    cBase: get('cBase', 50000),
+    cCom: get('cCom', 10),
+    cLoyer: get('cLoyer', 100000),
+    cAutresFixe: get('cAutresFixe', 0),
+    cEmprunt: get('cEmprunt', 0),
+    cPrime: get('cPrime', 25),
+    cPatron: get('cPatron', 45),
+    cDev: get('cDev', 30)
+  };
+  IA_saveComptaConfig(cfg);
+  // On remet les valeurs dans les champs pour que tu voies ce qui est sauvé
+  IA_loadComptaConfig();
+  let s = document.getElementById('comptaParamStatus');
+  if(s) s.textContent = '✅ Sauvegardé - Loyer ' + Number(cfg.cLoyer).toLocaleString() + ' FC';
+};
+
+// Fix 2 : Si la page est déjà chargée, on recharge tout de suite, on n'attend pas DOMContentLoaded
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', IA_loadComptaConfig);
+} else {
+  IA_loadComptaConfig();
+}
 console.log('✅ PDF COMPTA V8.27 SAFE chargé');
