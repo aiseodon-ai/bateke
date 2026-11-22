@@ -1,4 +1,21 @@
-// VERSION SAFE CORRIGÉE - V4.9.11 - Date par défaut 1er -> Aujourd'hui + Vide champs valeurs après calcul - ne bloque pas SYNC
+// VERSION SAFE CORRIGÉE - V4.9.12 - Date 1er -> Aujourd'hui + Vide champs après calcul + Sauvegarde Config + Coût d'achat affiché - ne bloque pas SYNC
+
+// SAUVEGARDE CONFIG COMPTA - DG : Ton loyer ne revient plus à l'ancienne valeur
+function IA_saveComptaConfig(cfg){
+  try{ localStorage.setItem('menkao_compta_config', JSON.stringify(cfg)); }catch(e){}
+}
+function IA_loadComptaConfig(){
+  try{
+    let c = JSON.parse(localStorage.getItem('menkao_compta_config') || 'null');
+    if(!c) return;
+    Object.keys(c).forEach(function(id){
+      let el = document.getElementById(id);
+      if(el && c[id] !== undefined && c[id] !== '') el.value = c[id];
+    });
+  }catch(e){}
+}
+document.addEventListener('DOMContentLoaded', IA_loadComptaConfig);
+
 export function calcCompta(){
  try{
   let duEl=document.getElementById('cDu'), auEl=document.getElementById('cAu');
@@ -44,6 +61,9 @@ export function calcCompta(){
   let patronPct=parseFloat(document.getElementById('cPatron')?.value||45);
   let devPct=parseFloat(document.getElementById('cDev')?.value||30);
 
+  // CORRECTION V4.9.12 DG : On sauvegarde ce que tu viens de taper, pour la prochaine réouverture
+  IA_saveComptaConfig({cBase:base, cCom:comPct, cLoyer:loyer, cAutresFixe:autreFixe, cEmprunt:emprunt, cPrime:primePct, cPatron:patronPct, cDev:devPct});
+
   let exclus = window.CURRENT_CONFIG?.compta?.exclus || [];
 
   let vPeriode=(data.ventes||[]).filter(v=>{ let d=new Date(v.date); return d>=du&&d<=au; });
@@ -71,6 +91,8 @@ export function calcCompta(){
 
   let totalCA=vPeriode.reduce((s,v)=>s+(v.total||0),0);
   let totalBenefBrut=vals.reduce((s,v)=>s+v.benefBrut,0) || vPeriode.reduce((s,v)=>s+(v.benefice||0),0);
+  // CORRECTION V4.9.12 DG : Coût d'achat de la marchandise vendue = CA - Marge Brute
+  let coutMarchandise = totalCA - totalBenefBrut;
   let totalCom=vals.reduce((s,v)=>s+v.commission,0);
   let totalBase=vals.length*base;
   let totalDep=depPeriode.reduce((s,d)=>s+(d.montant||0),0);
@@ -92,14 +114,14 @@ export function calcCompta(){
 
   let pointJ=`<table><tr><th>Jour</th><th>Nb</th><th>CA</th><th>Bénéf</th><th>Dép</th><th>Net</th></tr>`+Object.values(byDay).sort((a,b)=> new Date(a.day.split('/').reverse().join('-')) - new Date(b.day.split('/').reverse().join('-'))).map(d=>`<tr><td>${d.day}</td><td>${d.nb}</td><td>${d.ca.toLocaleString()}</td><td>${d.benef.toLocaleString()}</td><td>${d.dep.toLocaleString()}</td><td>${(d.benef-d.dep).toLocaleString()}</td></tr>`).join('')+`</table>`;
 
-  let htmlSeuil=`<div class="card" style="border:3px solid #f59e0b;background:#fffbeb"><h4>📍 Seuil CORRIGÉ V4.9.10 - Base ${vals.length} x ${base.toLocaleString()} + Emprunt ${emprunt.toLocaleString()} ✅</h4><table><tr><th>Charge</th><th>Montant</th></tr><tr><td>Loyer</td><td>${loyer.toLocaleString()}</td></tr><tr><td>Autres Fixes</td><td>${autreFixe.toLocaleString()}</td></tr><tr><td>🏦 Emprunt</td><td><b>${emprunt.toLocaleString()}</b></td></tr><tr><td>👥 Bases (${vals.length} x ${base.toLocaleString()}) ✅ CORRIGÉ</td><td><b>${totalBase.toLocaleString()}</b></td></tr><tr><td>Dépenses</td><td>${totalDep.toLocaleString()}</td></tr><tr><td>Commissions</td><td>${totalCom.toLocaleString()}</td></tr><tr style="background:#111;color:#fff"><td>TOTAL</td><td><b>${chargesPourSeuil.toLocaleString()}</b></td></tr><tr><td>Marge</td><td>${margePct.toFixed(1)}%</td></tr><tr style="background:#dc2626;color:#fff"><td>🎯 OBJECTIF / JOUR</td><td><b style="font-size:20px">${seuilParJour.toLocaleString()} FC</b></td></tr></table></div>`;
+  let htmlSeuil=`<div class="card" style="border:3px solid #f59e0b;background:#fffbeb"><h4>📍 Seuil CORRIGÉ V4.9.10 - Base ${vals.length} x ${base.toLocaleString()} + Emprunt ${emprunt.toLocaleString()} ✅</h4><table><tr><th>Charge</th><th>Montant</th></tr><tr><td>🛒 Coût d'achat marchandise (CA - Marge)</td><td><b>${coutMarchandise.toLocaleString()}</b></td></tr><tr><td>Loyer</td><td>${loyer.toLocaleString()}</td></tr><tr><td>Autres Fixes</td><td>${autreFixe.toLocaleString()}</td></tr><tr><td>🏦 Emprunt</td><td><b>${emprunt.toLocaleString()}</b></td></tr><tr><td>👥 Bases (${vals.length} x ${base.toLocaleString()}) ✅ CORRIGÉ</td><td><b>${totalBase.toLocaleString()}</b></td></tr><tr><td>Dépenses</td><td>${totalDep.toLocaleString()}</td></tr><tr><td>Commissions</td><td>${totalCom.toLocaleString()}</td></tr><tr style="background:#111;color:#fff"><td>TOTAL</td><td><b>${chargesPourSeuil.toLocaleString()}</b></td></tr><tr><td>Marge</td><td>${margePct.toFixed(1)}%</td></tr><tr style="background:#dc2626;color:#fff"><td>🎯 OBJECTIF / JOUR</td><td><b style="font-size:20px">${seuilParJour.toLocaleString()} FC</b></td></tr></table></div>`;
 
   let htmlSal=`<div class="card"><h4>👥 Salaires ${vals.length} vendeurs - Base totale ${totalBase.toLocaleString()} FC ✅</h4><table><tr><th>Vendeur</th><th>CA</th><th>Bénéf</th><th>Salaire</th><th>Act</th></tr>${vals.map(v=>`<tr><td><b>${v.nom}</b></td><td>${v.ca.toLocaleString()}</td><td>${v.benefBrut.toLocaleString()}</td><td><b>${v.salaire.toLocaleString()}</b></td><td><button class="btn btn-r" style="width:auto;font-size:10px" onclick="toggleExclusCompta('${v.key}')">🚫 Exclure</button></td></tr>`).join('')||`<tr><td colspan=5>Aucun vendeur - CA Firebase: ${totalCA.toLocaleString()} FC - Vérifie dates</td></tr>`}</table></div>`;
 
   let htmlRep=`<div class="card"><h4>💰 Répartition - NET ${resultatNet.toLocaleString()} FC</h4><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div style="background:#facc15;padding:12px;border-radius:12px;text-align:center">PRIME ${primePct}%<br><b>${(repart*(primePct/100)).toLocaleString()}</b><br>${meilleur?meilleur.nom:''}</div><div style="background:#0b5e2f;color:#fff;padding:12px;border-radius:12px;text-align:center">PATRON ${patronPct}%<br><b>${(repart*(patronPct/100)).toLocaleString()}</b></div><div style="background:#0ea5e9;color:#fff;padding:12px;border-radius:12px;text-align:center">DEV ${devPct}%<br><b>${(repart*(devPct/100)).toLocaleString()}</b></div></div></div>`;
 
   let totalEncaisse=vPeriode.reduce((s,v)=>s+(v.montantPaye!=null?v.montantPaye:v.total||0),0);
-  let crHtml=`<table><tr><th>Poste</th><th>Montant</th></tr><tr><td>CA Firebase</td><td>${totalCA.toLocaleString()}</td></tr><tr><td>Marge</td><td>${totalBenefBrut.toLocaleString()} (${margePct.toFixed(1)}%)</td></tr><tr><td>- Dép</td><td>-${totalDep.toLocaleString()}</td></tr><tr><td>- Loyer+Fixes+Emprunt</td><td>-${(loyer+autreFixe+emprunt).toLocaleString()}</td></tr><tr><td>- Bases ${totalBase.toLocaleString()} ✅</td><td>-${totalBase.toLocaleString()}</td></tr><tr><td>- Com</td><td>-${totalCom.toLocaleString()}</td></tr><tr style="background:#111;color:#fff"><td>= NET</td><td><b>${resultatNet.toLocaleString()}</b></td></tr></table>`;
+  let crHtml=`<table><tr><th>Poste</th><th>Montant</th></tr><tr><td>CA Firebase</td><td>${totalCA.toLocaleString()}</td></tr><tr><td>🛒 Coût d'achat marchandise</td><td>-${coutMarchandise.toLocaleString()}</td></tr><tr><td>Marge</td><td>${totalBenefBrut.toLocaleString()} (${margePct.toFixed(1)}%)</td></tr><tr><td>- Dép</td><td>-${totalDep.toLocaleString()}</td></tr><tr><td>- Loyer+Fixes+Emprunt</td><td>-${(loyer+autreFixe+emprunt).toLocaleString()}</td></tr><tr><td>- Bases ${totalBase.toLocaleString()} ✅</td><td>-${totalBase.toLocaleString()}</td></tr><tr><td>- Com</td><td>-${totalCom.toLocaleString()}</td></tr><tr style="background:#111;color:#fff"><td>= NET</td><td><b>${resultatNet.toLocaleString()}</b></td></tr></table>`;
 
   let resEl=document.getElementById('comptaResult');
   if(resEl) resEl.innerHTML=htmlSal+htmlRep+htmlSeuil;
@@ -110,6 +132,7 @@ export function calcCompta(){
 
   // CORRECTION V4.9.11 DG : Après calcul réussi, on vide les champs de saisie de valeurs pour repartir propre.
   // On ne vide PAS cDu / cAu, pour garder la période. Au prochain calcul sans saisie, les valeurs par défaut (50000, 10, 100000...) seront reprises.
+  // Mais comme on a déjà sauvegardé en V4.9.12, à la prochaine réouverture, tes dernières valeurs seront rechargées.
   ['cBase','cCom','cLoyer','cAutresFixe','cEmprunt','cPrime','cPatron','cDev'].forEach(function(id){
     let el = document.getElementById(id);
     if(el) el.value = '';
