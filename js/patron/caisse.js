@@ -6,6 +6,12 @@ export function renderCaisse(){
  let data=getFiltered(); let all=[];
  // Ventes : On compte ce que le vendeur a encaissé au moment de la vente
  data.ventes.forEach(v=>all.push({date:v.date,type:'Vente',motif:(v.items||[]).map(i=>esc(i.CODE)).join(','),montant:Number(v.paye ?? v.montantPaye ?? v.total ?? 0),_id:v._id,_shop:v._shop}));
+ // Dans getFiltered(), là où tu fais data.ventes, data.dep, data.vers, ajoute :
+data.paiementsDette = [];
+for(let shop of shopsFiltres){
+  let pd = STATE.ALL_DATA[shop]?.paiementsDette || {};
+  Object.values(pd).forEach(p=> data.paiementsDette.push({...p, _shop: shop}));
+}
  // NOUVEAU : Paiements Dette - Ce que le client paie PLUS TARD. C'est une ENTRÉE caisse.
  // On les prend dans data.paiementsDette si ton getFiltered les ramène, sinon on les prend dans les ventes
  let paiements = data.paiementsDette || [];
