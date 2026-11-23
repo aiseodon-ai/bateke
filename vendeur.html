@@ -84,8 +84,16 @@
 <div style="display:grid;grid-template-columns:1fr 90px 70px 50px;gap:5px;margin-top:8px"><input id="codeArt" placeholder="CODE" readonly><input id="pvArt" placeholder="PV" type="number" readonly><input id="qteArt" placeholder="Qté" type="number" value="1"><button class="btn btn-b" onclick="addPanier()">+</button></div>
 <div id="panierList" style="margin-top:10px;min-height:60px;background:#fafafa;border-radius:8px;padding:8px">Panier vide</div>
 <div class="remiseBox" style="margin-top:10px">
-<div>Remise %<br><small>max 5%</small>
-<input id="remise" type="number" placeholder="0" max="5" min="0" value="0" oninput="checkRemise();renderPanier()" style="font-weight:bold;text-align:center;font-size:16px">
+<div>Réduction en FC<br><small>max 30% - ex: 2000 FC</small>
+<input id="remise" type="number" placeholder="0" min="0" value="0" oninput="checkRemise();renderPanier()" style="font-weight:bold;text-align:center;font-size:16px">
+<select id="remiseMotif" style="margin-top:5px">
+  <option value="">Motif - si réduction</option>
+  <option value="Solde">🔥 Solde</option>
+  <option value="Promo">🎁 Promo</option>
+  <option value="Fidélité">❤️ Fidélité</option>
+  <option value="Défaut">⚠️ Défaut / Abîmé</option>
+  <option value="Autre">Autre</option>
+</select>
 </div>
 <div style="text-align:right">
 <div>Brut: <span id="totalPanier" class="kpi">0 FC</span></div>
@@ -97,8 +105,11 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
 <input id="clientNom" placeholder="Nom client"><input id="clientTel" placeholder="Tél client">
 </div>
-<select id="payMode"><option value="cash">Cash</option><option value="credit">Crédit</option><option value="mixte">Mixte</option></select>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px">
+<input id="clientAnniv" type="date" title="Anniversaire client - optionnel, 1ère fois seulement">
 <input id="montantPaye" type="number" placeholder="Montant payé (si crédit)">
+</div>
+<select id="payMode"><option value="cash">Cash</option><option value="credit">Crédit</option><option value="mixte">Mixte</option></select>
 <button class="btn btn-g" onclick="validerVente()">✅ VALIDER VENTE</button>
 </div>
 <div class="card"><h4>Dernières ventes aujourd'hui</h4><div style="overflow:auto"><table><thead><tr><th>Heure</th><th>Vendeur</th><th>Client</th><th>Articles</th><th>Total</th><th>Sync</th></tr></thead><tbody id="ventesJour"></tbody></table></div></div>
