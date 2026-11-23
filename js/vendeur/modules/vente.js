@@ -25,11 +25,15 @@ function getFinDate(){
 }
 
 // === NOUVEAU : REMISE EN FC - MAX 30% ===
+// === CORRECTIF REMISE FC - PAS D'ALERT PENDANT LA FRAPPE ===
 function getRemise(brut){
   let brutVal = Number(brut) || 0;
   let remiseFC = parseFloat(document.getElementById('remise')?.value || 0) || 0;
   if(remiseFC < 0) remiseFC = 0;
+  // Si panier vide, on ne plafonne pas pendant la frappe, on laisse taper
+  if(brutVal <= 0) return { remiseFC: 0, remisePct: 0, maxRemise: 0, final: 0 };
   let maxRemise = Math.round(brutVal * 0.30);
+  // On plafonne silencieusement, sans popup, pour ne pas bloquer le vendeur
   if(remiseFC > maxRemise) remiseFC = maxRemise;
   let remisePct = brutVal > 0 ? (remiseFC / brutVal * 100) : 0;
   return { remiseFC, remisePct, maxRemise, final: brutVal - remiseFC };
@@ -122,17 +126,20 @@ export function removePanier(i){ STATE.PANIER.splice(i,1); renderPanier(); }
 
 export function checkRemise(){
   let brut = STATE.PANIER.reduce((s,p)=>s+((p.prix||p.Prix||0)*p.qty),0);
+  // Si panier vide, on ne fait RIEN. On laisse le vendeur taper sa remise tranquillement.
+  if(brut <= 0) return;
   let maxRemise = Math.round(brut * 0.30);
-  let r = parseFloat(document.getElementById('remise')?.value || 0) || 0;
-  if(r < 0){ document.getElementById('remise').value = 0; r = 0; }
+  let input = document.getElementById('remise');
+  if(!input) return;
+  let r = parseFloat(input.value || 0) || 0;
+  if(r < 0){ input.value = 0; r = 0; }
   if(r > maxRemise){
-    alert(`Max 30% pour solde\nBrut : ${formatPrix(brut)} FC\nMax autorisé : ${formatPrix(maxRemise)} FC\nTu as mis : ${formatPrix(r)} FC\nOn plafonne à ${formatPrix(maxRemise)} FC.`);
-    document.getElementById('remise').value = maxRemise;
-    r = maxRemise;
+    // PAS D'ALERT ICI. On plafonne et on affiche en rouge en dessous, c'est tout.
+    input.value = maxRemise;
+    if(document.getElementById('remiseInfo')) document.getElementById('remiseInfo').innerText = `⚠️ Max 30% = ${formatPrix(maxRemise)} FC. Plafonné à ${formatPrix(maxRemise)} FC.`;
   }
   renderPanier();
 }
-
 export async function validerVente(){
   if(isAboExpired()){
     alert("🔒 VENTE BLOQUÉE - Boutique "+STATE.SHOP+" abonnement expiré depuis "+getFinDate()+"\nImpossible de vendre - Contacte patron 15.000 FC");
