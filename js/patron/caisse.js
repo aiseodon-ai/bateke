@@ -1,7 +1,7 @@
 import { esc } from "../common/utils.js";
 import { STATE } from '../core/state.js';
 import { db } from '../core/firebase.js';
-
+ 
 export function renderCaisse(){
  let data=getFiltered(); let all=[];
  // Ventes : On compte ce que le vendeur a encaissé au moment de la vente
