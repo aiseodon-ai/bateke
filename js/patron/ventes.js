@@ -1,6 +1,30 @@
 import { STATE } from '../core/state.js';
 import { db } from '../core/firebase.js';
 
+// === HELPER PATRON V5.7.0 - COMPATIBLE ANCIEN + NOUVEAU ===
+function normaliserVentePatron(v){
+  if(!v) return null;
+  let brut = Number(v.totalBrut || v.brut || 0);
+  // REMISE : Ancien = en % (ex: 5), Nouveau = en FC (ex: 2000) + remiseVal
+  let remiseFC = 0;
+  if(v.remiseVal != null) remiseFC = Number(v.remiseVal || 0);
+  else if(v.remise != null){
+    if(Number(v.remise) > 100) remiseFC = Number(v.remise); // >100 = forcément en FC
+    else if(v.remisePct != null) remiseFC = brut * Number(v.remisePct || 0) / 100;
+    else remiseFC = brut * Number(v.remise || 0) / 100;
+  }
+  let remisePctCalc = brut > 0 ? (remiseFC / brut * 100) : 0;
+  let total = Number(v.total ?? (brut - remiseFC) ?? 0);
+  let paye = Number(v.paye ?? v.montantPaye ?? total);
+  let reste = Number(v.reste ?? v.Reste ?? Math.max(0, total - paye));
+  let payMode = v.payMode || v.payement || v.mode || 'cash';
+  let clientNom = v.client?.nom || (typeof v.client === 'string' ? v.client : '') || v.clientNom || 'Comptoir';
+  let clientTel = v.client?.tel || v.clientTel || '';
+  let anniv = v.client?.anniversaire || v.anniversaire || v.clientAnniv || '';
+  let motif = v.remiseMotif || v.motif || '';
+  return { brut, remiseFC, remisePctCalc, total, paye, reste, payMode, clientNom, clientTel, anniv, motif };
+}
+
 export function renderVentes(){
   let tb=document.getElementById('ventesList'); if(!tb) return;
   let data = window.getFiltered? window.getFiltered() : {ventes:[]};
@@ -8,10 +32,14 @@ export function renderVentes(){
 
   let rows=[];
   ventes.forEach(v=>{
+    let n = normaliserVentePatron(v);
     let items = v.items || [];
     if(!items.length && (v.CODE || v.code)){
       items = [{CODE: v.CODE||v.code, Designation: v.Designation||v.designation, qty: v.qty||v.qte||0, Prix: v.Prix||v.pv||0}];
     }
+    // Texte remise : Ex: -2 000 FC (20% - Solde) ou - si pas de remise
+    let remiseTxt = n.remiseFC > 0 ? `- ${n.remiseFC.toLocaleString()} FC (${n.remisePctCalc.toFixed(1)}%${n.motif ? ' - ' + window.esc(n.motif) : ''})` : '-';
+    let annivTxt = n.anniv ? `<br><small>🎂 ${new Date(n.anniv).toLocaleDateString()}</small>` : '';
     items.forEach(i=>{
       rows.push(`
         <tr>
@@ -20,11 +48,11 @@ export function renderVentes(){
           <td>${window.esc(i.CODE||i.code||'')}</td>
           <td>${window.esc(i.Designation||i.designation||'')}</td>
           <td>${i.qty||i.qte||0}</td>
-          <td>${((i.qty||i.qte||0)*(i.Prix||i.pv||0)).toLocaleString()}</td>
-          <td>${(v.montantPaye??v.total??0).toLocaleString()}</td>
-          <td style="color:${(v.reste||0)>0?'red':'inherit'}">${(v.reste||0).toLocaleString()}</td>
-          <td>${window.esc(v.client?.nom||(typeof v.client==='string'?v.client:'Comptoir'))}</td>
-          <td>${window.esc(v.payement||v.mode||'cash')}</td>
+          <td>${((i.qty||i.qte||0)*(i.Prix||i.pv||0)).toLocaleString()}<br><small style="color:#ef4444">${remiseTxt}</small></td>
+          <td>${n.paye.toLocaleString()}</td>
+          <td style="color:${n.reste>0?'red':'inherit'}">${n.reste.toLocaleString()}</td>
+          <td>${window.esc(n.clientNom)}${annivTxt}<br><small>${window.esc(n.clientTel)}</small></td>
+          <td>${window.esc(n.payMode)}</td>
           <td><button class="btn btn-r" style="width:auto;padding:4px 8px;font-size:10px" data-id="${v._id}" data-shop="${v._shop||STATE.SHOP}" onclick="window.annulerVente(this.dataset.id,this.dataset.shop)">↩</button></td>
         </tr>`);
     });
@@ -35,7 +63,7 @@ export function renderVentes(){
   if(window.updateKPIs) window.updateKPIs();
 }
 
-// CORRIGÉ: Annulation avec RETOUR STOCK
+// CORRIGÉ: Annulation avec RETOUR STOCK - INCHANGÉ, STABLE
 export async function annulerVente(id, shop){
   if(!id) return alert('ID vide');
   if(!confirm('Annuler cette vente '+id+'? Le stock sera REMIS.')) return;
