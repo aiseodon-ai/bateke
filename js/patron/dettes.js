@@ -2,46 +2,54 @@ import { STATE } from '../core/state.js';
 import { db } from '../core/firebase.js';
 import { esc } from "../common/utils.js";
 
-export function renderDettes(){
-  let data=getFiltered();
-  // Compat ancien + nouveau : reste / Reste, paye / montantPaye
-  let dettes=data.ventes.filter(v=>{
-    let reste = Number(v.reste ?? v.Reste ?? 0);
-    return reste > 0;
-  });
-  document.getElementById('dettesList').innerHTML=dettes.slice(0,200).map(v=>{
-    let total = Number(v.total ?? 0);
-    let paye = Number(v.paye ?? v.montantPaye ?? total);
-    let reste = Number(v.reste ?? v.Reste ?? Math.max(0, total - paye));
-    let anniv = v.client?.anniversaire || v.anniversaire || '';
-    let annivTxt = anniv ? `<br><small>🎂 ${new Date(anniv).toLocaleDateString()}</small>` : '';
-    let histo = (v.paiementsDette || []).map(p=> `${new Date(p.date).toLocaleDateString()} : +${Number(p.montant||0).toLocaleString()} FC (${esc(p.motif||'')})`).join('<br>');
-    return `<tr>
-      <td>${new Date(v.date).toLocaleString()}</td>
-      <td><b>${esc(v.client?.nom||'')}</b>${annivTxt}</td>
-      <td>${esc(v.client?.tel||'')}</td>
-      <td>${esc(v._shop||'')}</td>
-      <td>${esc(v.vendeurNom||'')}</td>
-      <td>${total.toLocaleString()}</td>
-      <td>${paye.toLocaleString()}<br><small style="color:#666">${histo}</small></td>
-      <td style="color:red"><b>${reste.toLocaleString()}</b></td>
-      <td>
-        <button class="btn btn-g" style="width:auto;padding:6px 10px;font-size:11px" onclick="ouvrirPayerDette('${esc(v._id)}','${esc(v._shop)}')">💰 Payer</button><br>
-        <small style="color:#999">${esc(v.remiseMotif||'')}</small>
-      </td>
-    </tr>`;
-  }).join('')||'<tr><td colspan=9>Aucune</td></tr>';
-  let el=document.getElementById('totalDettes'); if(el) el.innerText=dettes.reduce((s,v)=>s+Number(v.reste ?? v.Reste ?? 0),0).toLocaleString()+' FC';
+function toArrayPaiements(v){
+  let p = v.paiementsDette;
+  if(!p) return [];
+  if(Array.isArray(p)) return p;
+  if(typeof p === 'object') return Object.values(p); // Firebase push() = objet
+  return [];
 }
 
-// === PAYER UNE DETTE - SANS ANNULER LA VENTE, SANS TOUCHER AU STOCK ===
+export function renderDettes(){
+  try{
+    let data = window.getFiltered ? window.getFiltered() : {ventes:[]};
+    let el = document.getElementById('dettesList');
+    if(!el) return;
+    let dettes = (data.ventes||[]).filter(v=> Number(v.reste ?? v.Reste ?? 0) > 0);
+    el.innerHTML = dettes.slice(0,200).map(v=>{
+      let total = Number(v.total ?? 0);
+      let paye = Number(v.paye ?? v.montantPaye ?? total);
+      let reste = Number(v.reste ?? v.Reste ?? Math.max(0, total - paye));
+      let anniv = v.client?.anniversaire || v.anniversaire || '';
+      let annivTxt = anniv ? `<br><small>🎂 ${new Date(anniv).toLocaleDateString()}</small>` : '';
+      let histo = toArrayPaiements(v).map(p=> `${new Date(p.date).toLocaleDateString()} : +${Number(p.montant||0).toLocaleString()} FC (${esc(p.motif||'')})`).join('<br>');
+      return `<tr>
+        <td>${new Date(v.date).toLocaleString()}</td>
+        <td><b>${esc(v.client?.nom||'')}</b>${annivTxt}</td>
+        <td>${esc(v.client?.tel||'')}</td>
+        <td>${esc(v._shop||'')}</td>
+        <td>${esc(v.vendeurNom||'')}</td>
+        <td>${total.toLocaleString()}</td>
+        <td>${paye.toLocaleString()}<br><small style="color:#666">${histo}</small></td>
+        <td style="color:red"><b>${reste.toLocaleString()}</b></td>
+        <td><button class="btn btn-g" style="width:auto;padding:6px 10px;font-size:11px" onclick="ouvrirPayerDette('${esc(v._id)}','${esc(v._shop||'')}')">💰 Payer</button></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="9">Aucune</td></tr>';
+    let totalEl = document.getElementById('totalDettes');
+    if(totalEl) totalEl.innerText = dettes.reduce((s,v)=> s + Number(v.reste ?? v.Reste ?? 0), 0).toLocaleString() + ' FC';
+  }catch(e){
+    console.error('renderDettes planté:', e);
+    let el = document.getElementById('dettesList');
+    if(el) el.innerHTML = `<tr><td colspan="9" style="color:red">Erreur: ${esc(e.message)}</td></tr>`;
+  }
+}
+
 export function ouvrirPayerDette(id, shop){
-  let data = getFiltered();
+  let data = window.getFiltered ? window.getFiltered() : {ventes:[]};
   let v = (data.ventes||[]).find(x=> String(x._id) === String(id));
   if(!v) return alert('Vente introuvable');
   let reste = Number(v.reste ?? v.Reste ?? 0);
   if(reste <= 0) return alert('Cette dette est déjà réglée');
-  // On ouvre un petit formulaire en popup, pas un simple prompt, pour forcer le motif
   let overlay = document.createElement('div');
   overlay.id = 'overlayPayerDette';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
@@ -78,10 +86,8 @@ export async function validerPayerDette(id, shop){
   let note = (document.getElementById('inputNoteDette')?.value || '').trim();
   if(!motif) return alert('Choisis un motif / justification - Obligatoire');
   if(montant <= 0) return alert('Montant invalide');
-
   let s = shop || STATE.SHOP;
   if(!s || s === 'ALL') return alert('Choisis boutique');
-
   let path = 'shops/'+s+'/ventes/'+id;
   let snap = await db.ref(path).once('value');
   if(!snap.exists()){
@@ -102,59 +108,20 @@ export async function validerPayerDette(id, shop){
   let nouveauPaye = payeActuel + montant;
   let nouveauReste = Math.max(0, resteActuel - montant);
   let nouveauPayMode = nouveauReste === 0 ? 'cash' : (nouveauPaye > 0 ? 'mixte' : 'credit');
-
-  let paiement = {
-    date: new Date().toISOString(),
-    montant: montant,
-    motif: motif,
-    note: note,
-    vendeur: STATE.CURRENT_USER?.nom || 'Patron',
-    venteId: id,
-    clientNom: v.client?.nom || '',
-    clientTel: v.client?.tel || '',
-    shop: s
-  };
-
+  let paiement = { date: new Date().toISOString(), montant: montant, motif: motif, note: note, vendeur: 'Patron', venteId: id, clientNom: v.client?.nom || '', clientTel: v.client?.tel || '', shop: s };
   try{
-    // 1. On met à jour la vente : Payé augmente, Reste diminue. On NE touche PAS au stock, on NE supprime PAS la vente.
-    await db.ref(path).update({
-      paye: nouveauPaye,
-      montantPaye: nouveauPaye,
-      reste: nouveauReste,
-      Reste: nouveauReste,
-      payMode: nouveauPayMode,
-      payement: nouveauPayMode,
-      dernierePaiementDette: paiement.date
-    });
-    // On ajoute dans l'historique de la vente
+    await db.ref(path).update({ paye: nouveauPaye, montantPaye: nouveauPaye, reste: nouveauReste, Reste: nouveauReste, payMode: nouveauPayMode, payement: nouveauPayMode, dernierePaiementDette: paiement.date });
     await db.ref(path + '/paiementsDette').push(paiement);
-
-    // 2. On renvoie la somme dans la CAISSE, avec justification
-    // C'est une ENTRÉE caisse, pas une dépense. C'est ça qui fait que ton CA Jour augmente.
     await db.ref('shops/'+s+'/paiementsDette').push(paiement);
-
-    // 3. Sync local
     if(STATE.ALL_DATA[s]?.ventes){
       let local = STATE.ALL_DATA[s].ventes.find(x=> String(x._id) === String(id));
-      if(local){
-        local.paye = nouveauPaye; local.montantPaye = nouveauPaye;
-        local.reste = nouveauReste; local.Reste = nouveauReste;
-        local.payMode = nouveauPayMode; local.payement = nouveauPayMode;
-        if(!local.paiementsDette) local.paiementsDette = [];
-        local.paiementsDette.push(paiement);
-      }
+      if(local){ local.paye = nouveauPaye; local.montantPaye = nouveauPaye; local.reste = nouveauReste; local.Reste = nouveauReste; local.payMode = nouveauPayMode; local.payement = nouveauPayMode; }
     }
     window.savePatronCache?.();
     document.getElementById('overlayPayerDette')?.remove();
-    renderDettes();
-    window.renderCaisse?.();
-    window.renderVentes?.();
-    window.renderCRM?.();
-    window.updateKPIs?.();
+    renderDettes(); window.renderCaisse?.(); window.renderVentes?.(); window.renderCRM?.(); window.updateKPIs?.();
     alert(`✅ Paiement enregistré : ${montant.toLocaleString()} FC\nClient: ${v.client?.nom||''}\nMotif: ${motif}\nNouveau reste: ${nouveauReste.toLocaleString()} FC\nLa somme est envoyée en Caisse.`);
-  }catch(e){
-    alert('❌ Erreur paiement dette: ' + e.message);
-  }
+  }catch(e){ alert('❌ Erreur paiement dette: ' + e.message); }
 }
 
 window.renderDettes=renderDettes;
