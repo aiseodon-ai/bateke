@@ -1,18 +1,19 @@
-// js/vendeur/modules/vente.js - V5.6.5 SAAS BLOQUANT 15K + FIX ASCII 58MM
+// js/vendeur/modules/vente.js - V5.7.0 COMPLET - SAAS BLOQUANT 15K + REMISE FC MAX 30% + DETTE + ANNIVERSAIRE
+// À coller en entier, remplace l'ancien fichier. Ne touche à rien d'autre.
 import { STATE } from '../core/state.js';
 import { saveStockCache, saveQueue, updateOfflineUI } from '../core/offline.js';
 
-const CACHE_VERSION = 'v5.6.5-saas-15k-20261026';
+const CACHE_VERSION = 'v5.7.0-complet-remiseFC-dette-anniv-20261123';
 
 function formatPrix(n){
   return String(Math.round(parseFloat(n)||0));
 }
 
-// 🔒 SAAS CHECK COMMUN - UTILISÉ PARTOUT
+// 🔒 SAAS CHECK COMMUN - UTILISÉ PARTOUT - GARDÉ DU STABLE
 function isAboExpired(){
   const shop = STATE.SHOP;
   const finStr = localStorage.getItem('BATEKE_ABO_FIN_'+shop);
-  if(!finStr) return false; // pas encore vérifié online, on laisse passer
+  if(!finStr) return false;
   const fin = new Date(finStr);
   const grace = new Date(fin); grace.setDate(grace.getDate()+3);
   return new Date() > grace;
@@ -23,8 +24,18 @@ function getFinDate(){
   return finStr ? new Date(finStr).toLocaleDateString() : '';
 }
 
+// === NOUVEAU : REMISE EN FC - MAX 30% ===
+function getRemise(brut){
+  let brutVal = Number(brut) || 0;
+  let remiseFC = parseFloat(document.getElementById('remise')?.value || 0) || 0;
+  if(remiseFC < 0) remiseFC = 0;
+  let maxRemise = Math.round(brutVal * 0.30);
+  if(remiseFC > maxRemise) remiseFC = maxRemise;
+  let remisePct = brutVal > 0 ? (remiseFC / brutVal * 100) : 0;
+  return { remiseFC, remisePct, maxRemise, final: brutVal - remiseFC };
+}
+
 export function addPanier(){
-  // 🔒 BLOQUE AJOUT PANIER SI ABO EXPIRÉ
   if(isAboExpired()){
     alert("🔒 Vente bloquée - Boutique "+STATE.SHOP+" abonnement expiré depuis "+getFinDate()+"\nContacte ton patron: 15.000 FC - Airtel 0998111387");
     return;
@@ -100,49 +111,121 @@ export function renderPanier(){
     }).join('');
   }
   let brut=STATE.PANIER.reduce((s,p)=>s+((p.prix||p.Prix||0)*p.qty),0); 
-  let rem=parseFloat(document.getElementById('remise')?.value||0); if(rem>5) rem=5; 
-  let remVal=brut*rem/100; let final=brut-remVal;
+  let { remiseFC, remisePct, maxRemise, final } = getRemise(brut);
   if(document.getElementById('totalPanier')) document.getElementById('totalPanier').innerText=formatPrix(brut)+' FC';
   if(document.getElementById('totalFinal')) document.getElementById('totalFinal').innerText=formatPrix(final)+' FC';
-  if(document.getElementById('remiseInfo')) document.getElementById('remiseInfo').innerText= rem>0?`Remise ${rem}% = -${formatPrix(remVal)} FC`:'';
+  if(document.getElementById('remiseInfo')) document.getElementById('remiseInfo').innerText = remiseFC>0 ? `Réduction -${formatPrix(remiseFC)} FC (${remisePct.toFixed(1)}%) - Max 30% = ${formatPrix(maxRemise)} FC` : '';
+  if(document.getElementById('remiseInfoFC')) document.getElementById('remiseInfoFC').innerText = remiseFC>0 ? `- ${formatPrix(remiseFC)} FC` : '';
 }
 
 export function removePanier(i){ STATE.PANIER.splice(i,1); renderPanier(); }
-export function checkRemise(){ let r=parseFloat(document.getElementById('remise')?.value||0); if(r>5){ alert('Max 5%'); document.getElementById('remise').value=5; renderPanier(); } }
+
+export function checkRemise(){
+  let brut = STATE.PANIER.reduce((s,p)=>s+((p.prix||p.Prix||0)*p.qty),0);
+  let maxRemise = Math.round(brut * 0.30);
+  let r = parseFloat(document.getElementById('remise')?.value || 0) || 0;
+  if(r < 0){ document.getElementById('remise').value = 0; r = 0; }
+  if(r > maxRemise){
+    alert(`Max 30% pour solde\nBrut : ${formatPrix(brut)} FC\nMax autorisé : ${formatPrix(maxRemise)} FC\nTu as mis : ${formatPrix(r)} FC\nOn plafonne à ${formatPrix(maxRemise)} FC.`);
+    document.getElementById('remise').value = maxRemise;
+    r = maxRemise;
+  }
+  renderPanier();
+}
 
 export async function validerVente(){
-  // 🔒 BLOQUE VALIDATION SI ABO EXPIRÉ - MÊME OFFLINE
   if(isAboExpired()){
     alert("🔒 VENTE BLOQUÉE - Boutique "+STATE.SHOP+" abonnement expiré depuis "+getFinDate()+"\nImpossible de vendre - Contacte patron 15.000 FC");
     return;
   }
   if(!STATE.PANIER.length) return alert('Panier vide'); 
   if(!STATE.CURRENT_VENDEUR) return alert('Login requis');
+
+  // RESTAURÉ BASE : PIN BLOQUÉ
+  if(window.BLOCKED_PINS_CACHE && window.BLOCKED_PINS_CACHE.includes(STATE.CURRENT_VENDEUR?.pin)){
+    alert('🚫 Compte bloqué');
+    if(window.logoutAll) window.logoutAll();
+    return;
+  }
+
   let brut=STATE.PANIER.reduce((s,p)=>s+((p.prix||p.Prix||0)*p.qty),0); 
-  let rem=parseFloat(document.getElementById('remise')?.value||0)||0; 
-  let final=brut-brut*rem/100;
+
+  // NOUVEAU : REMISE EN FC - MAX 30%
+  let { remiseFC, remisePct, final } = getRemise(brut);
+  let remiseVal = remiseFC;
+  let remiseMotifVal = document.getElementById('remiseMotif')?.value || '';
+  if(remiseFC > 0 && !remiseMotifVal) remiseMotifVal = 'Solde';
+
+  // RESTAURÉ BASE : BÉNÉFICE
+  let benef = STATE.PANIER.reduce((s,i)=> s + i.qty*((i.Prix||i.prix||0)-(i.PA||0)), 0) - remiseVal;
+
+  // RESTAURÉ BASE : CLIENT + PAIEMENT + DETTE + NOUVEAU ANNIVERSAIRE
+  let nomCli = (document.getElementById('clientNom')?.value || '').trim() || 'Comptoir';
+  let telCli = (document.getElementById('clientTel')?.value || '').trim();
+  let payModeVal = document.getElementById('payMode')?.value || 'cash';
+  let montantPayeRaw = document.getElementById('montantPaye')?.value ?? document.getElementById('payeInput')?.value ?? '';
+  let montantPayeVal = parseFloat(montantPayeRaw);
+  if(isNaN(montantPayeVal)) montantPayeVal = final;
+  if(montantPayeVal < 0) montantPayeVal = 0;
+  if(montantPayeVal > final) montantPayeVal = final;
+  let resteVal = Math.max(0, Math.round(final - montantPayeVal));
+  if(resteVal > 0 && payModeVal === 'cash') payModeVal = (montantPayeVal > 0 ? 'mixte' : 'credit');
+
+  let annivRaw = document.getElementById('clientAnniv')?.value || '';
+  let annivVal = (nomCli !== 'Comptoir' || telCli) ? annivRaw : '';
+  if(annivVal && isNaN(new Date(annivVal).getTime())) annivVal = '';
+
   let id=Date.now(); 
   let vente={
     id:id, date:new Date().toISOString(), boutique:STATE.SHOP, 
     vendeur:STATE.CURRENT_VENDEUR.nom, vendeurNom:STATE.CURRENT_VENDEUR.nom, vendeurPin:STATE.CURRENT_VENDEUR.pin, 
     items:STATE.PANIER.map(p=>({CODE:p.CODE, Designation:p.Designation, Prix:p.Prix||p.prix, prix:p.prix||p.Prix, qty:p.qty, qte:p.qty})), 
-    totalBrut:brut, remise:rem, total:final, 
-    client:{nom:document.getElementById('clientNom')?.value||'', tel:document.getElementById('clientTel')?.value||''}, 
-    payMode:document.getElementById('payMode')?.value||'cash', offline:!STATE.FIREBASE_CONNECTED
+    totalBrut:brut, remise:remiseFC, remisePct:remisePct, remiseVal:remiseVal, remiseMotif:remiseMotifVal, total:final, 
+    client:{nom:nomCli, tel:telCli, anniversaire:annivVal}, 
+    payMode:payModeVal, payement:payModeVal,
+    montantPaye:montantPayeVal, paye:montantPayeVal,
+    reste:resteVal, Reste:resteVal,
+    benefice:benef, benef:benef,
+    offline:!STATE.FIREBASE_CONNECTED
   };
+
+  // Sauvegarde anniversaire dans CRM si présent
+  if(annivVal && (telCli || nomCli !== 'Comptoir')){
+    try{
+      let cleClient = telCli ? 'tel_' + telCli.replace(/[^0-9]/g,'') : 'nom_' + nomCli.toLowerCase().replace(/\s+/g,'_');
+      if(STATE.IS_ONLINE && STATE.FIREBASE_CONNECTED && window.db){
+        window.db.ref('shops/'+STATE.SHOP+'/clients/'+cleClient).update({
+          nom: nomCli, tel: telCli, anniversaire: annivVal, derniereVente: vente.date
+        });
+      }
+    }catch(e){ console.log('Anniv non sauvé en CRM, mais vente OK :', e.message); }
+  }
+
   if(!STATE.IS_ONLINE||!STATE.FIREBASE_CONNECTED){
     let updates=STATE.PANIER.map(it=>{ let st=STATE.STOCK.find(s=>s.CODE===it.CODE); return {CODE:it.CODE, newQte:Math.max(0,(st?.Quantite||0)-it.qty)}; });
     STATE.OFFLINE_QUEUE.push({type:'vente', id, shop:STATE.SHOP, data:vente, stockUpdates:updates}); saveQueue();
     updates.forEach(u=>{ let st=STATE.STOCK.find(s=>s.CODE===u.CODE); if(st) st.Quantite=u.newQte; }); saveStockCache();
   }else{
     try{ 
+      // Vérification stock avant, comme la base
+      for(let it of STATE.PANIER){
+        let snap = await window.db.ref('shops/'+STATE.SHOP+'/stock/'+it.CODE+'/Quantite').once('value');
+        if(snap.val()===null){ alert(`❌ Article ${it.CODE} n'existe plus`); return; }
+        if((snap.val()||0) < it.qty){ alert(`❌ STOCK INSUFFISANT pour ${it.CODE}\nStock: ${snap.val()} | Demandé: ${it.qty}`); return; }
+      }
       for(let it of STATE.PANIER){ 
         let ref=window.db.ref('shops/'+STATE.SHOP+'/stock/'+it.CODE+'/Quantite'); 
         let res=await ref.transaction(q=>{ if(q===null||q<it.qty) return; return q-it.qty; }); 
-        if(!res.committed){ alert('Stock insuffisant '+it.CODE); return; } 
+        if(!res.committed){ 
+          alert('Stock insuffisant '+it.CODE); 
+          // RESTAURÉ BASE : ROLLBACK - On remet le stock des articles déjà déduits
+          for(let prev of STATE.PANIER){ if(prev===it) break; await window.db.ref('shops/'+STATE.SHOP+'/stock/'+prev.CODE+'/Quantite').transaction(q=>{ return (q||0)+prev.qty; }); }
+          return; 
+        } 
         let st=STATE.STOCK.find(s=>s.CODE===it.CODE); if(st) st.Quantite=res.snapshot.val(); 
       } 
       await window.db.ref('shops/'+STATE.SHOP+'/ventes/'+id).set(vente); saveStockCache(); 
+      if(window.logPresence) window.logPresence('VENTE', vente.total+' FC');
     }catch(e){ alert('Erreur '+e.message); return; }
   }
   STATE.PANIER=[]; STATE.LAST_VENTE=vente; window.LAST_VENTE=vente;
@@ -150,13 +233,20 @@ export async function validerVente(){
   renderPanier(); 
   document.getElementById('codeArt').value=''; document.getElementById('searchArt').value=''; document.getElementById('suggest').innerHTML='';
   document.getElementById('qteArt').value='1'; document.getElementById('remise').value=0; 
+  if(document.getElementById('remiseMotif')) document.getElementById('remiseMotif').value='';
+  if(document.getElementById('montantPaye')) document.getElementById('montantPaye').value='';
+  if(document.getElementById('payeInput')) document.getElementById('payeInput').value='';
+  if(document.getElementById('clientNom')) document.getElementById('clientNom').value='';
+  if(document.getElementById('clientTel')) document.getElementById('clientTel').value='';
+  if(document.getElementById('clientAnniv')) document.getElementById('clientAnniv').value='';
+  if(document.getElementById('payMode')) document.getElementById('payMode').value='cash';
   window.renderVentesJour?.(); window.renderStock?.(); window.updateKPI?.(); updateOfflineUI(); 
   let cfg = STATE.TICKET_CONFIG || window.CURRENT_CONFIG || {};
   let autoPrint = cfg.imprimante?.autoPrint || cfg.autoPrint || false;
   if(autoPrint){
     window.imprimerVenteUniverselle?.(vente);
   } else {
-    if(confirm(`Vente: ${formatPrix(final)} FC\nImprimer ticket 58mm ?`)){
+    if(confirm(`Vente: ${formatPrix(final)} FC\nBrut: ${formatPrix(brut)} FC${remiseFC>0 ? `\nRéduction: -${formatPrix(remiseFC)} FC (${remiseMotifVal})` : ''}\nPayé: ${formatPrix(montantPayeVal)} FC${resteVal>0 ? `\nReste / Dette: ${formatPrix(resteVal)} FC` : ''}\nImprimer ticket 58mm ?`)){
       window.imprimerVenteUniverselle?.(vente);
     }
   }
@@ -173,4 +263,4 @@ export function renderVentesJour(){
 
 window.addPanier=addPanier; window.searchArticle=searchArticle; window.selectArtVente=selectArtVente; window.selectArt=selectArtVente;
 window.renderPanier=renderPanier; window.removePanier=removePanier; window.checkRemise=checkRemise; window.validerVente=validerVente; window.vendre=validerVente; window.renderVentesJour=renderVentesJour;
-console.log("vente.js V5.6.5 SAAS BLOQUANT OK -", CACHE_VERSION);
+console.log("vente.js V5.7.0 COMPLET OK -", CACHE_VERSION);
