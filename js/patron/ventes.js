@@ -43,7 +43,7 @@ export function renderVentes(){
     items.forEach(i=>{
       rows.push(`
         <tr>
-          <td>${new Date(v.date).toLocaleString()}</td>
+          <td>${new Date(v.date).toLocaleString()}<br><small style="color:#2563eb;font-weight:bold">Vente ${v._id}</small></td>
           <td>${window.esc(v.vendeurNom||v.vendeur||'')}</td>
           <td>${window.esc(i.CODE||i.code||'')}</td>
           <td>${window.esc(i.Designation||i.designation||'')}</td>
