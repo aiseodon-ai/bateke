@@ -1,5 +1,5 @@
 // ia-tresorerie.js - V1.0 - DIRECTEUR FINANCIER - Cash réel, pas CA
-// Règles : CA UNIQUE = v.total | Encaissé = Payé (total - reste) | Période 1er -> Aujourd'hui LOCALE
+// Règles : CA UNIQUE = v.total | Encaissé = Payé (total - reste) + Paiements Dette | Période 1er -> Aujourd'hui LOCALE
 (function(){
   function TR_getDates(){
     let duEl = document.getElementById('cDu'), auEl = document.getElementById('cAu');
@@ -64,8 +64,6 @@
     let caisseBrutes = gf.caisse || [];
     let versBrutes = gf.vers || [];
     // ✅ CORRECTION 1 - SANS TOUCHER AU STABLE : Achats = entrees (Rapport V8.30)
-    // getFiltered() ne renvoie pas achats, il renvoie entrees : { CODE, qty, date }
-    // On garde gf.achats en 1er au cas où, sinon on prend entrees, sinon ALL_DATA
     let achatsBruts = gf.achats || gf.entrees || [];
     if(!achatsBruts.length){
       try{
@@ -74,7 +72,8 @@
         if(ALL_DATA[SHOP] && ALL_DATA[SHOP].entrees) achatsBruts = ALL_DATA[SHOP].entrees;
       }catch(e){}
     }
-    let stockBrut = gf.stock || c.stock || [];
+    // ✅ CORRIGÉ : c?.stock pour ne pas crasher si c est vide
+    let stockBrut = gf.stock || c?.stock || [];
     let dettesBrutes = gf.dettes || [];
 
     // Fallback : si getFiltered ne donne pas caisse/vers, on prend IA_getData
@@ -92,26 +91,21 @@
     let achatsPeriode = achatsBruts.filter(function(x){ let dt=TR_date(x); return dt && dt>=du && dt<=au; });
 
     // === 1. VENTES : CA vs ENCAISSÉ vs DETTES CRÉÉES ===
-    // CORRECTION : CA = v.total, jamais qty*prix, jamais IA_ventesLignes
     let caPer = 0, encaisseVentes = 0, dettesCreeesPer = 0, benefBrut = 0, coutMarch = 0;
     let vendeursPer = {};
     let nbVendeurs = 0;
     vPeriode.forEach(function(v){
       let caVente = IA_num(v.total ?? v.TOTAL ?? 0);
-      // Payé : champ paye / payé / Payé, sinon total - reste
       let resteV = IA_num(v.reste ?? v.Reste ?? v.RESTE ?? 0);
       let payeV = IA_num(v.paye ?? v.Payé ?? v.paye ?? v.PAYE ?? v.paiement ?? 0);
       if(payeV===0 && (resteV>0 || caVente>0)){
-        // Si pas de champ payé, on déduit : payé = total - reste
-        // Si reste = 0, c'est payé comptant
         payeV = Math.max(0, caVente - resteV);
       }
-      if(payeV > caVente) payeV = caVente; // Sécurité
+      if(payeV > caVente) payeV = caVente;
       caPer += caVente;
       encaisseVentes += payeV;
       dettesCreeesPer += Math.max(0, caVente - payeV);
 
-      // Marge corrigée remise, comme Compta V2.5
       let nomRaw = String(v.vendeurNom || v.vendeur || 'Inconnu').trim();
       let exclus = window.CURRENT_CONFIG?.compta?.exclus || [];
       let keyExclus = nomRaw.toLowerCase().replace(/\s+/g,'').replace(/[^a-z]/g,'');
@@ -140,14 +134,32 @@
         vendeursPer[nomRaw].encaisse += payeV;
       }
     });
+
+    // ✅ CORRIGÉ - COMPAT CAISSE.JS : Paiements Dette, comme dans caisse.js
+    // caisse.js fait : Encaissé = Vente.montantPaye + Paiement Dette - Dep - Vers
+    // dette.js stocke le paiement dans v.paiementsDette, il ne met pas à jour v.paye.
+    // Donc on doit les ajouter ici, sinon on perd l'argent des dettes payées.
+    // On prend TOUTES les ventes, pas que vPeriode, car une dette de novembre peut être payée en décembre.
+    // On ne double-compte pas : vPeriode ne compte que le payé au moment de la vente.
+    let encaisseDettes = 0;
+    ventesBrutes.forEach(function(v){
+      let arr=[];
+      if(v.paiementsDette){
+        if(Array.isArray(v.paiementsDette)) arr=v.paiementsDette;
+        else if(typeof v.paiementsDette==='object') arr=Object.values(v.paiementsDette);
+      }
+      arr.forEach(function(p){
+        let dtP = TR_date(p);
+        if(dtP && dtP>=du && dtP<=au) encaisseDettes += IA_num(p.montant||0);
+      });
+    });
+    encaisseVentes += encaisseDettes;
+
     nbVendeurs = Object.keys(vendeursPer).length;
     let margePct = caPer>0 ? (benefBrut/caPer*100) : 0;
 
     // === 2. DÉPENSES / CAISSE / VERSEMENTS / ACHATS ===
     let totalDep = depPeriode.reduce(function(s,d){ return s + TR_montant(d); },0);
-    // ✅ CORRECTION 2 - SANS TOUCHER AU STABLE : Montant Achat = Qté x Prix Achat
-    // Une entree n'a pas de montant. On fait comme Rapport synthese_achats.
-    // Si c'est un vrai achat avec montant, on prend le montant. Sinon Qté x PA.
     let totalAchats = 0;
     achatsPeriode.forEach(function(a){
       let mDirect = TR_montant(a);
@@ -165,12 +177,16 @@
 
     let caisseEntrees = 0, caisseSorties = 0;
     caissePeriode.forEach(function(x){
+      // ✅ CORRIGÉ - ANTI DOUBLE-COMPTE : si caisse contient déjà Vente / Paiement Dette,
+      // on les ignore ici, ils sont déjà comptés dans encaisseVentes + encaisseDettes.
+      // Sinon on compterait 2 fois les ventes.
+      let tX = String(x.type ?? x.Type ?? '').toLowerCase();
+      if(tX==='vente' || tX==='paiement dette' || tX==='paiement dette'.toLowerCase()) return;
       let m = Math.abs(TR_montant(x));
       if(TR_sensCaisse(x)==='sortie') caisseSorties += m; else caisseEntrees += m;
     });
     let totalVers = versPeriode.reduce(function(s,x){ return s + Math.abs(TR_montant(x)); },0);
 
-    // Dépenses par type, pour le Directeur Financier
     let depParType = {};
     depPeriode.forEach(function(d){
       let t = String(d.type ?? d.Type ?? d.motif ?? d.Motif ?? d.categorie ?? 'Autre').trim() || 'Autre';
@@ -180,9 +196,8 @@
     let depParTypeArr = Object.keys(depParType).map(function(k){ return {type:k, montant:depParType[k]}; }).sort(function(a,b){ return b.montant-a.montant; });
 
     // === 3. DETTES CLIENTS À RÉCUPÉRER - Par ancienneté ===
-    // On prend c.totalDettes (IA_buildContext) comme stock total, et on détaille par vente / dette
-    let totalDettesStock = IA_num(c.totalDettes || 0);
-    // Détail depuis dettesBrutes si dispo, sinon depuis ventes avec reste
+    // ✅ CORRIGÉ : c?.totalDettes
+    let totalDettesStock = IA_num(c?.totalDettes || 0);
     let dettesDetail = [];
     if(dettesBrutes.length){
       dettesBrutes.forEach(function(dd){
@@ -194,7 +209,6 @@
         dettesDetail.push({nom:nom, reste:reste, jours:jours, date: dt ? dt.getTime() : 0});
       });
     } else {
-      // Fallback : on reconstruit depuis les ventes (toutes, pas seulement période)
       ventesBrutes.forEach(function(v){
         let reste = IA_num(v.reste ?? v.Reste ?? 0);
         if(reste<=0) return;
@@ -204,7 +218,6 @@
         dettesDetail.push({nom:nom, reste:reste, jours:jours, date: dt.getTime()});
       });
     }
-    // On regroupe par client
     let dettesParClient = {};
     dettesDetail.forEach(function(d){
       if(!dettesParClient[d.nom]) dettesParClient[d.nom]={nom:d.nom, reste:0, jours:0, nb:0};
@@ -216,23 +229,16 @@
     let dettes0_7 = dettesClientsArr.filter(function(d){ return d.jours<=7; }).reduce(function(s,d){ return s+d.reste; },0);
     let dettes8_15 = dettesClientsArr.filter(function(d){ return d.jours>7 && d.jours<=15; }).reduce(function(s,d){ return s+d.reste; },0);
     let dettes15plus = dettesClientsArr.filter(function(d){ return d.jours>15; }).reduce(function(s,d){ return s+d.reste; },0);
-    // Si le total détaillé ne colle pas avec c.totalDettes, on prend le plus grand comme référence
     let totalDettesCalcule = dettesClientsArr.reduce(function(s,d){ return s+d.reste; },0);
     let totalDettes = Math.max(totalDettesStock, totalDettesCalcule);
-    // Si on n'a pas de détail mais on a un total, on l'utilise pour les ratios
     if(dettesClientsArr.length===0 && totalDettes>0){
       dettes15plus = totalDettes;
     }
 
     // === 4. SOLDE CAISSE - LE VRAI CHIFFRE DU DIRECTEUR FINANCIER ===
-    // ATTENTION : Versements = transfert Boutique -> Patron, ce n'est PAS un nouveau revenu.
-    // On ne l'ajoute pas à l'encaissé, sinon on compte 2 fois.
-    // Solde Boutique = Encaissé ventes + Entrées caisse - Dépenses - Caisse sorties - Versements déjà faits
+    // Formule alignée caisse.js : Encaissé (Ventes + Paiements Dette) + Entrées caisse hors ventes - Dépenses - Sorties caisse - Versements
     let soldeBoutique = encaisseVentes + caisseEntrees - totalDep - caisseSorties - totalVers;
-    // Ce que les vendeurs doivent encore verser = Encaissé - Déjà versé - Dépenses payées depuis caisse ?
-    // Simplifié et vrai : À verser = Encaissé ventes + Entrées - Dépenses - Sorties - Déjà versé = soldeBoutique
     let aVerser = Math.max(0, soldeBoutique);
-    // Si solde négatif, c'est un manque / trou de caisse à expliquer
     let trouCaisse = soldeBoutique < 0 ? Math.abs(soldeBoutique) : 0;
 
     // === 5. CHARGES À PAYER CE MOIS ===
@@ -241,9 +247,7 @@
     let totalSalaires = totalBase + totalCom;
     let chargesFixesMois = loyer + autreFixe + emprunt + totalBase;
     let chargesTotalesMois = chargesFixesMois + totalDep + totalCom;
-    // On suppose que les dépenses déjà enregistrées sont déjà payées. Reste à payer = Fixes + Salaires
     let resteAPayerFixes = loyer + autreFixe + emprunt + totalSalaires;
-    // Réserve obligatoire : loyer + bases, à ne pas toucher
     let reserveObligatoire = loyer + totalBase;
 
     // === 6. PRÉVISIONS ===
@@ -254,14 +258,10 @@
     let prevCA7j = Math.round(caJourMoyen*7);
     let prevEncaisse7j = Math.round(encaisseJourMoyen*7);
     let prevDep7j = Math.round(depJourMoyen*7);
-    // Cash prévu dans 7j = Solde aujourd'hui + Encaissé prévu - Dépenses prévues - 50% des dettes 0-7j récupérées (prudent)
     let prevCash7j = Math.round(soldeBoutique + prevEncaisse7j - prevDep7j + (dettes0_7*0.5));
-    // Cash prévu fin de mois = Solde + Encaissé restant du mois - Dépenses restantes - Charges fixes restantes
     let prevCashFinMois = Math.round(soldeBoutique + (encaisseJourMoyen*joursRestantsMois) - (depJourMoyen*joursRestantsMois) - resteAPayerFixes + (dettes0_7*0.5 + dettes8_15*0.3));
 
-    // Capacité de commande : ce que tu peux commander sans toucher à la réserve loyer + salaires
     let capaciteCommande = Math.max(0, soldeBoutique - reserveObligatoire);
-    // Si tu récupères les dettes urgentes, capacité augmentée
     let capaciteAvecDettes = capaciteCommande + Math.round(dettes15plus*0.5);
 
     // === 7. DÉCISIONS DU DIRECTEUR FINANCIER ===
@@ -279,9 +279,8 @@
     if(prevCashFinMois < 0) decisions.push('🔴 PRÉVISION FIN DE MOIS NÉGATIVE : '+IA_fmt(prevCashFinMois)+'. Tu vas manquer de cash pour payer loyer + salaires. Réduis les dépenses et relance les dettes 0-7j en priorité.');
     if(decisions.length===0) decisions.push('✅ Trésorerie saine. Continue à ce rythme, et garde ta réserve loyer + salaires intacte.');
 
-    
     // === HTML ===
-    let filtreHtml = '<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-bottom:10px">📅 <b>Période :</b> '+labelPeriode+' | '+nbJours+' jours<br>CA = <b>'+IA_fmt(caPer)+'</b> (v.total) | Encaissé = <b>'+IA_fmt(encaisseVentes)+'</b> (Payé) | Dettes créées = <b>'+IA_fmt(dettesCreeesPer)+'</b><br><span style="font-size:11px;color:#555">Le CA n\'est pas du cash. Le cash, c\'est ce qui est vraiment entré. Différence CA - Encaissé = Dettes clients.</span></div>';
+    let filtreHtml = '<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-bottom:10px">📅 <b>Période :</b> '+labelPeriode+' | '+nbJours+' jours<br>CA = <b>'+IA_fmt(caPer)+'</b> (v.total) | Encaissé = <b>'+IA_fmt(encaisseVentes)+'</b> (Payé + Paiements Dette '+IA_fmt(encaisseDettes)+') | Dettes créées = <b>'+IA_fmt(dettesCreeesPer)+'</b><br><span style="font-size:11px;color:#555">Le CA n\'est pas du cash. Le cash, c\'est ce qui est vraiment entré. Différence CA - Encaissé = Dettes clients.</span></div>';
 
     let soldeHtml = '<h4>💰 SOLDE CAISSE RÉELLE - Au '+new Date().toLocaleDateString('fr-FR')+'</h4>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
@@ -289,10 +288,11 @@
       +'<div style="background:#dbeafe;padding:12px;border-radius:12px;text-align:center"><div style="font-size:11px">À VERSER / À RÉCUPÉRER</div><b style="font-size:20px">'+IA_fmt(aVerser)+'</b><br><small>Encaissé - Déjà versé - Dépenses</small></div>'
       +'<div style="background:#fef3c7;padding:12px;border-radius:12px;text-align:center"><div style="font-size:11px">RÉSERVE OBLIGATOIRE</div><b style="font-size:20px">'+IA_fmt(reserveObligatoire)+'</b><br><small>Loyer '+IA_fmt(loyer)+' + Bases '+IA_fmt(totalBase)+'</small></div>'
       +'</div>'
-      +'<div style="margin-top:8px;background:#fff;padding:10px;border-radius:10px;font-size:12px">Calcul : Encaissé ventes '+IA_fmt(encaisseVentes)+' + Entrées caisse '+IA_fmt(caisseEntrees)+' - Dépenses '+IA_fmt(totalDep)+' - Sorties caisse '+IA_fmt(caisseSorties)+' - Versements déjà faits '+IA_fmt(totalVers)+' = <b>'+IA_fmt(soldeBoutique)+'</b></div>';
+      +'<div style="margin-top:8px;background:#fff;padding:10px;border-radius:10px;font-size:12px">Calcul : Encaissé ventes '+IA_fmt(encaisseVentes - encaisseDettes)+' + Paiements Dette '+IA_fmt(encaisseDettes)+' + Entrées caisse '+IA_fmt(caisseEntrees)+' - Dépenses '+IA_fmt(totalDep)+' - Sorties caisse '+IA_fmt(caisseSorties)+' - Versements déjà faits '+IA_fmt(totalVers)+' = <b>'+IA_fmt(soldeBoutique)+'</b></div>';
 
     let fluxHtml = '<h4>💧 FLUX DE TRÉSORERIE - '+labelPeriode+'</h4><div style="overflow:auto"><table><tr><th>Flux</th><th>Montant</th><th>Lecture Directeur Financier</th></tr>'
-      +'<tr><td>✅ Encaissé ventes (Payé)</td><td><b>'+IA_fmt(encaisseVentes)+'</b></td><td>'+vPeriode.length+' ventes, payé comptant + acomptes</td></tr>'
+      +'<tr><td>✅ Encaissé ventes (Payé)</td><td><b>'+IA_fmt(encaisseVentes - encaisseDettes)+'</b></td><td>'+vPeriode.length+' ventes, payé comptant + acomptes</td></tr>'
+      +'<tr><td>💰 Paiements Dette (après vente)</td><td><b>'+IA_fmt(encaisseDettes)+'</b></td><td>Dettes payées après, comme dans Caisse</td></tr>'
       +'<tr><td>📥 Entrées caisse (hors ventes)</td><td>'+IA_fmt(caisseEntrees)+'</td><td>'+caissePeriode.length+' mouvements caisse</td></tr>'
       +'<tr><td>💳 Dettes créées ce mois (CA - Encaissé)</td><td>'+IA_fmt(dettesCreeesPer)+'</td><td>À récupérer, sinon ce n\'est pas du cash</td></tr>'
       +'<tr><td>❌ Dépenses (dep)</td><td>- '+IA_fmt(totalDep)+'</td><td>'+depPeriode.length+' dépenses</td></tr>'
@@ -335,7 +335,6 @@
       + decisions.map(function(d){ return '<p>'+d+'</p>'; }).join('')
       + '<p><b>Priorité n°1 cette semaine :</b> '+(dettes15plus>0 ? 'Récupérer '+IA_fmt(dettes15plus)+' chez les clients +15j avant de commander.' : soldeBoutique < reserveObligatoire ? 'Ne pas toucher à la réserve loyer + salaires.' : 'Garder ta réserve intacte et commander max '+IA_fmt(capaciteCommande)+'.')+'</p></div>';
 
-        // === OBJECTIFS FINANCIERS - NORME DIRECTEUR FINANCIER ===
     let objectifReserve = loyer + autreFixe + totalBase;
     let tauxEncaissement = caPer>0 ? (encaisseVentes/caPer*100) : 0;
     let tauxDettes = caPer>0 ? (totalDettes/caPer*100) : 0;
@@ -351,6 +350,6 @@
     +'</table></div>'
     +'<p style="font-size:12px;color:#555">Un Directeur Financier ne regarde pas que le passé. Il te dit si tu vas tenir le mois prochain. Si tu rates 2 objectifs sur 5, ton entreprise est en danger, même si ton CA est beau.</p>';
       
-    return filtreHtml + soldeHtml + fluxHtml + dettesHtml + chargesHtml + objectifsHtml + prevHtml + avisHtml + c.debug;
+    return filtreHtml + soldeHtml + fluxHtml + dettesHtml + chargesHtml + objectifsHtml + prevHtml + avisHtml + (c?.debug || '');
   };
 })();
