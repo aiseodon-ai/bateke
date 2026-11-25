@@ -1,11 +1,12 @@
-// ia-marketing.js - V2.3 - CA UNIQUE = v.total + CA Produit corrigé remise + Période 1er -> Aujourd'hui LOCALE
+// ia-marketing.js - V2.4 - CA UNIQUE = v.total + CA Produit corrigé remise + Période 1er -> Aujourd'hui LOCALE
+// V2.4 - PLAN D'ACTION : dates réelles de la semaine en cours, dynamiques. Lundi = début, Dimanche = fin.
+// Ex cette semaine : Lundi 23/11, Mercredi 25/11, Vendredi 27/11, Dimanche 29/11/2026. La semaine prochaine ça change tout seul.
 (function(){
   function MK_getDates(){
     let duEl = document.getElementById('cDu'), auEl = document.getElementById('cAu');
     let now = new Date();
     let du, au;
     if(duEl && duEl.value && auEl && auEl.value){
-      // CORRECTION V2.3 : Heure locale, pas UTC
       du = new Date(duEl.value + 'T00:00:00');
       au = new Date(auEl.value + 'T23:59:59');
     } else {
@@ -15,6 +16,23 @@
       au.setHours(23,59,59,999);
     }
     return {du:du, au:au};
+  }
+  // ✅ V2.4 - SEMAINE EN COURS, DYNAMIQUE
+  function MK_semaineEnCours(){
+    let now = new Date();
+    now.setHours(0,0,0,0);
+    let jour = now.getDay(); // 0=Dimanche, 1=Lundi ... 6=Samedi
+    let decalageLundi = (jour === 0) ? -6 : (1 - jour); // On ramène toujours au Lundi de cette semaine
+    let lundi = new Date(now);
+    lundi.setDate(now.getDate() + decalageLundi);
+    function plus(j){ let d = new Date(lundi); d.setDate(lundi.getDate() + j); return d; }
+    let fmtCourt = function(d){ return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'}); }; // 23/11
+    let fmtLong = function(d){ return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'}); }; // 23/11/2026
+    return {
+      lundi: plus(0), mardi: plus(1), mercredi: plus(2), jeudi: plus(3), vendredi: plus(4), samedi: plus(5), dimanche: plus(6),
+      fmtCourt: fmtCourt, fmtLong: fmtLong,
+      label: 'SEMAINE DU LUNDI ' + fmtCourt(plus(0)) + ' AU DIMANCHE ' + fmtLong(plus(6))
+    };
   }
   function MK_clientName(v){
     return String(v.clientNom || v.client || v.nomClient || v.customer || v.telephone || v.phone || 'Client inconnu').trim();
@@ -45,6 +63,7 @@
     let periode = MK_getDates();
     let du = periode.du, au = periode.au;
     let labelPeriode = du.toLocaleDateString('fr-FR')+' au '+au.toLocaleDateString('fr-FR');
+    let sem = MK_semaineEnCours(); // ✅ V2.4
 
     let gf = {};
     try{ gf = (typeof getFiltered==='function' ? getFiltered() : null) || {}; }catch(e){ gf={}; }
@@ -58,7 +77,7 @@
     let parProduit = {};
     let parClient = {};
     let caTotal = 0;
-    let caProduitsControle = 0; // Pour vérifier que somme produits = caTotal
+    let caProduitsControle = 0;
     vPeriode.forEach(function(v){
       let d = new Date(v.date).getTime();
       let caVente = IA_num(v.total);
@@ -68,7 +87,6 @@
       parClient[cli].ca += caVente;
       parClient[cli].nb += 1;
       parClient[cli].derniere = Math.max(parClient[cli].derniere, d);
-      // CORRECTION V2.3 : On calcule d'abord caItems pour répartir la remise au prorata
       let items = v.items || [];
       if(!items.length) return;
       let caItems = 0;
@@ -81,10 +99,8 @@
         caItems += caLigneBrut;
         return {CODE:String(i.CODE), qty:qty, prix:prix, pa:pa, caBrut:caLigneBrut};
       });
-      // Si v.total est à 0, on prend caItems. Sinon ratio = v.total / caItems pour répartir la remise
       let ratio = (caVente>0 && caItems>0) ? (caVente / caItems) : 1;
-      if(caVente===0 && caItems>0) caVente = caItems; // Déjà compté dans caTotal ? Non, caTotal a pris 0, on corrige
-      // Correction caTotal si v.total était 0 : on a ajouté 0, il faut ajouter caItems
+      if(caVente===0 && caItems>0) caVente = caItems;
       if(IA_num(v.total)===0 && caItems>0){
         caTotal += caItems;
         parClient[cli].ca += caItems;
@@ -93,9 +109,7 @@
       }
       lignes.forEach(function(l){
         if(!parProduit[l.CODE]) parProduit[l.CODE]={CODE:l.CODE, qte:0, ca:0, benef:0, derniere:0};
-        // CA corrigé = CA brut * ratio. Ex : article 55 000, vente totale avec remise -> 50 000
         let caCorr = l.caBrut * ratio;
-        // Marge corrigée = CA corrigé - Coût réel (Qté x PA). Le coût ne change pas avec la remise.
         let benefCorr = caCorr - (l.qty * l.pa);
         parProduit[l.CODE].qte += l.qty;
         parProduit[l.CODE].ca += caCorr;
@@ -151,10 +165,11 @@
     let nomStar = star ? MK_nom(star.CODE, fullMap) : 'Ton produit Star';
     let pvStar = star ? MK_prixVente(fullMap[star.CODE]) : 0;
     let nomDormant = dormant1 ? dormant1.nom : '';
+    // ✅ V2.4 - Messages avec la vraie date du dimanche de cette semaine
     let msgStatut = star ? '🔥 MENKAO2 - STAR DE LA SEMAINE 🔥\n'+nomStar+' est le plus demandé à Menkao2 !\n'+star.qte+' vendus ce mois.\nPrix : '+IA_fmt(pvStar)+'\nStock limité, premier arrivé, premier servi.\nViens à Menkao2 ou commande sur WhatsApp.' : 'MENKAO2 - Nouveautés en boutique, viens découvrir !';
-    let msgPromo = dormant1 ? '⚡ PROMO MENKAO2 - CETTE SEMAINE SEULEMENT ⚡\n'+nomDormant+' à -20% !\nAu lieu de '+IA_fmt(dormant1.pv)+', tu l\'as à '+IA_fmt(Math.round(dormant1.pv*0.8))+'\nOffre valable jusqu\'à dimanche.\nNe rate pas, stock : '+dormant1.qteStock+' pcs.' : '⚡ PROMO MENKAO2 - Pack Star + 1 produit à -10% cette semaine !';
+    let msgPromo = dormant1 ? '⚡ PROMO MENKAO2 - CETTE SEMAINE SEULEMENT ⚡\n'+nomDormant+' à -20% !\nAu lieu de '+IA_fmt(dormant1.pv)+', tu l\'as à '+IA_fmt(Math.round(dormant1.pv*0.8))+'\nOffre valable jusqu\'à dimanche '+sem.fmtCourt(sem.dimanche)+'.\nNe rate pas, stock : '+dormant1.qteStock+' pcs.' : '⚡ PROMO MENKAO2 - Pack Star + 1 produit à -10% cette semaine !';
     let msgRelance = perdus.length>0 ? '👋 Bonjour '+perdus[0].nom+', c\'est Menkao2 !\nÇa fait un moment qu\'on ne t\'a pas vu.\nOn a reçu de nouveaux produits, et ton produit préféré est de retour.\nPasse nous voir cette semaine, on te garde une petite réduction. 🙏' : '👋 Bonjour, c\'est Menkao2 ! On a des nouveautés pour toi cette semaine, passe nous voir.';
-    let msgPack = (star && dormant1) ? '🎁 PACK MENKAO2\nAchète '+nomStar+' + '+nomDormant+' ensemble et tu as -10% sur le pack !\nTu économises '+IA_fmt(Math.round((pvStar+dormant1.pv)*0.10))+'\nOffre limitée.' : '🎁 PACK MENKAO2 - Star + 1 produit à -10%';
+    let msgPack = (star && dormant1) ? '🎁 PACK MENKAO2\nAchète '+nomStar+' + '+nomDormant+' ensemble et tu as -10% sur le pack !\nTu économises '+IA_fmt(Math.round((pvStar+dormant1.pv)*0.10))+'\nOffre limitée jusqu\'à dimanche '+sem.fmtCourt(sem.dimanche)+'.' : '🎁 PACK MENKAO2 - Star + 1 produit à -10%';
 
     let diagHtml = '<h4>📊 DIAGNOSTIC MARKETING - '+labelPeriode+'</h4>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
@@ -170,11 +185,12 @@
       + '</table></div>'
       + (prixBas.length>0 ? '<p style="background:#fee2e2;padding:8px;border-radius:8px">⚠️ <b>Prix trop bas :</b> '+prixBas.map(function(p){ return IA_esc(MK_nom(p.CODE, fullMap))+' (marge <15%)'; }).join(', ')+' - Tu perds de l\'argent à chaque vente. Augmente de 500 FC.</p>' : '');
 
-    let planHtml = '<h4>🎯 PLAN D\'ACTION DU DIRECTEUR - CETTE SEMAINE</h4><div style="background:#fffbeb;border:2px solid #f59e0b;padding:12px;border-radius:12px">'
-      +'<p><b>LUNDI :</b> Mets '+(star?IA_esc(MK_nom(star.CODE, fullMap)):'ton Star')+' en vitrine + Statut WhatsApp avec le message n°1 ci-dessous. Objectif : '+IA_fmt(Math.round(caJourMoyen))+'</p>'
-      +'<p><b>MERCREDI :</b> Lance la promo '+(dormant1?IA_esc(dormant1.nom):'Dormant')+' à -20%. Message n°2. Objectif : débloquer '+IA_fmt(dormant1?dormant1.cashBloque:0)+'</p>'
-      +'<p><b>VENDREDI :</b> Fais le Pack '+(star&&dormant1?IA_esc(MK_nom(star.CODE, fullMap))+' + '+IA_esc(dormant1.nom):'Star + Dormant')+' à -10%. Message n°3. Objectif : vider le dormant sans perdre de marge sur le Star.</p>'
-      +'<p><b>DIMANCHE :</b> Relance tes VIP + tes perdus. Messages n°4. Objectif : '+IA_fmt(objectifSemaine)+' de CA sur la semaine.</p>'
+    // ✅ V2.4 - PLAN AVEC DATES RÉELLES, CONCRET, PRAGMATIQUE
+    let planHtml = '<h4>🎯 PLAN D\'ACTION DU DIRECTEUR - '+sem.label+'</h4><div style="background:#fffbeb;border:2px solid #f59e0b;padding:12px;border-radius:12px">'
+      +'<p><b>LUNDI '+sem.fmtCourt(sem.lundi)+' :</b> Mets '+(star?IA_esc(MK_nom(star.CODE, fullMap)):'ton Star')+' en vitrine + Statut WhatsApp avec le message n°1 ci-dessous. Objectif du jour : '+IA_fmt(Math.round(caJourMoyen))+'</p>'
+      +'<p><b>MERCREDI '+sem.fmtCourt(sem.mercredi)+' :</b> Lance la promo '+(dormant1?IA_esc(dormant1.nom):'Dormant')+' à -20%. Message n°2. Objectif : débloquer '+IA_fmt(dormant1?dormant1.cashBloque:0)+'</p>'
+      +'<p><b>VENDREDI '+sem.fmtCourt(sem.vendredi)+' :</b> Fais le Pack '+(star&&dormant1?IA_esc(MK_nom(star.CODE, fullMap))+' + '+IA_esc(dormant1.nom):'Star + Dormant')+' à -10%. Message n°3. Objectif : vider le dormant sans perdre de marge sur le Star.</p>'
+      +'<p><b>DIMANCHE '+sem.fmtCourt(sem.dimanche)+' :</b> Relance tes VIP + tes perdus. Message n°4. Objectif : '+IA_fmt(objectifSemaine)+' de CA sur la semaine du '+sem.fmtCourt(sem.lundi)+' au '+sem.fmtCourt(sem.dimanche)+'. Fais le bilan le soir même.</p>'
       +'<p><b>⛔ NE FAIS PAS :</b> Ne fais pas de pub sur tes '+rupturesVraies.length+' vraies ruptures. Tu vas frustrer les clients. Commande-les d\'abord.</p>'
       +'</div>';
 
