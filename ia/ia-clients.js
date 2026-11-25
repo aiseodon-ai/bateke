@@ -3,10 +3,35 @@
 // Aligné CRM + Caisse + Trésorerie : Dette = total - payé - paiementsDette | Nom/Tél depuis v.client objet
 (function(){
   window.IA_render_clients = function(c){
-    let clients = (c?.clients || []).slice();
+    // ✅ CORRIGÉ - BUG [Object Object] vu en capture : c.clients a nom = objet
+    // Dans IA_buildContext, on a fait {nom: v.client} alors que v.client = {nom, tel}
+    // Donc ici on normalise TOUT : nom, téléphone, total, nb, dernier, anniversaire
+    let clients = (c?.clients || []).map(function(clRaw){
+      let cl = clRaw || {};
+      let nom = '';
+      if(typeof cl.nom === 'string') nom = cl.nom;
+      else if(cl.nom && typeof cl.nom === 'object') nom = cl.nom.nom || cl.nom.name || '';
+      else if(typeof cl.client === 'string') nom = cl.client;
+      else if(cl.client && typeof cl.client === 'object') nom = cl.client.nom || '';
+      if(!nom) nom = cl.nomClient || cl.clientNom || 'Inconnu';
+      let phone = cl.phone || cl.telephone || cl.tel || '';
+      if(!phone && cl.nom && typeof cl.nom === 'object') phone = cl.nom.tel || cl.nom.telephone || cl.nom.phone || '';
+      if(!phone && cl.client && typeof cl.client === 'object') phone = cl.client.tel || cl.client.telephone || cl.client.phone || '';
+      let total = IA_num(cl.total ?? cl.ca ?? cl.CA ?? cl.montantTotal ?? cl.totalAchats ?? 0);
+      let nb = IA_num(cl.nb ?? cl.nombre ?? cl.nbr ?? cl.achats ?? cl.count ?? 0);
+      return {
+        nom: String(nom).trim(),
+        phone: phone, telephone: phone, tel: phone,
+        total: total,
+        nb: nb,
+        dernier: cl.dernier ?? cl.last ?? cl.derniere ?? 0,
+        anniversaire: cl.anniversaire || cl.birthday || cl.dateNaissance || '',
+        dette: cl.dette ?? cl.reste ?? 0
+      };
+    });
     let nowTs = c?.now || Date.now();
     let now = new Date(nowTs);
- 
+
     // === 0. DONNÉES VENTES pour Produit Préféré + Dette réelle ===
     let gf = {};
     try{ gf = (typeof getFiltered==='function' ? getFiltered() : null) || {}; }catch(e){ gf={}; }
@@ -45,8 +70,6 @@
     let parCle = {};
     ventesBrutes.forEach(function(v){
       // ✅ CORRIGÉ - COMPAT CRM : v.client est un OBJET {nom, tel}, pas une string
-      // Avant : String(v.client) = "[object Object]", donc aucune vente ne matchait aucun client
-      // Après : même extraction que CRM corrigé
       let clientObj = v.client;
       let nomV = '';
       let phoneV = '';
@@ -62,7 +85,10 @@
       if(phoneV.length===9 && phoneV[0]==='0') phoneV = '243' + phoneV.slice(1);
       if(phoneV.length===10 && phoneV[0]==='0') phoneV = '243' + phoneV.slice(1);
       let cleV = phoneV ? 'TEL:'+phoneV : 'NOM:'+nomV.toLowerCase();
-      if(!parCle[cleV]) parCle[cleV] = {dette:0, produits:{}};
+      if(!parCle[cleV]) parCle[cleV] = {dette:0, totalVentes:0, nbVentes:0, produits:{}};
+      // ✅ CORRIGÉ - Total 0 FC en capture : on recalcule le vrai total depuis les ventes
+      parCle[cleV].totalVentes += IA_num(v.total ?? 0);
+      parCle[cleV].nbVentes += 1;
       let reste = IA_num(v.reste ?? v.Reste ?? 0);
       if(reste===0){
         let totalV = IA_num(v.total ?? 0);
@@ -70,8 +96,6 @@
         if(totalV>0 && payeV>0 && payeV<totalV) reste = totalV - payeV;
       }
       // ✅ CORRIGÉ - COMPAT CAISSE / TRÉSORERIE / CRM : Paiements Dette
-      // Avant : dette = reste au moment de la vente, donc makila restait à 5 000 même après avoir payé 200
-      // Après : dette = reste - paiementsDette, comme dans les 3 autres modules
       let arrDette=[];
       if(v.paiementsDette){
         if(Array.isArray(v.paiementsDette)) arrDette=v.paiementsDette;
@@ -121,11 +145,14 @@
       let j = cl.dernier>0 ? Math.floor((nowTs - cl.dernier)/86400000) : 999;
       let anniv = prochainAnniv(cl);
       let cle = cleClient(cl);
-      let infoVentes = parCle[cle] || {dette:0, produits:{}};
+      let infoVentes = parCle[cle] || {dette:0, totalVentes:0, nbVentes:0, produits:{}};
       if(!parCle[cle]){
         let cleNom = 'NOM:'+String(cl.nom||'').trim().toLowerCase();
-        infoVentes = parCle[cleNom] || {dette:0, produits:{}};
+        infoVentes = parCle[cleNom] || {dette:0, totalVentes:0, nbVentes:0, produits:{}};
       }
+      // ✅ CORRIGÉ - Si c.clients a total = 0 mais ventes existent, on prend le vrai total des ventes
+      if(IA_num(cl.total||0)===0 && infoVentes.totalVentes>0) cl.total = infoVentes.totalVentes;
+      if(IA_num(cl.nb||0)===0 && infoVentes.nbVentes>0) cl.nb = infoVentes.nbVentes;
       let detteClient = IA_num(cl.dette ?? cl.reste ?? 0);
       if(detteClient===0) detteClient = infoVentes.dette;
       let produitsArr = Object.values(infoVentes.produits || {});
@@ -198,8 +225,8 @@
     let alerteAnnivHtml = '';
     if(annivSemaine.length){
       alerteAnnivHtml = '<div style="background:#fef3c7;padding:12px;border-radius:12px;margin-bottom:10px"><b>🎂 ANNIVERSAIRES À SOUHAITER CETTE SEMAINE :</b><br>'
-                + annivSemaine.map(function(e){ return '• <b>'+IA_esc(e.cl.nom)+'</b> ('+IA_esc(e.phoneClean||'')+') : '+e.anniv.jourMois+' (dans '+e.anniv.jours+'j) - Produit préféré : '+IA_esc(e.produitPrefTxt)+' - <a href="'+e.waLink+'" target="_blank" style="color:#0b5e2f"><b>Envoyer 🎂</b></a>'; }).join('<br>')
-                + '</div>';
+        + annivSemaine.map(function(e){ return '• <b>'+IA_esc(e.cl.nom)+'</b> ('+IA_esc(e.phoneClean||'')+') : '+e.anniv.jourMois+' (dans '+e.anniv.jours+'j) - Produit préféré : '+IA_esc(e.produitPrefTxt)+' - <a href="'+e.waLink+'" target="_blank" style="color:#0b5e2f"><b>Envoyer 🎂</b></a>'; }).join('<br>')
+        + '</div>';
     }
 
     let rows = enrichis.slice(0,50).map(function(e){
@@ -227,12 +254,12 @@
     }).join('');
 
     let tableauHtml = '<h4>❤️ CLIENTS / FIDÉLITÉ</h4>'
-            + alerteAnnivHtml
-            + '<div style="overflow:auto"><table><tr><th>Client</th><th>🎂 Anniversaire</th><th>Statut IA</th><th>Total / Nb</th><th>💳 Dette</th><th>⭐ Produit Préféré</th><th>Dernier</th><th>Action</th></tr>'
-            + rows
-            + (enrichis.length===0 ? '<tr><td colspan="8">Aucun client avec nom. Tes ventes sont en "Client comptant" ? Mets le nom du client dans la vente pour suivre sa fidélité.</td></tr>' : '')
-            + '</table></div>'
-            + '<p style="font-size:12px;color:#555"><b>Conseil du jour :</b> '+(avecDette.length>0 ? 'Récupère d\'abord <b>'+IA_fmt(totalDettesClients)+'</b> de dettes chez '+avecDette.length+' clients avant de faire des promos.' : aRelancer.length>0 ? 'Appelle d\'abord <b>'+IA_esc(aRelancer[0].cl.nom)+'</b>, il est en train de partir depuis '+aRelancer[0].j+' jours.' : annivSemaine.length>0 ? 'Souhaite l\'anniversaire de <b>'+IA_esc(annivSemaine[0].cl.nom)+'</b> aujourd\'hui.' : 'Aucun client en danger. Concentre-toi sur tes VIP.')+'</p>';
+      + alerteAnnivHtml
+      + '<div style="overflow:auto"><table><tr><th>Client</th><th>🎂 Anniversaire</th><th>Statut IA</th><th>Total / Nb</th><th>💳 Dette</th><th>⭐ Produit Préféré</th><th>Dernier</th><th>Action</th></tr>'
+      + rows
+      + (enrichis.length===0 ? '<tr><td colspan="8">Aucun client avec nom. Tes ventes sont en "Client comptant" ? Mets le nom du client dans la vente pour suivre sa fidélité.</td></tr>' : '')
+      + '</table></div>'
+      + '<p style="font-size:12px;color:#555"><b>Conseil du jour :</b> '+(avecDette.length>0 ? 'Récupère d\'abord <b>'+IA_fmt(totalDettesClients)+'</b> de dettes chez '+avecDette.length+' clients avant de faire des promos.' : aRelancer.length>0 ? 'Appelle d\'abord <b>'+IA_esc(aRelancer[0].cl.nom)+'</b>, il est en train de partir depuis '+aRelancer[0].j+' jours.' : annivSemaine.length>0 ? 'Souhaite l\'anniversaire de <b>'+IA_esc(annivSemaine[0].cl.nom)+'</b> aujourd\'hui.' : 'Aucun client en danger. Concentre-toi sur tes VIP.')+'</p>';
 
     return resumeHtml + tableauHtml + (c?.debug || '');
   };
