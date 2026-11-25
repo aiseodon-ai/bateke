@@ -1,18 +1,16 @@
-// ia-clients.js - V2.3 - DIRECTEUR COMMERCIAL - Fidélité + Anniversaire + Dette + Produit Préféré + Doublons Nom
-// Règles : Ne lit PLUS c.clients, il est cassé : nom = "[Object Object]" | On reconstruit depuis getFiltered().ventes
-// V2.3 : Fusion même nom avec/sans tel (makila) + Comptoir exclu + Total depuis items si v.total=0 + Dette = total - payé - paiementsDette - acomptes
+// ia-clients.js - V2.4 - DIRECTEUR COMMERCIAL
+// Règles : On reconstruit depuis ventes, Comptoir exclu, Fusion même nom
+// V2.4 - DETTE : v.reste est déjà le vrai reste, comme dans le tableau Dettes. On ne soustrait PLUS paiementsDette, sinon on compte 2 fois.
 (function(){
   window.IA_render_clients = function(c){
     let nowTs = c?.now || Date.now();
     let now = new Date(nowTs);
-
     let gf = {};
     try{ gf = (typeof getFiltered==='function' ? getFiltered() : null) || {}; }catch(e){ gf={}; }
     let ventesBrutes = gf.ventes || [];
     let stockBrut = gf.stock || c?.stock || [];
     let fullMap = {};
     stockBrut.forEach(function(p){ let code = p.CODE || p._id; if(code) fullMap[String(code)] = p; });
-
     function normPhone(raw){
       let s = String(raw||'').replace(/[^0-9]/g,'');
       if(s.length===9 && s[0]==='0') s = '243' + s.slice(1);
@@ -33,12 +31,10 @@
       if(!phone) phone = normPhone(v.phone || v.telephone || v.tel || v.clientPhone || '');
       if(!nom) return null;
       let nLow = nom.toLowerCase();
-      // ✅ V2.3 - Comptoir exclu, ce n'est pas un client
-      if(nLow.includes('comptant') || nLow.includes('comptoir') || nLow === 'client comptant' || nom === '[object object]') return null;
+      if(nLow.includes('comptant') || nLow.includes('comptoir') || nom === '[object object]') return null;
       let cle = phone ? 'TEL:'+phone : 'NOM:'+nLow;
       return {cle:cle, nom:nom, phone:phone};
     }
-
     let mapClients = {};
     ventesBrutes.forEach(function(v){
       let info = cleVente(v);
@@ -48,7 +44,6 @@
         total: 0, nb: 0, dernier: 0, anniversaire: '', dette: 0, produits: {}
       };
       let cl = mapClients[info.cle];
-      // ✅ V2.3 - Si v.total = 0, on recalcule depuis les items (cas makila)
       let totalV = IA_num(v.total ?? v.montant ?? v.montantTotal ?? 0);
       if(totalV===0 && v.items){
         v.items.forEach(function(it){ totalV += IA_num(it.qty ?? it.QTE ?? 0) * IA_num(it.Prix ?? it.prix ?? 0); });
@@ -61,34 +56,28 @@
       if(v.client && typeof v.client === 'object') annivV = v.client.anniversaire || v.client.birthday || '';
       if(!annivV) annivV = v.anniversaire || '';
       if(annivV && !cl.anniversaire) cl.anniversaire = annivV;
-      // ✅ V2.3 - Dette réelle : total - payé - paiementsDette - acomptes
-      // Cas makila : total 1600, payé 1400 (600 + 200 + 600 en acomptes), reste = 200
-      // Avant : on lisait seulement v.reste qui vaut 0 stocké, donc dette 0
-      // Après : si reste stocké = 0, on recalcule total - payé - paiementsDette
-      let payeV = IA_num(v.paye ?? v.Payé ?? v.montantPaye ?? v.acompte ?? 0);
-      // Acomptes : v.acomptes peut être tableau [{montant}] ou objet, ou v.paiements
-      let arrAcompte = [];
-      if(v.acomptes){ if(Array.isArray(v.acomptes)) arrAcompte = v.acomptes; else if(typeof v.acomptes==='object') arrAcompte = Object.values(v.acomptes); }
-      arrAcompte.forEach(function(a){ payeV += IA_num(a.montant ?? a.paye ?? a ?? 0); });
-      // Si payé est déjà le total des acomptes, on ne double pas : si v.paye vaut déjà 1400, les acomptes sont dedans, on ne les rajoute pas 2 fois
-      // On ne rajoute les acomptes que si v.paye = 0
-      if(IA_num(v.paye ?? v.Payé ?? 0) !== 0){
-        payeV = IA_num(v.paye ?? v.Payé ?? 0);
+      // ✅ V2.4 - DETTE = v.reste, POINT. C'est exactement ce que fait le tableau Dettes.
+      // Ex makila : v.reste = 200, donc dette = 200. On ne soustrait rien d'autre.
+      // Ex Monsantu : v.reste = 0, donc dette = 0. On n'invente pas de dette.
+      // Avant V2.3 : on faisait reste - paiementsDette, donc makila 200 - 800 = 0, faux.
+      // Avant V2.3 bis : on faisait si payé=0 alors dette=total, donc Monsantu 10 000, faux.
+      // Après : on lit v.reste, et si v.reste n'existe pas du tout, on calcule total - payé - paiementsDette, une seule fois.
+      let aReste = (v.reste !== undefined && v.reste !== null) || (v.Reste !== undefined && v.Reste !== null);
+      let reste = 0;
+      if(aReste){
+        reste = IA_num(v.reste ?? v.Reste ?? 0);
+      } else {
+        let payeV = IA_num(v.paye ?? v.Payé ?? v.montantPaye ?? 0);
+        let arrDette=[];
+        if(v.paiementsDette){
+          if(Array.isArray(v.paiementsDette)) arrDette=v.paiementsDette;
+          else if(typeof v.paiementsDette==='object') arrDette=Object.values(v.paiementsDette);
+        }
+        let payeDetteVente=0;
+        arrDette.forEach(function(p){ payeDetteVente += IA_num(p.montant||0); });
+        reste = Math.max(0, totalV - payeV - payeDetteVente);
       }
-      let reste = IA_num(v.reste ?? v.Reste ?? v.solde ?? 0);
-      if(reste===0){
-        if(totalV>0 && payeV>=0 && payeV<totalV) reste = totalV - payeV;
-        else if(totalV>0 && payeV===0) reste = totalV;
-      }
-      let arrDette=[];
-      if(v.paiementsDette){
-        if(Array.isArray(v.paiementsDette)) arrDette=v.paiementsDette;
-        else if(typeof v.paiementsDette==='object') arrDette=Object.values(v.paiementsDette);
-      }
-      let payeDetteVente=0;
-      arrDette.forEach(function(p){ payeDetteVente += IA_num(p.montant||0); });
-      reste = Math.max(0, reste - payeDetteVente);
-      cl.dette += reste;
+      cl.dette += Math.max(0, reste);
       (v.items||[]).forEach(function(it){
         let code = String(it.CODE || it.code || '');
         if(!code) return;
@@ -100,10 +89,7 @@
         cl.produits[code].total += qty * prix;
       });
     });
-
-    // ✅ V2.3 - FUSION même nom avec / sans téléphone = 1 seul makila
-    // Avant : makila avec tel (dette 200) + makila sans tel (dette 0) = 2 lignes, on affichait celle à 0
-    // Après : 1 seul makila, total + nb + dette additionnés, téléphone gardé
+    // Fusion même nom avec / sans téléphone = 1 seul makila
     let fusion = {};
     Object.values(mapClients).forEach(function(cl){
       let cleNom = 'NOM:' + String(cl.nom||'').trim().toLowerCase();
@@ -124,13 +110,11 @@
       }
     });
     let clients = Object.values(fusion);
-
     function cleClient(cl){
       let phoneClean = normPhone(cl.phone || cl.telephone || cl.tel || '');
       if(phoneClean) return 'TEL:' + phoneClean;
       return 'NOM:' + String(cl.nom||'').trim().toLowerCase();
     }
-
     function prochainAnniv(cl){
       let raw = cl.anniversaire || cl.birthday || cl.dateNaissance || cl.naissance || cl.anniv || '';
       if(!raw) return {txt:'-', jours:999, date:null, jourMois:''};
@@ -152,7 +136,6 @@
       let txt = d.toLocaleDateString('fr-FR');
       return {txt:txt, jours:jours, date:prochain, jourMois:jourMois};
     }
-
     let enrichis = clients.map(function(cl){
       let j = cl.dernier>0 ? Math.floor((nowTs - cl.dernier)/86400000) : 999;
       let anniv = prochainAnniv(cl);
@@ -188,7 +171,6 @@
       let waLink = phoneClean ? 'https://wa.me/'+phoneClean+'?text='+encodeURIComponent(msg) : 'https://wa.me/?text='+encodeURIComponent(msg);
       return {cl:cl, j:j, anniv:anniv, statut:statut, statutCode:statutCode, msg:msg, phoneClean:phoneClean, waLink:waLink, dette:detteClient, produitPref:produitPref, produitPrefTxt:produitPrefTxt, cle:cleClient(cl)};
     });
-
     let ordre = {vip_danger:0, dette:1, anniv_jour:2, anniv_proche:3, partir:4, relancer:5, vip:6, fidele:7, nouveau:8, normal:9};
     enrichis.sort(function(a,b){ let oa = ordre[a.statutCode] ?? 9, ob = ordre[b.statutCode] ?? 9; if(oa!==ob) return oa - ob; return (b.cl.total||0) - (a.cl.total||0); });
     let vip = enrichis.filter(function(e){ return e.statutCode==='vip' || e.statutCode==='vip_danger'; });
