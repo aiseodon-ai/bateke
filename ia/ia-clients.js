@@ -1,6 +1,11 @@
-// ia-clients.js - V2.4 - DIRECTEUR COMMERCIAL
+// ia-clients.js - V2.5 - DIRECTEUR COMMERCIAL
 // Règles : On reconstruit depuis ventes, Comptoir exclu, Fusion même nom
-// V2.4 - DETTE : v.reste est déjà le vrai reste, comme dans le tableau Dettes. On ne soustrait PLUS paiementsDette, sinon on compte 2 fois.
+// V2.5 - DETTE : COPIE EXACTE de dette.js
+// dette.js : dettes = ventes.filter(v => Number(v.reste ?? v.Reste ?? 0) > 0)
+// dette.js : paye = Number(v.paye ?? v.montantPaye ?? total)
+// dette.js : reste = Number(v.reste ?? v.Reste ?? Math.max(0, total - paye))
+// Avant V2.4 : si v.reste manquait, on faisait total - payé(0) - paiementsDette = total, donc dette inventée pour Monsantu 10 000
+// Après V2.5 : si v.reste manquait, paye = total, donc reste = 0, comme Dettes. Monsantu 0, makila 200, mbuza 3 000
 (function(){
   window.IA_render_clients = function(c){
     let nowTs = c?.now || Date.now();
@@ -56,28 +61,12 @@
       if(v.client && typeof v.client === 'object') annivV = v.client.anniversaire || v.client.birthday || '';
       if(!annivV) annivV = v.anniversaire || '';
       if(annivV && !cl.anniversaire) cl.anniversaire = annivV;
-      // ✅ V2.4 - DETTE = v.reste, POINT. C'est exactement ce que fait le tableau Dettes.
-      // Ex makila : v.reste = 200, donc dette = 200. On ne soustrait rien d'autre.
-      // Ex Monsantu : v.reste = 0, donc dette = 0. On n'invente pas de dette.
-      // Avant V2.3 : on faisait reste - paiementsDette, donc makila 200 - 800 = 0, faux.
-      // Avant V2.3 bis : on faisait si payé=0 alors dette=total, donc Monsantu 10 000, faux.
-      // Après : on lit v.reste, et si v.reste n'existe pas du tout, on calcule total - payé - paiementsDette, une seule fois.
-      let aReste = (v.reste !== undefined && v.reste !== null) || (v.Reste !== undefined && v.Reste !== null);
-      let reste = 0;
-      if(aReste){
-        reste = IA_num(v.reste ?? v.Reste ?? 0);
-      } else {
-        let payeV = IA_num(v.paye ?? v.Payé ?? v.montantPaye ?? 0);
-        let arrDette=[];
-        if(v.paiementsDette){
-          if(Array.isArray(v.paiementsDette)) arrDette=v.paiementsDette;
-          else if(typeof v.paiementsDette==='object') arrDette=Object.values(v.paiementsDette);
-        }
-        let payeDetteVente=0;
-        arrDette.forEach(function(p){ payeDetteVente += IA_num(p.montant||0); });
-        reste = Math.max(0, totalV - payeV - payeDetteVente);
+      // ✅ V2.5 - DETTE = COPIE EXACTE de dette.js
+      let payePourDette = IA_num(v.paye ?? v.montantPaye ?? totalV);
+      let restePourDette = IA_num(v.reste ?? v.Reste ?? Math.max(0, totalV - payePourDette));
+      if(restePourDette > 0){
+        cl.dette += restePourDette;
       }
-      cl.dette += Math.max(0, reste);
       (v.items||[]).forEach(function(it){
         let code = String(it.CODE || it.code || '');
         if(!code) return;
