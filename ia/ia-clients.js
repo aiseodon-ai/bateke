@@ -1,77 +1,8 @@
-// ia-clients.js - V2.1 - DIRECTEUR COMMERCIAL - Fidélité + Anniversaire + Dette + Produit Préféré + Doublons Nom
-// Règles : Lit c.clients + getFiltered().ventes pour produit préféré + dette | Ne touche à rien d'autre
+// ia-clients.js - V2.2 - DIRECTEUR COMMERCIAL - Fidélité + Anniversaire + Dette + Produit Préféré + Doublons Nom
+// Règles : Ne lit PLUS c.clients, il est cassé : nom = "[Object Object]" en string, tous les clients fusionnés en 1
+// On reconstruit les clients depuis getFiltered().ventes, comme CRM, c'est la seule source vraie
 (function(){
   window.IA_render_clients = function(c){
-    // ✅ DEBUG VISIBLE : on affiche la vraie structure du 1er client, pour ne plus deviner
-    // Après ta capture, on enlèvera ce cadre jaune
-    let debugRaw = '';
-    try{
-      let premier = (c?.clients || [])[0];
-      debugRaw = '<div style="background:#fef3c7;padding:10px;border-radius:10px;margin-bottom:10px;font-size:11px;word-break:break-all"><b>🔍 DEBUG - 1er client brut :</b><br>' + IA_esc(JSON.stringify(premier).substring(0,2000)) + '<br><b>Nombre clients :</b> ' + (c?.clients||[]).length + ' | <b>Type nom :</b> ' + (premier ? typeof premier.nom : '-') + ' | <b>Clés :</b> ' + (premier ? Object.keys(premier).join(', ') : '-') + '</div>';
-    }catch(e){ debugRaw = '<div style="background:#fee2e2;padding:10px">DEBUG erreur : '+IA_esc(String(e))+'</div>'; }
-
-    // ✅ CORRIGÉ - Extraction PROFONDE, n'importe quelle profondeur
-    // Ton [Object Object] veut dire : nom est un objet dans un objet dans un objet
-    // On cherche récursivement jusqu'à trouver une string
-    function deepNom(x, profondeur){
-      if(!x) return '';
-      if(typeof x === 'string') return x;
-      if(typeof x !== 'object') return '';
-      if(profondeur > 5) return '';
-      // On essaye toutes les clés possibles, en profondeur
-      let cles = ['nom','name','client','clientNom','nomClient','nom_client'];
-      for(let k of cles){
-        if(x[k] !== undefined){
-          let r = deepNom(x[k], profondeur+1);
-          if(r) return r;
-        }
-      }
-      return '';
-    }
-    function deepPhone(x, profondeur){
-      if(!x) return '';
-      if(typeof x === 'string' && /[0-9]{7,}/.test(x.replace(/[^0-9]/g,''))) return x;
-      if(typeof x !== 'object') return '';
-      if(profondeur > 5) return '';
-      let cles = ['phone','telephone','tel','clientPhone','clientTel','numero','num'];
-      for(let k of cles){
-        if(x[k] !== undefined){
-          let r = deepPhone(x[k], profondeur+1);
-          if(r) return r;
-        }
-      }
-      // Si x a nom + tel au même niveau, on a déjà testé, sinon on fouille tout
-      for(let k in x){
-        let r = deepPhone(x[k], profondeur+1);
-        if(r) return r;
-      }
-      return '';
-    }
-    function deepNum(obj, clesPossibles){
-      for(let k of clesPossibles){
-        if(obj[k] !== undefined && obj[k] !== null && typeof obj[k] !== 'object') return IA_num(obj[k]);
-      }
-      return 0;
-    }
-
-    let clients = (c?.clients || []).map(function(clRaw){
-      let cl = clRaw || {};
-      let nom = deepNom(cl, 0) || 'Inconnu';
-      let phone = deepPhone(cl, 0) || '';
-      let total = deepNum(cl, ['total','ca','CA','montantTotal','totalAchats','totalCA','chiffre']);
-      let nb = deepNum(cl, ['nb','nombre','nbr','achats','count','nombreAchats','nbAchats']);
-      let dernier = cl.dernier ?? cl.last ?? cl.derniere ?? cl.date ?? 0;
-      if(typeof dernier === 'object') dernier = 0;
-      return {
-        nom: String(nom).trim(),
-        phone: phone, telephone: phone, tel: phone,
-        total: total,
-        nb: nb,
-        dernier: dernier,
-        anniversaire: (typeof cl.anniversaire === 'string' ? cl.anniversaire : '') || (typeof cl.birthday === 'string' ? cl.birthday : '') || (typeof cl.dateNaissance === 'string' ? cl.dateNaissance : ''),
-        dette: deepNum(cl, ['dette','reste'])
-      };
-    });
     let nowTs = c?.now || Date.now();
     let now = new Date(nowTs);
 
@@ -82,48 +13,55 @@
     let fullMap = {};
     stockBrut.forEach(function(p){ let code = p.CODE || p._id; if(code) fullMap[String(code)] = p; });
 
-    function cleClient(cl){
-      let phoneRaw = cl.phone || cl.telephone || cl.tel || '';
-      let phoneClean = String(phoneRaw).replace(/[^0-9]/g,'');
-      if(phoneClean.length===9 && phoneClean[0]==='0') phoneClean = '243' + phoneClean.slice(1);
-      if(phoneClean.length===10 && phoneClean[0]==='0') phoneClean = '243' + phoneClean.slice(1);
-      if(phoneClean) return 'TEL:' + phoneClean;
-      return 'NOM:' + String(cl.nom||'').trim().toLowerCase();
+    // ✅ CORRIGÉ - On ne prend plus c.clients, on reconstruit depuis les ventes
+    // Avant : c.clients = [{nom:"[Object Object]", total:0, nb:13}] = 1 seul client faux
+    // Après : on groupe les ventes par téléphone / nom, on retrouve tous tes clients de Mbakana
+    function normPhone(raw){
+      let s = String(raw||'').replace(/[^0-9]/g,'');
+      if(s.length===9 && s[0]==='0') s = '243' + s.slice(1);
+      if(s.length===10 && s[0]==='0') s = '243' + s.slice(1);
+      return s;
     }
-    let clientsUniques = [];
-    let vuCle = {};
-    clients.forEach(function(cl){
-      let cle = cleClient(cl);
-      if(vuCle[cle]) {
-        let ex = vuCle[cle];
-        ex.total = IA_num(ex.total||0) + IA_num(cl.total||0);
-        ex.nb = IA_num(ex.nb||0) + IA_num(cl.nb||0);
-        if((cl.dernier||0) > (ex.dernier||0)) ex.dernier = cl.dernier;
-        if(!ex.anniversaire && cl.anniversaire) ex.anniversaire = cl.anniversaire;
-      } else {
-        vuCle[cle] = cl;
-        clientsUniques.push(cl);
+    function cleVente(v){
+      let co = v.client;
+      let nom = '';
+      let phone = '';
+      if(co && typeof co === 'object'){
+        nom = String(co.nom || '').trim();
+        phone = normPhone(co.tel || co.telephone || co.phone || '');
+      } else if(typeof co === 'string' && co !== '[Object Object]'){
+        nom = co.trim();
       }
-    });
-    clients = clientsUniques;
+      if(!nom) nom = String(v.clientNom || v.nomClient || '').trim();
+      if(!phone) phone = normPhone(v.phone || v.telephone || v.tel || v.clientPhone || '');
+      if(!nom || nom.toLowerCase().includes('comptant') || nom === '[object object]') return null;
+      let cle = phone ? 'TEL:'+phone : 'NOM:'+nom.toLowerCase();
+      return {cle:cle, nom:nom, phone:phone};
+    }
 
-    let parCle = {};
+    // On construit les clients depuis les ventes
+    let mapClients = {};
     ventesBrutes.forEach(function(v){
-      let nomV = deepNom(v, 0) || '';
-      let phoneV = deepPhone(v, 0) || '';
-      if(!nomV) nomV = String(v.clientNom || v.nomClient || '').trim();
-      if(!phoneV) phoneV = String(v.phone || v.telephone || v.tel || v.clientPhone || '').replace(/[^0-9]/g,'');
-      else phoneV = String(phoneV).replace(/[^0-9]/g,'');
-      if(!nomV || nomV.toLowerCase().includes('comptant')) return;
-      if(phoneV.length===9 && phoneV[0]==='0') phoneV = '243' + phoneV.slice(1);
-      if(phoneV.length===10 && phoneV[0]==='0') phoneV = '243' + phoneV.slice(1);
-      let cleV = phoneV ? 'TEL:'+phoneV : 'NOM:'+nomV.toLowerCase();
-      if(!parCle[cleV]) parCle[cleV] = {dette:0, totalVentes:0, nbVentes:0, produits:{}};
-      parCle[cleV].totalVentes += IA_num(v.total ?? 0);
-      parCle[cleV].nbVentes += 1;
+      let info = cleVente(v);
+      if(!info) return;
+      if(!mapClients[info.cle]) mapClients[info.cle] = {
+        nom: info.nom, phone: info.phone, telephone: info.phone, tel: info.phone,
+        total: 0, nb: 0, dernier: 0, anniversaire: '', dette: 0, produits: {}
+      };
+      let cl = mapClients[info.cle];
+      let totalV = IA_num(v.total ?? 0);
+      cl.total += totalV;
+      cl.nb += 1;
+      let dV = new Date(v.date).getTime();
+      if(!isNaN(dV) && dV > cl.dernier) cl.dernier = dV;
+      // Anniversaire si la vente l'a
+      let annivV = '';
+      if(v.client && typeof v.client === 'object') annivV = v.client.anniversaire || v.client.birthday || '';
+      if(!annivV) annivV = v.anniversaire || '';
+      if(annivV && !cl.anniversaire) cl.anniversaire = annivV;
+      // Dette réelle : reste - paiementsDette, comme Caisse / Trésorerie / CRM
       let reste = IA_num(v.reste ?? v.Reste ?? 0);
       if(reste===0){
-        let totalV = IA_num(v.total ?? 0);
         let payeV = IA_num(v.paye ?? v.Payé ?? v.paye ?? 0);
         if(totalV>0 && payeV>0 && payeV<totalV) reste = totalV - payeV;
       }
@@ -135,18 +73,29 @@
       let payeDetteVente=0;
       arrDette.forEach(function(p){ payeDetteVente += IA_num(p.montant||0); });
       reste = Math.max(0, reste - payeDetteVente);
-      parCle[cleV].dette += Math.max(0, reste);
+      cl.dette += reste;
+      // Produit préféré
       (v.items||[]).forEach(function(it){
         let code = String(it.CODE || it.code || '');
         if(!code) return;
         let qty = IA_num(it.qty ?? it.QTE ?? 0);
         let prix = IA_num(it.Prix ?? it.prix ?? 0);
         let des = it.Designation || it.designation || (fullMap[code] ? (fullMap[code].Designation||fullMap[code].designation||'') : '') || code;
-        if(!parCle[cleV].produits[code]) parCle[cleV].produits[code] = {CODE:code, Des:des, qty:0, total:0};
-        parCle[cleV].produits[code].qty += qty;
-        parCle[cleV].produits[code].total += qty * prix;
+        if(!cl.produits[code]) cl.produits[code] = {CODE:code, Des:des, qty:0, total:0};
+        cl.produits[code].qty += qty;
+        cl.produits[code].total += qty * prix;
       });
     });
+
+    // Si c.clients a un anniversaire pour un client qu'on n'a pas en vente, on le récupère quand même
+    // Mais on ne prend JAMAIS son nom "[Object Object]" ni son total 0
+    let clients = Object.values(mapClients);
+
+    function cleClient(cl){
+      let phoneClean = normPhone(cl.phone || cl.telephone || cl.tel || '');
+      if(phoneClean) return 'TEL:' + phoneClean;
+      return 'NOM:' + String(cl.nom||'').trim().toLowerCase();
+    }
 
     function prochainAnniv(cl){
       let raw = cl.anniversaire || cl.birthday || cl.dateNaissance || cl.naissance || cl.anniv || '';
@@ -173,17 +122,8 @@
     let enrichis = clients.map(function(cl){
       let j = cl.dernier>0 ? Math.floor((nowTs - cl.dernier)/86400000) : 999;
       let anniv = prochainAnniv(cl);
-      let cle = cleClient(cl);
-      let infoVentes = parCle[cle] || {dette:0, totalVentes:0, nbVentes:0, produits:{}};
-      if(!parCle[cle]){
-        let cleNom = 'NOM:'+String(cl.nom||'').trim().toLowerCase();
-        infoVentes = parCle[cleNom] || {dette:0, totalVentes:0, nbVentes:0, produits:{}};
-      }
-      if(IA_num(cl.total||0)===0 && infoVentes.totalVentes>0) cl.total = infoVentes.totalVentes;
-      if(IA_num(cl.nb||0)===0 && infoVentes.nbVentes>0) cl.nb = infoVentes.nbVentes;
-      let detteClient = IA_num(cl.dette ?? cl.reste ?? 0);
-      if(detteClient===0) detteClient = infoVentes.dette;
-      let produitsArr = Object.values(infoVentes.produits || {});
+      let detteClient = IA_num(cl.dette||0);
+      let produitsArr = Object.values(cl.produits || {});
       produitsArr.sort(function(a,b){ return (b.qty - a.qty) || (b.total - a.total); });
       let produitPref = produitsArr[0] || null;
       let produitPrefTxt = produitPref ? produitPref.Des+' ('+produitPref.qty+'x)' : 'votre produit préféré';
@@ -210,12 +150,9 @@
       else if(statutCode==='nouveau') msg = 'Bonjour '+cl.nom+', merci pour votre 1er achat 🙏 Revenez nous voir, on vous réserve une petite surprise.';
       else if(statutCode==='fidele') msg = 'Bonjour '+cl.nom+', merci pour vos '+cl.nb+' achats ❤️ Cadeau pour vous : 1 petit accessoire offert sur votre prochaine visite.';
       else msg = 'Bonjour '+cl.nom+' 🙂 Merci pour votre fidélité. Passez nous voir cette semaine, '+prodTxt+' est en stock.';
-      let phoneRaw = cl.phone || cl.telephone || cl.tel || '';
-      let phoneClean = String(phoneRaw).replace(/[^0-9]/g,'');
-      if(phoneClean.length===9 && phoneClean[0]==='0') phoneClean = '243' + phoneClean.slice(1);
-      if(phoneClean.length===10 && phoneClean[0]==='0') phoneClean = '243' + phoneClean.slice(1);
+      let phoneClean = normPhone(cl.phone || cl.telephone || cl.tel || '');
       let waLink = phoneClean ? 'https://wa.me/'+phoneClean+'?text='+encodeURIComponent(msg) : 'https://wa.me/?text='+encodeURIComponent(msg);
-      return {cl:cl, j:j, anniv:anniv, statut:statut, statutCode:statutCode, msg:msg, phoneClean:phoneClean, waLink:waLink, dette:detteClient, produitPref:produitPref, produitPrefTxt:produitPrefTxt, cle:cle};
+      return {cl:cl, j:j, anniv:anniv, statut:statut, statutCode:statutCode, msg:msg, phoneClean:phoneClean, waLink:waLink, dette:detteClient, produitPref:produitPref, produitPrefTxt:produitPrefTxt, cle:cleClient(cl)};
     });
 
     let ordre = {vip_danger:0, dette:1, anniv_jour:2, anniv_proche:3, partir:4, relancer:5, vip:6, fidele:7, nouveau:8, normal:9};
@@ -242,6 +179,6 @@
       return '<tr><td>'+nomAffiche+'</td><td>'+annivCell+'</td><td>'+e.statut+'</td><td>'+IA_fmt(cl.total)+'<br>'+cl.nb+' achats</td><td style="color:'+(e.dette>0?'#ef4444':'#111')+'"><b>'+(e.dette>0?IA_fmt(e.dette):'0')+'</b><br><small>Dette</small></td><td><b>'+IA_esc(e.produitPrefTxt)+'</b></td><td>'+(e.j===999 ? '-' : e.j+'j')+'</td><td><a href="'+e.waLink+'" target="_blank" style="background:#25D366;color:#fff;padding:5px 10px;border-radius:8px;text-decoration:none">📱 WhatsApp</a><br><small style="font-size:11px;color:#555">'+IA_esc(e.msg.substring(0,70))+'...</small></td></tr>';
     }).join('');
     let tableauHtml = '<h4>❤️ CLIENTS / FIDÉLITÉ</h4>' + alerteAnnivHtml + '<div style="overflow:auto"><table><tr><th>Client</th><th>🎂 Anniversaire</th><th>Statut IA</th><th>Total / Nb</th><th>💳 Dette</th><th>⭐ Produit Préféré</th><th>Dernier</th><th>Action</th></tr>' + rows + (enrichis.length===0 ? '<tr><td colspan="8">Aucun client avec nom.</td></tr>' : '') + '</table></div>' + '<p style="font-size:12px;color:#555"><b>Conseil du jour :</b> '+(avecDette.length>0 ? 'Récupère d\'abord <b>'+IA_fmt(totalDettesClients)+'</b> de dettes chez '+avecDette.length+' clients avant de faire des promos.' : aRelancer.length>0 ? 'Appelle d\'abord <b>'+IA_esc(aRelancer[0].cl.nom)+'</b>, il est en train de partir depuis '+aRelancer[0].j+' jours.' : annivSemaine.length>0 ? 'Souhaite l\'anniversaire de <b>'+IA_esc(annivSemaine[0].cl.nom)+'</b> aujourd\'hui.' : 'Aucun client en danger. Concentre-toi sur tes VIP.')+'</p>';
-    return debugRaw + resumeHtml + tableauHtml + (c?.debug || '');
+    return resumeHtml + tableauHtml + (c?.debug || '');
   };
 })();
