@@ -6,7 +6,7 @@
     let clients = (c?.clients || []).slice();
     let nowTs = c?.now || Date.now();
     let now = new Date(nowTs);
-
+ 
     // === 0. DONNÉES VENTES pour Produit Préféré + Dette réelle ===
     let gf = {};
     try{ gf = (typeof getFiltered==='function' ? getFiltered() : null) || {}; }catch(e){ gf={}; }
