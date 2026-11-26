@@ -1,8 +1,7 @@
-// ia-audit.js - V2.6 - INSPECTEUR - Dettes comme dette.js + Standard SMIG uniquement, plus de Coût de vie 900 000 FC
-// V2.5 bug Dette = 0 : Audit calculait dettes sur ventes filtrées du mois, alors que dette.js les calcule sur TOUTES les ventes + lit v.reste direct.
-// V2.6 : Dettes = exactement comme dette.js : getFiltered().ventes.filter(v => Number(v.reste ?? v.Reste ?? 0) > 0) + lecture du DOM #totalDettes déjà calculé par l'onglet Dettes.
-// V2.6 : On enlève Coût de vie Kinshasa 900 000 FC. On reste standard barème national : SMIG officiel 21 000 FC/jour = 630 000 FC/mois.
-// Patron = au moins 1 SMIG officiel. Vendeur = au moins 1 SMIG officiel. Base 50 000 FC = très en dessous du SMIG, c'est illégal au barème national.
+// ia-audit.js - V2.7 - INSPECTEUR - Section 5 VRAIMENT refaite + Dette mémorisée (sinon l'Audit ne peut pas la voir)
+// V2.6 : Section 5 pas vraiment modifiée, juste chiffres changés. V2.7 : Section 5 refaite : diagnostic 4 causes, tests, indicateurs, décision J30/J60/J90.
+// V2.6 bug Dette = 0 : #totalDettes n'existe pas quand on est sur l'onglet Audit, et getFiltered() filtre par mois. V2.7 : tu entres le total Dettes 1 fois, on le sauve en localStorage, il ne sera plus 0.
+// Standard : SMIG officiel 21 000 FC/jour = 630 000 FC/mois. Plus de Coût de vie 900 000 FC.
 (function(){
   function IA_getValAudit(id, def){
     let el = document.getElementById(id);
@@ -10,6 +9,13 @@
     let n = parseFloat(String(el.value).replace(/\s/g,'').replace(',','.'));
     return isNaN(n)?def:n;
   }
+  window.IA_saveDettesManuel = function(){
+    let el = document.getElementById('inputDettesManuel');
+    let v = parseFloat(String(el ? el.value : '').replace(/\s/g,'').replace(',','.')) || 0;
+    try{ localStorage.setItem('IA_dettes_manuel', String(v)); }catch(e){}
+    alert('✅ Dettes mémorisées : ' + v.toLocaleString() + ' FC. Recharge l\'onglet Audit, ce ne sera plus 0.');
+    location.reload();
+  };
   window.IA_render_audit = function(c){
     c = c || {};
     let gf = {};
@@ -166,12 +172,10 @@
     });
     dormantsDetail.sort(function(a,b){ return b.cash - a.cash; });
     let aRelancer = c.aRelancer || [];
-    // ✅ V2.6 - DETTES EXACTEMENT COMME dette.js : v.reste direct, sans passer par paye, + lecture DOM #totalDettes
+    // ✅ V2.7 - DETTES : comme dette.js (v.reste direct) + mémorisée manuellement si l'app ne la transmet pas
     let dettesVentes = 0;
     let nbDettes = 0;
-    // On essaie toutes les sources de ventes possibles, comme dette.js fait avec getFiltered(), mais sans filtre mois
     let toutesVentes = ventesBrutes;
-    // Si getFiltered() filtre par mois, on essaie aussi les globales que l'app garde en mémoire
     try{
       if(window.ventes && Array.isArray(window.ventes) && window.ventes.length > toutesVentes.length) toutesVentes = window.ventes;
       if(window.allVentes && Array.isArray(window.allVentes) && window.allVentes.length > toutesVentes.length) toutesVentes = window.allVentes;
@@ -181,7 +185,6 @@
       let reste = Number(v.reste ?? v.Reste ?? 0);
       if(reste > 0){ dettesVentes += reste; nbDettes++; }
     });
-    // Lecture du total déjà calculé par l'onglet Dettes (dette.js : el.innerText = total + ' FC')
     let dettesDOM = 0;
     try{
       let elDettes = document.getElementById('totalDettes');
@@ -195,8 +198,10 @@
     else if(c.totalDettesClients!==undefined) dettesFallback = IA_num(c.totalDettesClients);
     else if(c.dettesTotal!==undefined) dettesFallback = IA_num(c.dettesTotal);
     else if(Array.isArray(c.dettes)) dettesFallback = c.dettes.reduce(function(s,x){ return s + Number(x.reste ?? x.Reste ?? 0); }, 0);
-    let dettesTotal = Math.max(dettesVentes, dettesDOM, dettesFallback);
-    let dettesSource = dettesDOM>0 ? 'onglet Dettes (#totalDettes)' : (dettesVentes>0 ? 'ventes (v.reste comme dette.js)' : (dettesFallback>0 ? 'c.totalDettes' : 'NON TRANSMISES - voir onglet Dettes'));
+    let dettesManuel = 0;
+    try{ dettesManuel = parseInt(localStorage.getItem('IA_dettes_manuel') || '0', 10) || 0; }catch(e){}
+    let dettesTotal = Math.max(dettesVentes, dettesDOM, dettesFallback, dettesManuel);
+    let dettesSource = dettesManuel>0 && dettesTotal===dettesManuel ? 'saisie manuelle mémorisée' : (dettesDOM>0 ? 'onglet Dettes (#totalDettes)' : (dettesVentes>0 ? 'ventes (v.reste comme dette.js)' : (dettesFallback>0 ? 'c.totalDettes' : 'NON TRANSMISE - entre-la ci-dessous 1 fois')));
     let dettesFiable = dettesTotal>0;
     function evol(actuel, precedent){
       if(precedent===0) return {txt:'Pas de référence', pct:0, sens:'-'};
@@ -213,16 +218,12 @@
     let starCA = produitsTriCA[0] ? produitsTriCA[0].ca : 0;
     let dependanceStar = caTotal>0 ? (starCA / caTotal * 100) : 0;
     let nomStar = produitsTriCA[0] ? nomProd(produitsTriCA[0].CODE, fullMap) : '-';
-    // ✅ V2.6 - STANDARD SMIG UNIQUEMENT, BARÈME NATIONAL, PLUS DE COÛT DE VIE 900 000 FC
     let SMIG_OFFICIEL_JOUR = 21000, SMIG_REEL_JOUR = 11500;
-    let SMIG_OFFICIEL_MOIS = SMIG_OFFICIEL_JOUR * 30; // 630 000 FC - barème national officiel
-    let SMIG_REEL_MOIS = SMIG_REEL_JOUR * 30; // 345 000 FC - ce que beaucoup appliquent en pratique
-    // Le Patron, comme tout travailleur, doit gagner au moins 1 SMIG officiel. C'est la référence légale, pas une estimation.
-    let besoinPatron = SMIG_OFFICIEL_MOIS; // 630 000 FC
-    // Ce que touche le vendeur aujourd'hui : Base + Com. On le compare au SMIG, c'est le barème qui juge.
+    let SMIG_OFFICIEL_MOIS = SMIG_OFFICIEL_JOUR * 30;
+    let SMIG_REEL_MOIS = SMIG_REEL_JOUR * 30;
+    let besoinPatron = SMIG_OFFICIEL_MOIS;
     let salaireVendeurActuel = Math.round(base + (benefMoisEstime/Math.max(1,nbVendeurs))*(comPct/100));
     let deficitVendeurVsSmig = SMIG_OFFICIEL_MOIS - salaireVendeurActuel;
-    // Répartition Compta
     let totalBaseEstime = nbVendeurs * base;
     let totalComEstime = benefMoisEstime * (comPct/100);
     let totalChargesFixesEstime = loyer + autreFixe + emprunt + totalBaseEstime;
@@ -242,9 +243,9 @@
       strategie = '3 leviers en 30 jours : 1) +500 FC sur tous les produits à marge <30%. 2) Vide les dormants ('+IA_fmt(cashBloque)+') avec Pack Star + Dormant. 3) Contrôle : inventaire chaque dimanche, caisse comptée chaque soir, 1 seul vendeur à la caisse, chaque vente = reçu.';
     } else if(repartPatron < besoinPatron){
       verdictVie = '🟡 SURVIE (Barème SMIG) : Ta part Patron = '+IA_fmt(repartPatron)+', il te faut au moins 1 SMIG officiel = '+IA_fmt(besoinPatron)+'. Il te manque '+IA_fmt(deficitPatron)+' / mois.';
-      strategie = 'Tu es à '+Math.round(repartPatron/besoinPatron*100)+'% du SMIG officiel. Il te faut '+IA_fmt(deficitPatron)+' de plus en part Patron, soit environ '+IA_fmt(Math.round(deficitPatron/(patronPct/100)))+' de plus en Résultat Net.';
+      strategie = 'Tu es à '+Math.round(repartPatron/besoinPatron*100)+'% du SMIG officiel. Il te faut '+IA_fmt(deficitPatron)+' de plus en part Patron.';
     } else {
-      verdictVie = '🟢 CONFORME SMIG : Ta part Patron = '+IA_fmt(repartPatron)+', tu atteins au moins 1 SMIG officiel = '+IA_fmt(besoinPatron)+'. Tu n\'es plus en survie au barème national.';
+      verdictVie = '🟢 CONFORME SMIG : Ta part Patron = '+IA_fmt(repartPatron)+', tu atteins au moins 1 SMIG officiel = '+IA_fmt(besoinPatron)+'.';
       strategie = 'Sécurise : mets 10% de ta part de côté chaque mois. Tu peux passer ton vendeur au SMIG officiel pour le fidéliser.';
     }
     let pGarde = {m6:repartPatron*6, m12:repartPatron*12, m36:repartPatron*36, m60:repartPatron*60};
@@ -264,7 +265,6 @@
     if(repartPatron >= besoinPatron) note += 4;
     else if(repartPatron >= besoinPatron*0.5) note += 1;
     else note -= 2;
-    // Pénalité si vendeur en dessous du SMIG : c'est un risque légal et un risque de vol
     if(salaireVendeurActuel < SMIG_OFFICIEL_MOIS) note -= 1;
     note = Math.max(0, Math.min(20, note));
     let mention = note>=16 ? '🟢 BON - Continue' : note>=10 ? '🟡 MOYEN - À corriger vite' : '🔴 DANGER - Survie, il faut changer de rythme';
@@ -291,36 +291,42 @@
       +'- Dépenses : '+IA_fmt(Math.round(totalDepEstime))+' | - Loyer '+IA_fmt(loyer)+' | - Autres fixes '+IA_fmt(autreFixe)+' | - Emprunt '+IA_fmt(emprunt)+' | - Bases salaires ('+nbVendeurs+' x '+IA_fmt(base)+') = '+IA_fmt(totalBaseEstime)+' | - Commissions '+comPct+'% = '+IA_fmt(Math.round(totalComEstime))+'<br>'
       +'=> <b>Résultat Net estimé : '+IA_fmt(resultatNetEstime)+'</b><br>'
       +'=> Répartition : Prime '+primePct+'% = '+IA_fmt(repartPrime)+' | <b>Patron '+patronPct+'% = '+IA_fmt(repartPatron)+'</b> | Dev '+devPct+'% = '+IA_fmt(repartDev)+'</p>'
-      +'<p><b>Barème national - SMIG :</b><br>'
-      +'SMIG officiel : <b>21 000 FC / jour = 630 000 FC / mois</b> (barème légal)<br>'
-      +'SMIG réel beaucoup appliqué : <b>11 500 FC / jour = 345 000 FC / mois</b> (pratique courante, en dessous du barème)<br>'
-      +'Ta part Patron doit être au moins <b>1 SMIG officiel = '+IA_fmt(besoinPatron)+'</b>. C\'est la référence standard, pas une estimation de coût de vie.</p>'
-      +'<p>Ta part Patron : <b>'+IA_fmt(repartPatron)+'</b> | Référence SMIG officiel : <b>'+IA_fmt(besoinPatron)+'</b> | <b>Il te manque : '+IA_fmt(Math.max(0,deficitPatron))+' / mois</b> '+(deficitPatron>0 ? 'soit '+Math.round(deficitPatron/Math.max(1,repartPatron)*100)+'% de plus à gagner.' : '✅ Tu atteins le SMIG officiel.')+'</p>'
-      +'<p><b>Vendeur au barème :</b> Ton vendeur touche aujourd\'hui Base '+IA_fmt(base)+' + Com '+comPct+'% = environ <b>'+IA_fmt(salaireVendeurActuel)+' / mois</b>. Barème SMIG officiel = <b>'+IA_fmt(SMIG_OFFICIEL_MOIS)+'</b>. Il lui manque <b>'+IA_fmt(Math.max(0,deficitVendeurVsSmig))+' / mois</b> pour atteindre le SMIG. C\'est en dessous du barème national. Pour payer au SMIG, il faut monter le bénéfice, pas baisser les salaires. Un vendeur payé en dessous du SMIG est un risque de départ et un risque de vol.</p>'
+      +'<p><b>Barème national - SMIG :</b> SMIG officiel : <b>21 000 FC / jour = 630 000 FC / mois</b> | SMIG réel beaucoup appliqué : <b>11 500 FC / jour = 345 000 FC / mois</b><br>Ta part Patron doit être au moins <b>1 SMIG officiel = '+IA_fmt(besoinPatron)+'</b>.</p>'
+      +'<p>Ta part Patron : <b>'+IA_fmt(repartPatron)+'</b> | Référence SMIG officiel : <b>'+IA_fmt(besoinPatron)+'</b> | <b>Il te manque : '+IA_fmt(Math.max(0,deficitPatron))+' / mois</b></p>'
+      +'<p><b>Vendeur au barème :</b> Ton vendeur touche Base '+IA_fmt(base)+' + Com '+comPct+'% = environ <b>'+IA_fmt(salaireVendeurActuel)+' / mois</b>. Barème SMIG officiel = <b>'+IA_fmt(SMIG_OFFICIEL_MOIS)+'</b>. Il lui manque <b>'+IA_fmt(Math.max(0,deficitVendeurVsSmig))+' / mois</b> pour atteindre le SMIG. Un vendeur payé en dessous du SMIG est un risque de départ et un risque de vol.</p>'
       +'<p style="background:#fee2e2;padding:8px;border-radius:8px"><b>'+verdictVie+'</b></p>'
       +'<p><b>🎯 STRATÉGIE ANTI-SURVIE :</b><br>'+strategie+'</p>'
-      +'<p><b>🔒 ANTI-VOL :</b><br>1) Inventaire chaque dimanche soir, tu comptes toi-même. 2) Caisse comptée chaque soir, écart = 0 toléré. 3) 1 seul vendeur à la caisse. 4) Chaque vente = reçu, même 500 FC. 5) Si le bénéfice monte, paie ton vendeur au SMIG, un vendeur payé au SMIG vole moins qu\'un vendeur payé 50 000 FC. 6) Si l\'écart inventaire dépasse 2% du CA, tu changes de vendeur.</p>'
+      +'<p><b>🔒 ANTI-VOL :</b> 1) Inventaire chaque dimanche, tu comptes toi-même. 2) Caisse comptée chaque soir, écart = 0 toléré. 3) 1 seul vendeur à la caisse. 4) Chaque vente = reçu, même 500 FC. 5) Si le bénéfice monte, paie ton vendeur au SMIG. 6) Si l\'écart inventaire dépasse 2% du CA, tu changes de vendeur.</p>'
       +'</div>'
-      +'<p>💤 Cash bloqué dans dormants : <b>'+IA_fmt(cashBloque)+'</b> ('+dormants.length+' dormants) - Top : '+(dormantsDetail[0]?IA_esc(dormantsDetail[0].nom)+' ('+IA_fmt(dormantsDetail[0].cash)+')':'-')+' | 🚫 Ruptures vraies : <b>'+ruptures.length+'</b> | 💳 Dettes : <b>'+IA_fmt(dettesTotal)+'</b> '+(dettesFiable ? ('= '+Math.round(tauxDette)+'% du CA mois ('+nbDettes+' dettes) '+(tauxDette>10?'🔴 Trop de dettes, récupère d\'abord.':'✅ Dettes sous contrôle.')) : '⚠️ NON TRANSMISES - va voir l\'onglet Dettes.')+' <small>(source : '+dettesSource+')</small> | 📞 À relancer : <b>'+aRelancer.length+'</b></p>';
+      +'<p>💤 Cash bloqué dans dormants : <b>'+IA_fmt(cashBloque)+'</b> ('+dormants.length+' dormants) - Top : '+(dormantsDetail[0]?IA_esc(dormantsDetail[0].nom)+' ('+IA_fmt(dormantsDetail[0].cash)+')':'-')+' | 🚫 Ruptures vraies : <b>'+ruptures.length+'</b> | 💳 Dettes : <b>'+IA_fmt(dettesTotal)+'</b> '+(dettesFiable ? ('= '+Math.round(tauxDette)+'% du CA mois ('+nbDettes+' dettes) '+(tauxDette>10?'🔴 Trop de dettes, récupère d\'abord.':'✅ Dettes sous contrôle.')) : '⚠️ NON TRANSMISE - entre-la 1 fois ci-dessous.')+' <small>(source : '+dettesSource+')</small> | 📞 À relancer : <b>'+aRelancer.length+'</b></p>'
+      + (!dettesFiable ? '<div style="background:#fef3c7;padding:10px;border-radius:10px">💳 <b>Dettes non transmises à l\'Audit</b> - Va voir l\'onglet Dettes, copie le total ici, 1 fois, il sera mémorisé : <input id="inputDettesManuel" type="number" placeholder="ex : 2200" style="width:120px"> <button class="btn btn-g" onclick="IA_saveDettesManuel()">💾 Mémoriser Dettes</button></div>' : '');
     html += '<h4>4️⃣ PROJECTIONS - Sur TA part Patron, barème SMIG</h4>'
       +'<p style="font-size:12px;color:#555">Projection sur ta part Patron : '+IA_fmt(repartPatron)+' / mois. Référence : 1 SMIG officiel = '+IA_fmt(besoinPatron)+' / mois.</p>'
       +'<div style="overflow:auto"><table><tr><th>Scénario</th><th>Ta part / mois</th><th>6 mois</th><th>1 an</th><th>3 ans</th><th>5 ans</th></tr>'
       +'<tr><td><b>1. Tu gardes le rythme</b></td><td>'+IA_fmt(repartPatron)+'</td><td>'+fmtProj(pGarde.m6)+'</td><td><b>'+fmtProj(pGarde.m12)+'</b></td><td>'+fmtProj(pGarde.m36)+'</td><td>'+fmtProj(pGarde.m60)+'</td></tr>'
       +'<tr><td><b>2. Tu accélères +20%</b></td><td>'+IA_fmt(repartAccelere)+'</td><td>'+fmtProj(pAccelere.m6)+'</td><td><b>'+fmtProj(pAccelere.m12)+'</b></td><td>'+fmtProj(pAccelere.m36)+'</td><td>'+fmtProj(pAccelere.m60)+'</td></tr>'
       +'<tr style="background:#dcfce7"><td><b>3. Tu corriges + tu accélères</b></td><td><b>'+IA_fmt(repartCorrige)+'</b></td><td>'+fmtProj(pCorrige.m6)+'</td><td><b>'+fmtProj(pCorrige.m12)+'</b></td><td>'+fmtProj(pCorrige.m36)+'</td><td>'+fmtProj(pCorrige.m60)+'</td></tr>'
+      +'</table></div>';
+    // ✅ V2.7 - SECTION 5 VRAIMENT REFAITE : diagnostic 4 causes + tests + décision
+    html += '<h4>5️⃣ DÉCISION : FERMER OU THÉRAPIE DE CHOC ? - ANALYSE APPROFONDIE - 90 JOURS</h4><div style="background:#0f172a;color:#fff;padding:14px;border-radius:12px">'
+      +'<p><b>Verdict aujourd\'hui : NE FERME PAS TOUT DE SUITE, MAIS NE CONTINUE PAS COMME ÇA.</b><br>Avec '+IA_fmt(repartPatron)+' / mois de part Patron, tu es à '+Math.round(repartPatron/Math.max(1,besoinPatron)*100)+'% du SMIG officiel ('+IA_fmt(besoinPatron)+'). Mais fermer maintenant, c\'est jeter ton stock, tes clients, ta place à Menkao2, sans savoir QUELLE cause te tue. Il y a 4 causes possibles, pas 1. On les teste une par une, avec des preuves, pas avec des sentiments.</p>'
+      +'<p><b>🔍 DIAGNOSTIC - 4 CAUSES POSSIBLES, COMMENT LES RECONNAÎTRE :</b></p>'
+      +'<div style="overflow:auto"><table style="color:#fff"><tr><th>Cause</th><th>Symptôme que tu as déjà</th><th>Question à te poser</th><th>Si c\'est ça, que faire ?</th></tr>'
+      +'<tr><td><b>1. PRIX trop bas</b></td><td>'+(nbDangereuse+nbPerte)+' produits à marge &lt;15% ou en perte, marge globale faible, CA qui tourne mais bénéfice qui ne monte pas</td><td>Est-ce que tes clients achètent sans négocier ? Si oui, tu es trop bas. Est-ce que ton concurrent vend plus cher et vend quand même ?</td><td>+500 FC sur marges &lt;30%, +1 000 FC sur Stars. Si CA ne chute pas &gt;15% en 30 jours, c\'était le prix.</td></tr>'
+      +'<tr><td><b>2. GAMME pas adaptée</b></td><td>'+dormants.length+' dormants, cash bloqué '+IA_fmt(cashBloque)+', beaucoup de produits qui ne tournent pas, 1 Star qui porte tout ('+Math.round(dependanceStar)+'% du CA)</td><td>Qu\'est-ce que tes clients achètent AILLEURS parce que tu ne l\'as pas ? Demande à 20 clients, note les réponses.</td><td>Arrête les 5 pires dormants, remplace par 5 produits demandés. Vide les dormants avec Pack Star + Dormant.</td></tr>'
+      +'<tr><td><b>3. ENVIRONNEMENT Menkao2</b></td><td>Panier moyen '+IA_fmt(Math.round(panierMoyen))+', peu de ventes par jour, clients qui n\'ont pas de cash, beaucoup de dettes / crédit</td><td>Les gens à Menkao2 ont-ils le pouvoir d\'acheter tes produits ? Ou ils achètent seulement le strict minimum ? Ton loyer '+IA_fmt(loyer)+' est-il adapté au quartier ?</td><td>Si le quartier ne peut pas payer tes produits, il faut soit baisser la gamme (produits plus petits, moins chers), soit déménager, soit vendre en gros aux revendeurs, pas au détail.</td></tr>'
+      +'<tr><td><b>4. CONCURRENCE / VISIBILITÉ</b></td><td>CA semaine '+evolSemaine.sens+' '+evolSemaine.txt+', CA mois '+evolMois.sens+' '+evolMois.txt+', clients qui ne reviennent pas</td><td>Combien de concurrents vendent la même chose à Menkao2 ? À quel prix ? Les clients savent-ils que tu existes ? Pourquoi ils iraient chez toi et pas chez lui ?</td><td>Tour de 5 concurrents, note leurs prix sur tes 10 Stars. Aligne-toi ou explique ta différence (garantie, dispo, qualité). Relance tes 20 meilleurs clients par WhatsApp.</td></tr>'
       +'</table></div>'
-      +'<p><b>Lecture du Directeur :</b> Si tu gardes le rythme, en 1 an ta part Patron cumule '+fmtProj(pGarde.m12)+', il te faut '+IA_fmt(besoinPatron*12)+' pour atteindre 1 SMIG officiel par mois pendant 1 an. Il te manque '+IA_fmt(Math.max(0, besoinPatron*12 - pGarde.m12))+' sur l\'année.</p>';
-    html += '<h4>5️⃣ DÉCISION : FERMER OU THÉRAPIE DE CHOC ? - 90 JOURS POUR VALIDER OU INVALIDER</h4><div style="background:#0f172a;color:#fff;padding:14px;border-radius:12px">'
-      +'<p><b>Verdict de l\'Inspecteur aujourd\'hui : NE FERME PAS TOUT DE SUITE, MAIS NE CONTINUE PAS COMME ÇA.</b><br>Avec '+IA_fmt(repartPatron)+' / mois de part Patron, tu es en dessous du SMIG officiel. Mais fermer maintenant, c\'est jeter ton stock ('+IA_fmt(cashBloque)+' de dormants + stock actif), tes clients, et ta place à Menkao2, sans savoir si c\'est le produit, le prix, la concurrence ou l\'environnement qui te tue.</p>'
-      +'<p><b>🧪 THÉRAPIE DE CHOC - 90 JOURS, 3 HYPOTHÈSES À TESTER, 1 PAR MOIS :</b></p>'
-      +'<p><b>Mois 1 (Jour 1-30) - Hypothèse PRIX :</b> Tes prix sont trop bas. Test : +500 FC sur tous les produits à marge &lt;30%, +1 000 FC sur les Stars. Si le CA ne chute pas de plus de 15%, l\'hypothèse est VALIDÉE.<br><b>Critère J30 :</b> Marge brute &gt; '+IA_fmt(Math.round(benefMoisEstime*1.3))+' OU on invalide l\'hypothèse prix.</p>'
-      +'<p><b>Mois 2 (Jour 31-60) - Hypothèse GAMME / ENVIRONNEMENT :</b> Tes produits ne sont pas adaptés à Menkao2. Test : tu arrêtes les 5 dormants qui ne se vendent jamais, tu mets à la place 5 produits que les gens de Menkao2 achètent tous les jours (demande à 20 clients : "Qu\'est-ce que tu achètes ailleurs parce que je n\'ai pas ?").<br><b>Critère J60 :</b> Cash dormants divisé par 2 (de '+IA_fmt(cashBloque)+' à '+IA_fmt(Math.round(cashBloque/2))+') OU on invalide l\'hypothèse gamme.</p>'
-      +'<p><b>Mois 3 (Jour 61-90) - Hypothèse CONCURRENCE / VISIBILITÉ :</b> Les clients ne savent pas que tu existes, ou ils vont chez le concurrent moins cher. Test : tour de 5 concurrents à Menkao2, tu notes leurs prix sur tes 10 Stars, tu t\'alignes ou tu expliques pourquoi tu es plus cher. Tu relances tes 20 meilleurs clients par WhatsApp.<br><b>Critère J90 :</b> CA mois &gt; '+IA_fmt(Math.round(caMoisEstime*1.5))+' ET Part Patron &gt; 300 000 FC.</p>'
-      +'<p><b>🚦 DÉCISION J90 :</b><br>'
-      +'✅ <b>SI Part Patron &gt; 300 000 FC ET Marge &gt; 30% :</b> ON CONTINUE.<br>'
-      +'🟡 <b>SI Part Patron entre 150 000 et 300 000 FC :</b> ON TRANSFORME. Boutique plus petite, loyer moins cher, sans vendeur fixe.<br>'
-      +'🔴 <b>SI Part Patron &lt; 150 000 FC après 90 jours de choc :</b> ON FERME OU ON VEND LE STOCK. Tu as prouvé que ni le prix, ni la gamme, ni la visibilité ne suffisent à Menkao2. Fermer à ce moment-là, ce n\'est pas un échec, c\'est une décision de chef.</p>'
-      +'<p><b>⏱️ Combien de temps pour valider / invalider ?</b><br>• Un prix : <b>30 jours</b>.<br>• Une gamme : <b>60 jours</b>.<br>• Une visibilité / concurrence : <b>90 jours</b>.<br>Au-delà de 90 jours sans amélioration, tu ne testes plus, tu t\'entêtes.</p>'
+      +'<p><b>🧪 THÉRAPIE DE CHOC - 90 JOURS, 1 HYPOTHÈSE PAR MOIS, AVEC CRITÈRES CHIFFRÉS :</b></p>'
+      +'<p><b>Jour 1-30 - TEST PRIX :</b> +500 FC sur tous les produits à marge &lt;30%, +1 000 FC sur les Stars. Tu ne changes rien d\'autre. Tu notes le CA chaque dimanche.<br><b>✅ VALIDÉ si :</b> Marge brute &gt; '+IA_fmt(Math.round(benefMoisEstime*1.3))+' ET CA ne chute pas &gt;15%. <b>❌ INVALIDÉ si :</b> CA chute &gt;25% et les clients se plaignent. Dans ce cas, le problème n\'est PAS le prix, tu remets les anciens prix et tu passes au test suivant.</p>'
+      +'<p><b>Jour 31-60 - TEST GAMME :</b> Tu arrêtes les 5 pires dormants, tu mets 5 produits demandés par tes 20 clients. Tu vides les dormants avec Pack Star + Dormant.<br><b>✅ VALIDÉ si :</b> Cash dormants passe de '+IA_fmt(cashBloque)+' à moins de '+IA_fmt(Math.round(cashBloque/2))+' ET les nouveaux produits se vendent 2 fois en 30 jours. <b>❌ INVALIDÉ si :</b> Les nouveaux produits ne se vendent pas non plus. Dans ce cas, le problème n\'est PAS la gamme, c\'est l\'environnement ou la concurrence.</p>'
+      +'<p><b>Jour 61-90 - TEST CONCURRENCE / ENVIRONNEMENT :</b> Tour de 5 concurrents, prix notés, relance 20 meilleurs clients, offre spéciale Menkao2 (petits formats, petits prix).<br><b>✅ VALIDÉ si :</b> CA mois &gt; '+IA_fmt(Math.round(caMoisEstime*1.5))+' ET Part Patron &gt; 300 000 FC. <b>❌ INVALIDÉ si :</b> CA ne bouge pas malgré les prix alignés et les relances. Dans ce cas, l\'environnement de Menkao2 ne permet pas cette activité en détail.</p>'
+      +'<p><b>⏱️ COMBIEN DE TEMPS POUR VALIDER / INVALIDER UNE APPROCHE ?</b><br>• Un prix : <b>30 jours</b> suffisent, les clients réagissent tout de suite.<br>• Une gamme : <b>60 jours</b>, il faut que les nouveaux produits tournent 2 fois.<br>• Une visibilité / concurrence : <b>90 jours</b>, il faut que les clients reviennent 3 fois pour te faire confiance.<br>Au-delà de 90 jours sans amélioration, tu ne testes plus, tu t\'entêtes. Tu perds ton temps et tu favorises le vol, parce qu\'un vendeur qui voit que ça ne marche pas depuis 90 jours va se servir.</p>'
+      +'<p><b>🚦 DÉCISION J90 - C\'est chiffré, pas émotionnel :</b><br>'
+      +'✅ <b>SI Part Patron &gt; 300 000 FC ET Marge &gt; 30% :</b> ON CONTINUE. Tu as validé une approche. On passe à 6 mois de consolidation, et on monte le vendeur vers le SMIG officiel.<br>'
+      +'🟡 <b>SI Part Patron entre 150 000 et 300 000 FC :</b> ON TRANSFORME. Tu changes de gamme (produits plus petits, plus demandés), ou tu passes en boutique plus petite, loyer moins cher, sans vendeur fixe, toi seul à la caisse.<br>'
+      +'🔴 <b>SI Part Patron &lt; 150 000 FC après 90 jours de choc :</b> ON FERME OU ON VEND LE STOCK. Tu as prouvé que ni le prix, ni la gamme, ni la visibilité ne suffisent à Menkao2. Fermer à ce moment-là, ce n\'est pas un échec, c\'est une décision de chef. Tu récupères ton cash, tu ne perds plus 90 jours de plus, et tu ne laisses plus le temps au vol de s\'installer.</p>'
+      +'<p><b>📋 CE QUE TU DOIS ME DONNER POUR L\'ANALYSE APPROFONDIE :</b><br>1) Les prix de 5 concurrents à Menkao2 sur tes 10 Stars.<br>2) La réponse de 20 clients : "Qu\'est-ce que tu achètes ailleurs ?"<br>3) Ton loyer réel boutique ('+IA_fmt(loyer)+') vs loyer d\'une boutique plus petite à Menkao2.<br>Avec ça, on saura si c\'est le prix, la gamme, l\'environnement ou la concurrence qui te tue, et on ne décidera plus à l\'aveugle.</p>'
       +'</div>';
     return html + (c.debug || '');
   };
