@@ -1,5 +1,5 @@
 // ia-compta.js - V2.5 - CA UNIQUE = v.total comme calcCompta V4.9.14 + Marge corrigée remise + Période 1er -> Aujourd'hui LOCALE
-(function(){
+(function(){ 
   function IA_getVal(id, def){
     let el = document.getElementById(id);
     if(!el || el.value==null || el.value==='') return def;
