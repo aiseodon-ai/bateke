@@ -1,6 +1,6 @@
-// ia-audit.js - V2.2 - INSPECTEUR - Cash dormants recalculé depuis stock + Dettes depuis c si filtre les cache
-// V2.1 bug : Cash dormants = 0 FC alors que 11 dormants, Dettes = 0 FC alors que vraies dettes = 2 200 FC (mbuza 2 000 + makila 200)
-// V2.2 : Cash = Qté stock x PA (depuis stock, pas depuis c.dormants). Dettes = ventes visibles + fallback c.dettes / c.totalDettes / c.totalDettesClients
+// ia-audit.js - V2.1 - INSPECTEUR - PV réel depuis les ventes, pas depuis le stock
+// V2.0 bug : stock PV = 0 FC partout, donc marges 0%. V2.1 : PV = CA produit / Qté vendue = vrai prix payé par le client.
+// Ex : SU002 SUPPORT TV : CA 42 000 / 6 = 7 000 FC, PA 4 900 FC, marge = (7000-4900)/7000 = 30% = SAINE
 // SMIG officiel : 21 000 FC / jour = 630 000 FC / mois | SMIG réel : 11 500 FC / jour = 345 000 FC / mois
 (function(){
   window.IA_render_audit = function(c){
@@ -11,12 +11,14 @@
     let stockBrut = gf.stock || c.stock || [];
     let now = new Date();
     now.setHours(0,0,0,0);
+    let nowTs = now.getTime();
     function qteStock(p){
       if(!p) return 0;
       return IA_num(p['Qte Restante'] ?? p['Qté Restante'] ?? p.QTE ?? p.qte ?? p.Qte ?? p.Stock ?? p.stock ?? p['Quantité'] ?? p['Quantite'] ?? p.quantite ?? p['Qté'] ?? p.QTY ?? 0);
     }
     function prixVenteStock(p){
       if(!p) return 0;
+      // On essaie TOUTES les formes possibles du champ PV dans le stock
       return IA_num(p['Prix Vente'] ?? p['Prix Vente '] ?? p['Prix de Vente'] ?? p.PV ?? p.pv ?? p['Prix'] ?? p.Prix ?? p.PRIX ?? p.prix ?? p.PrixVente ?? p.Prix_Vente ?? p['Prix Unitaire'] ?? p['Prix unitaire'] ?? 0);
     }
     function designation(p, code){
@@ -34,8 +36,9 @@
     }
     let fullMap = {};
     stockBrut.forEach(function(p){ let code = p.CODE || p._id; if(code) fullMap[String(code)] = p; });
+
     let parProduit = {};
-    let caTotal = 0;
+    let caTotal = 0, benefTotal = 0;
     let debutMois = new Date(now.getFullYear(), now.getMonth(), 1);
     let debutMoisDernier = new Date(now.getFullYear(), now.getMonth()-1, 1);
     let finMoisDernier = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -81,16 +84,21 @@
       });
       caTotal += caVente;
     });
+    benefTotal = Object.values(parProduit).reduce(function(s,p){ return s + p.benef; }, 0);
     let joursEcoules = Math.max(1, now.getDate());
     let nbJoursMois = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
     let benefMoisEstime = Math.round(benefMois / joursEcoules * nbJoursMois);
     let caMoisEstime = Math.round(caMois / joursEcoules * nbJoursMois);
     let caJourMoyen = caMois / joursEcoules;
+
+    // ✅ V2.1 - MARGES AVEC PV RÉEL = CA / QTÉ
     let margeList = Object.values(parProduit).map(function(p){
       let prod = fullMap[p.CODE];
       let pa = prod ? IA_pa(prod) : 0;
       let pvStock = prixVenteStock(prod);
+      // PV réel : d'abord stock si >0, sinon CA / Qté = prix vraiment payé
       let pv = pvStock > 0 ? pvStock : (p.qte>0 ? (p.ca / p.qte) : 0);
+      // Si le stock dit 0 mais les ventes disent autre chose, on croit les ventes
       if(pvStock===0 && p.qte>0) pv = p.ca / p.qte;
       let margePct = (pv>0) ? ((pv-pa)/pv*100) : 0;
       let cat = '', catTxt = '';
@@ -108,6 +116,7 @@
     let nbInconnu = margeList.filter(function(x){ return x.cat==='inconnu'; }).length;
     let perteParMois = margeList.filter(function(x){ return x.cat==='perte' || x.cat==='dangereuse'; }).reduce(function(s,x){ return s + Math.min(0, x.benef); }, 0);
     let benefSiCorrige = benefMoisEstime - perteParMois;
+
     let dormants = c.dormants || [];
     let ruptures = c.ruptures || [];
     if(!dormants.length && stockBrut.length){
@@ -116,40 +125,20 @@
         let q = qteStock(p);
         if(q<5) return;
         let vendu = parProduit[code];
-        if(!vendu) dormants.push({CODE:code, nom:nomProd(code, fullMap)});
+        if(!vendu) dormants.push({CODE:code, nom:nomProd(code, fullMap), qteStock:q, cashBloque:q*IA_pa(p)});
       });
     }
-    // ✅ V2.2 - CASH BLOQUÉ : toujours recalculé depuis le STOCK, jamais depuis c.dormants
-    let cashBloque = 0;
-    let dormantsDetail = dormants.map(function(d){
-      let code = String(d.CODE || d.code || d._id || '');
-      let prod = fullMap[code];
-      // Qté : on essaie d'abord le stock réel, sinon ce que l'app nous a passé
-      let q = 0;
-      if(prod) q = qteStock(prod);
-      if(q===0) q = IA_num(d.qteStock ?? d.qte ?? d.QTE ?? d.Stock ?? d.stock ?? d.quantite ?? 0);
-      let pa = prod ? IA_pa(prod) : IA_num(d.pa ?? d.PA ?? 0);
-      let cash = q * pa;
-      cashBloque += cash;
-      return {CODE:code, nom:nomProd(code, fullMap), qte:q, pa:pa, cash:cash};
-    });
-    dormantsDetail.sort(function(a,b){ return b.cash - a.cash; });
+    let cashBloque = dormants.reduce(function(s,d){ return s + IA_num(d.cashBloque ?? (IA_num(d.qteStock||d.qte||0) * IA_num(d.pa||0)) ?? 0); }, 0);
+    if(cashBloque===0 && dormants.length){
+      cashBloque = dormants.reduce(function(s,d){ let pp = fullMap[String(d.CODE)]; return s + (IA_num(d.qteStock||d.qte||0) * (pp?IA_pa(pp):0)); }, 0);
+    }
     let aRelancer = c.aRelancer || [];
-    // ✅ V2.2 - DETTES : d'abord ventes visibles, sinon fallback c.*
-    let dettesVentes = 0;
+    let dettesTotal = 0;
     ventesBrutes.forEach(function(v){
       let paye = IA_num(v.paye ?? v.montantPaye ?? IA_num(v.total ?? 0));
       let reste = IA_num(v.reste ?? v.Reste ?? Math.max(0, IA_num(v.total ?? 0) - paye));
-      if(reste>0) dettesVentes += reste;
+      if(reste>0) dettesTotal += reste;
     });
-    let dettesFallback = 0;
-    if(c.totalDettesClients!==undefined) dettesFallback = IA_num(c.totalDettesClients);
-    else if(c.totalDettes!==undefined) dettesFallback = IA_num(c.totalDettes);
-    else if(c.dettesTotal!==undefined) dettesFallback = IA_num(c.dettesTotal);
-    else if(Array.isArray(c.dettes)) dettesFallback = c.dettes.reduce(function(s,x){ return s + IA_num(x.reste ?? x.Reste ?? x.montant ?? x.dette ?? 0); }, 0);
-    // On prend le max : si le filtre cache des dettes, on ne dit pas 0
-    let dettesTotal = Math.max(dettesVentes, dettesFallback);
-    let dettesSource = dettesVentes>0 ? 'ventes visibles' : (dettesFallback>0 ? 'total Dettes' : 'aucune visible');
     function evol(actuel, precedent){
       if(precedent===0) return {txt:'Pas de référence', pct:0, sens:'-'};
       let pct = ((actuel - precedent)/precedent*100);
@@ -178,6 +167,7 @@
     else if(benefMoisEstime < SMIG_REEL_MOIS*2) verdictVie = '🟡 Tu paies 1 travailleur au SMIG réel, il te reste '+IA_fmt(restePourPatronApres1Reel)+' pour toi + loyer + charges. C\'est juste, tu survis.';
     else if(benefMoisEstime < SMIG_OFFICIEL_MOIS*2) verdictVie = '🟢 Tu paies 1 à 2 travailleurs au SMIG réel, et il te reste quelque chose. Tu avances, mais doucement.';
     else verdictVie = '🟢 Tu paies tes travailleurs au SMIG officiel et il te reste pour toi. La boutique fait vivre la maison.';
+    function proj(mois, benefMensuel){ return {m6: Math.round(benefMensuel*6), m12: Math.round(benefMensuel*12), m36: Math.round(benefMensuel*36), m60: Math.round(benefMensuel*60)}; }
     let pGarde = {m6:benefMoisEstime*6, m12:benefMoisEstime*12, m36:benefMoisEstime*36, m60:benefMoisEstime*60};
     let benefAccelere = Math.round(benefMoisEstime*1.2);
     let pAccelere = {m6:benefAccelere*6, m12:benefAccelere*12, m36:benefAccelere*36, m60:benefAccelere*60};
@@ -220,7 +210,7 @@
       +'<p>Si tu paies 1 travailleur au SMIG réel (345 000 FC), il te reste : <b>'+IA_fmt(restePourPatronApres1Reel)+'</b> pour toi + loyer + charges.<br>Si tu paies 1 travailleur au SMIG officiel (630 000 FC), il te reste : <b>'+IA_fmt(restePourPatronApres1Officiel)+'</b></p>'
       +'<p><b>'+verdictVie+'</b></p>'
       +'</div>'
-      +'<p>💤 Cash bloqué dans dormants : <b>'+IA_fmt(cashBloque)+'</b> ('+dormants.length+' dormants) - Top : '+(dormantsDetail[0]?IA_esc(dormantsDetail[0].nom)+' ('+IA_fmt(dormantsDetail[0].cash)+')':'-')+' | 🚫 Ruptures vraies : <b>'+ruptures.length+'</b> | 💳 Dettes : <b>'+IA_fmt(dettesTotal)+'</b> = '+Math.round(tauxDette)+'% du CA mois '+(tauxDette>10?'🔴 Trop de dettes, récupère d\'abord.':'✅ Dettes sous contrôle.')+' <small>(source : '+dettesSource+')</small> | 📞 À relancer : <b>'+aRelancer.length+'</b></p>';
+      +'<p>💤 Cash bloqué dans dormants : <b>'+IA_fmt(cashBloque)+'</b> ('+dormants.length+' dormants) | 🚫 Ruptures vraies : <b>'+ruptures.length+'</b> | 💳 Dettes : <b>'+IA_fmt(dettesTotal)+'</b> = '+Math.round(tauxDette)+'% du CA mois '+(tauxDette>10?'🔴 Trop de dettes, récupère d\'abord.':'✅ Dettes sous contrôle.')+' | 📞 À relancer : <b>'+aRelancer.length+'</b></p>';
     html += '<h4>4️⃣ PROJECTIONS - Où tu seras si tu gardes ou changes le rythme ?</h4>'
       +'<p style="font-size:12px;color:#555">Projection sur le bénéfice brut mensuel estimé : '+IA_fmt(benefMoisEstime)+' / mois. Ce n\'est pas une promesse, c\'est : si tu continues comme ça, voilà où tu arrives.</p>'
       +'<div style="overflow:auto"><table><tr><th>Scénario</th><th>Bénéfice / mois</th><th>6 mois</th><th>1 an</th><th>3 ans</th><th>5 ans</th><th>Ça paie combien de salaires réels ? (1 an)</th></tr>'
@@ -231,7 +221,7 @@
       +'<p><b>Lecture du Directeur :</b> '
       + (benefMoisEstime<=0 ? 'À ce rythme, dans 5 ans tu auras mangé ton capital. Il faut changer de rythme maintenant, pas dans 6 mois.' : 'Si tu gardes le rythme, en 5 ans tu cumules '+fmtProj(pGarde.m60)+'. Si tu corriges + accélères, tu cumules '+fmtProj(pCorrige.m60)+'. La différence = '+fmtProj(pCorrige.m60 - pGarde.m60)+'. C\'est le prix de ne pas corriger.')
       +'</p>'
-      +'<p><b>Priorité n°1 de l\'Inspecteur :</b> '+(nbPerte+nbDangereuse>0 ? 'Corrige les '+(nbPerte+nbDangereuse)+' produits à marge dangereuse / perte, avant de chercher plus de clients.' : (dormants.length>0 ? 'Vide les dormants, '+IA_fmt(cashBloque)+' dort en stock. Top à vider : '+IA_esc(dormantsDetail[0]?dormantsDetail[0].nom:'')+'.' : 'Pousse ton Star '+IA_esc(nomStar)+' et relance tes VIP.'))+'</p>';
+      +'<p><b>Priorité n°1 de l\'Inspecteur :</b> '+(nbPerte+nbDangereuse>0 ? 'Corrige les '+(nbPerte+nbDangereuse)+' produits à marge dangereuse / perte, avant de chercher plus de clients.' : (dormants.length>0 ? 'Vide les dormants, '+IA_fmt(cashBloque)+' dort en stock.' : 'Pousse ton Star '+IA_esc(nomStar)+' et relance tes VIP.'))+'</p>';
     return html + (c.debug || '');
   };
 })();
