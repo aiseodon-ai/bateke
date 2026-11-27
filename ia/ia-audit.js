@@ -1,24 +1,38 @@
-// ia-audit.js - V2.1 - INSPECTEUR - PV réel depuis les ventes, pas depuis le stock
-// V2.0 bug : stock PV = 0 FC partout, donc marges 0%. V2.1 : PV = CA produit / Qté vendue = vrai prix payé par le client.
-// Ex : SU002 SUPPORT TV : CA 42 000 / 6 = 7 000 FC, PA 4 900 FC, marge = (7000-4900)/7000 = 30% = SAINE
-// SMIG officiel : 21 000 FC / jour = 630 000 FC / mois | SMIG réel : 11 500 FC / jour = 345 000 FC / mois
+// ia-audit.js - V2.5 - INSPECTEUR - Base corrigée (1 vendeur = 1x50 000) + Section 5 : Fermeture ou Thérapie de Choc 90 jours
+// V2.4 bug : Base 2x50 000 = 100 000 FC car on comptait les vendeurs sur toute l'histoire, y compris ancien vendeur + Comptoir.
+// V2.5 : On compte les vendeurs UNIQUEMENT sur les ventes du mois, on exclut Comptoir / Inconnu / Patron + exclus Compta.
+// V2.5 : Section 5 - Décision : Fermer ? Continuer ? Thérapie de choc 90 jours avec critères Go / No-Go chiffrés.
+// Pour Dettes = 0 : ajouter totalDettes: totalDettes dans l'appel IA_render_audit dans le fichier principal.
 (function(){
+  function IA_getValAudit(id, def){
+    let el = document.getElementById(id);
+    if(!el || el.value==null || el.value==='') return def;
+    let n = parseFloat(String(el.value).replace(/\s/g,'').replace(',','.'));
+    return isNaN(n)?def:n;
+  }
   window.IA_render_audit = function(c){
     c = c || {};
     let gf = {};
     try{ gf = (typeof getFiltered==='function' ? getFiltered() : null) || {}; }catch(e){ gf={}; }
     let ventesBrutes = gf.ventes || c.ventes || [];
     let stockBrut = gf.stock || c.stock || [];
+    let depBrutes = gf.dep || c.dep || [];
     let now = new Date();
     now.setHours(0,0,0,0);
-    let nowTs = now.getTime();
+    let base = IA_getValAudit('cBase', 50000);
+    let comPct = IA_getValAudit('cCom', 10);
+    let loyer = IA_getValAudit('cLoyer', 100000);
+    let autreFixe = IA_getValAudit('cAutresFixe', 0);
+    let emprunt = IA_getValAudit('cEmprunt', 0);
+    let primePct = IA_getValAudit('cPrime', 25);
+    let patronPct = IA_getValAudit('cPatron', 45);
+    let devPct = IA_getValAudit('cDev', 30);
     function qteStock(p){
       if(!p) return 0;
       return IA_num(p['Qte Restante'] ?? p['Qté Restante'] ?? p.QTE ?? p.qte ?? p.Qte ?? p.Stock ?? p.stock ?? p['Quantité'] ?? p['Quantite'] ?? p.quantite ?? p['Qté'] ?? p.QTY ?? 0);
     }
     function prixVenteStock(p){
       if(!p) return 0;
-      // On essaie TOUTES les formes possibles du champ PV dans le stock
       return IA_num(p['Prix Vente'] ?? p['Prix Vente '] ?? p['Prix de Vente'] ?? p.PV ?? p.pv ?? p['Prix'] ?? p.Prix ?? p.PRIX ?? p.prix ?? p.PrixVente ?? p.Prix_Vente ?? p['Prix Unitaire'] ?? p['Prix unitaire'] ?? 0);
     }
     function designation(p, code){
@@ -36,9 +50,8 @@
     }
     let fullMap = {};
     stockBrut.forEach(function(p){ let code = p.CODE || p._id; if(code) fullMap[String(code)] = p; });
-
     let parProduit = {};
-    let caTotal = 0, benefTotal = 0;
+    let caTotal = 0;
     let debutMois = new Date(now.getFullYear(), now.getMonth(), 1);
     let debutMoisDernier = new Date(now.getFullYear(), now.getMonth()-1, 1);
     let finMoisDernier = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -49,6 +62,26 @@
     let caMois = 0, caMoisDernier = 0, caSemaine = 0, caSemaineDerniere = 0;
     let benefMois = 0;
     let nbVentesMois = 0;
+    let totalDepMois = 0;
+    depBrutes.forEach(function(d){
+      let dt = new Date(d.date);
+      if(!isNaN(dt.getTime()) && dt>=debutMois) totalDepMois += IA_num(d.montant ?? d.Montant ?? 0);
+    });
+    let exclus = window.CURRENT_CONFIG?.compta?.exclus || [];
+    // ✅ V2.5 - VENDEURS DU MOIS SEULEMENT, POUR LA BASE
+    let nomsVendeursMois = {};
+    ventesBrutes.forEach(function(v){
+      let d = new Date(v.date ?? v.dateVente ?? v.createdAt ?? 0);
+      if(isNaN(d.getTime()) || d < debutMois) return;
+      let nomRaw = String(v.vendeurNom || v.vendeur || 'Inconnu').trim();
+      let low = nomRaw.toLowerCase();
+      if(!nomRaw || low==='comptoir' || low==='inconnu' || low==='patron' || low==='bâteau' || low==='bateke') return;
+      let keyExclus = low.replace(/\s+/g,'').replace(/[^a-z]/g,'');
+      if(exclus.includes(keyExclus)) return;
+      nomsVendeursMois[nomRaw]=1;
+    });
+    let nbVendeurs = Math.max(1, Object.keys(nomsVendeursMois).length);
+    // Si tu sais que tu as 1 vendeur et que l'Audit en compte encore 2, c'est qu'il y a 2 noms différents dans les ventes du mois (ex : "Mbuza" et "mbuza"). Dis-le moi, je te donne la fusion.
     ventesBrutes.forEach(function(v){
       let d = new Date(v.date ?? v.dateVente ?? v.createdAt ?? 0);
       if(isNaN(d.getTime())) return;
@@ -84,21 +117,16 @@
       });
       caTotal += caVente;
     });
-    benefTotal = Object.values(parProduit).reduce(function(s,p){ return s + p.benef; }, 0);
     let joursEcoules = Math.max(1, now.getDate());
     let nbJoursMois = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
     let benefMoisEstime = Math.round(benefMois / joursEcoules * nbJoursMois);
     let caMoisEstime = Math.round(caMois / joursEcoules * nbJoursMois);
     let caJourMoyen = caMois / joursEcoules;
-
-    // ✅ V2.1 - MARGES AVEC PV RÉEL = CA / QTÉ
     let margeList = Object.values(parProduit).map(function(p){
       let prod = fullMap[p.CODE];
       let pa = prod ? IA_pa(prod) : 0;
       let pvStock = prixVenteStock(prod);
-      // PV réel : d'abord stock si >0, sinon CA / Qté = prix vraiment payé
       let pv = pvStock > 0 ? pvStock : (p.qte>0 ? (p.ca / p.qte) : 0);
-      // Si le stock dit 0 mais les ventes disent autre chose, on croit les ventes
       if(pvStock===0 && p.qte>0) pv = p.ca / p.qte;
       let margePct = (pv>0) ? ((pv-pa)/pv*100) : 0;
       let cat = '', catTxt = '';
@@ -115,8 +143,6 @@
     let nbSaine = margeList.filter(function(x){ return x.cat==='saine'; }).length;
     let nbInconnu = margeList.filter(function(x){ return x.cat==='inconnu'; }).length;
     let perteParMois = margeList.filter(function(x){ return x.cat==='perte' || x.cat==='dangereuse'; }).reduce(function(s,x){ return s + Math.min(0, x.benef); }, 0);
-    let benefSiCorrige = benefMoisEstime - perteParMois;
-
     let dormants = c.dormants || [];
     let ruptures = c.ruptures || [];
     if(!dormants.length && stockBrut.length){
@@ -125,20 +151,37 @@
         let q = qteStock(p);
         if(q<5) return;
         let vendu = parProduit[code];
-        if(!vendu) dormants.push({CODE:code, nom:nomProd(code, fullMap), qteStock:q, cashBloque:q*IA_pa(p)});
+        if(!vendu) dormants.push({CODE:code, nom:nomProd(code, fullMap)});
       });
     }
-    let cashBloque = dormants.reduce(function(s,d){ return s + IA_num(d.cashBloque ?? (IA_num(d.qteStock||d.qte||0) * IA_num(d.pa||0)) ?? 0); }, 0);
-    if(cashBloque===0 && dormants.length){
-      cashBloque = dormants.reduce(function(s,d){ let pp = fullMap[String(d.CODE)]; return s + (IA_num(d.qteStock||d.qte||0) * (pp?IA_pa(pp):0)); }, 0);
-    }
+    let cashBloque = 0;
+    let dormantsDetail = dormants.map(function(d){
+      let code = String(d.CODE || d.code || d._id || '');
+      let prod = fullMap[code];
+      let q = 0;
+      if(prod) q = qteStock(prod);
+      if(q===0) q = IA_num(d.qteStock ?? d.qte ?? d.QTE ?? d.Stock ?? d.stock ?? d.quantite ?? 0);
+      let pa = prod ? IA_pa(prod) : IA_num(d.pa ?? d.PA ?? 0);
+      let cash = q * pa;
+      cashBloque += cash;
+      return {CODE:code, nom:nomProd(code, fullMap), qte:q, pa:pa, cash:cash};
+    });
+    dormantsDetail.sort(function(a,b){ return b.cash - a.cash; });
     let aRelancer = c.aRelancer || [];
-    let dettesTotal = 0;
+    let dettesVentes = 0;
     ventesBrutes.forEach(function(v){
       let paye = IA_num(v.paye ?? v.montantPaye ?? IA_num(v.total ?? 0));
       let reste = IA_num(v.reste ?? v.Reste ?? Math.max(0, IA_num(v.total ?? 0) - paye));
-      if(reste>0) dettesTotal += reste;
+      if(reste>0) dettesVentes += reste;
     });
+    let dettesFallback = 0;
+    if(c.totalDettes!==undefined) dettesFallback = IA_num(c.totalDettes);
+    else if(c.totalDettesClients!==undefined) dettesFallback = IA_num(c.totalDettesClients);
+    else if(c.dettesTotal!==undefined) dettesFallback = IA_num(c.dettesTotal);
+    else if(Array.isArray(c.dettes)) dettesFallback = c.dettes.reduce(function(s,x){ return s + IA_num(x.reste ?? x.Reste ?? x.montant ?? x.dette ?? 0); }, 0);
+    let dettesTotal = Math.max(dettesVentes, dettesFallback);
+    let dettesSource = dettesVentes>0 ? 'ventes visibles' : (dettesFallback>0 ? 'c.totalDettes' : 'NON TRANSMISES À AUDIT - ajouter totalDettes: totalDettes dans l\'appel IA_render_audit');
+    let dettesFiable = dettesTotal>0;
     function evol(actuel, precedent){
       if(precedent===0) return {txt:'Pas de référence', pct:0, sens:'-'};
       let pct = ((actuel - precedent)/precedent*100);
@@ -157,71 +200,104 @@
     let SMIG_OFFICIEL_JOUR = 21000, SMIG_REEL_JOUR = 11500;
     let SMIG_OFFICIEL_MOIS = SMIG_OFFICIEL_JOUR * 30;
     let SMIG_REEL_MOIS = SMIG_REEL_JOUR * 30;
-    let nbSalairesReel = Math.floor(benefMoisEstime / SMIG_REEL_MOIS);
-    let nbSalairesOfficiel = Math.floor(benefMoisEstime / SMIG_OFFICIEL_MOIS);
-    let restePourPatronApres1Reel = benefMoisEstime - SMIG_REEL_MOIS;
-    let restePourPatronApres1Officiel = benefMoisEstime - SMIG_OFFICIEL_MOIS;
+    // ✅ V2.5 - RÉPARTITION AVEC BON NOMBRE DE VENDEURS
+    let totalBaseEstime = nbVendeurs * base;
+    let totalComEstime = benefMoisEstime * (comPct/100);
+    let totalChargesFixesEstime = loyer + autreFixe + emprunt + totalBaseEstime;
+    let totalDepEstime = totalDepMois / Math.max(1,joursEcoules) * nbJoursMois;
+    let resultatNetEstime = benefMoisEstime - totalDepEstime - totalChargesFixesEstime - totalComEstime;
+    let repartPatron = resultatNetEstime>0 ? Math.round(resultatNetEstime * (patronPct/100)) : 0;
+    let repartPrime = resultatNetEstime>0 ? Math.round(resultatNetEstime * (primePct/100)) : 0;
+    let repartDev = resultatNetEstime>0 ? Math.round(resultatNetEstime * (devPct/100)) : 0;
+    let coutVie = {loyerMaison:200000, nourritureFamille:300000, transportPatron:120000, scolarite:100000, sante:50000, electriciteEau:80000, divers:50000};
+    let besoinPatron = coutVie.loyerMaison + coutVie.nourritureFamille + coutVie.transportPatron + coutVie.scolarite + coutVie.sante + coutVie.electriciteEau + coutVie.divers;
+    let deficitPatron = besoinPatron - repartPatron;
     let verdictVie = '';
-    if(benefMoisEstime<=0) verdictVie = '🔴 Tu manges ton capital. Le bénéfice ne couvre même pas 1 salaire. Il faut corriger les prix tout de suite.';
-    else if(benefMoisEstime < SMIG_REEL_MOIS) verdictVie = '🔴 Ton bénéfice du mois ne paie même pas 1 travailleur au SMIG réel (345 000 FC). Tu travailles pour rien.';
-    else if(benefMoisEstime < SMIG_REEL_MOIS*2) verdictVie = '🟡 Tu paies 1 travailleur au SMIG réel, il te reste '+IA_fmt(restePourPatronApres1Reel)+' pour toi + loyer + charges. C\'est juste, tu survis.';
-    else if(benefMoisEstime < SMIG_OFFICIEL_MOIS*2) verdictVie = '🟢 Tu paies 1 à 2 travailleurs au SMIG réel, et il te reste quelque chose. Tu avances, mais doucement.';
-    else verdictVie = '🟢 Tu paies tes travailleurs au SMIG officiel et il te reste pour toi. La boutique fait vivre la maison.';
-    function proj(mois, benefMensuel){ return {m6: Math.round(benefMensuel*6), m12: Math.round(benefMensuel*12), m36: Math.round(benefMensuel*36), m60: Math.round(benefMensuel*60)}; }
-    let pGarde = {m6:benefMoisEstime*6, m12:benefMoisEstime*12, m36:benefMoisEstime*36, m60:benefMoisEstime*60};
-    let benefAccelere = Math.round(benefMoisEstime*1.2);
-    let pAccelere = {m6:benefAccelere*6, m12:benefAccelere*12, m36:benefAccelere*36, m60:benefAccelere*60};
-    let benefCorrige = Math.max(benefMoisEstime, benefSiCorrige);
-    let benefCorrigeAccelere = Math.round(benefCorrige*1.2);
-    let pCorrige = {m6:benefCorrigeAccelere*6, m12:benefCorrigeAccelere*12, m36:benefCorrigeAccelere*36, m60:benefCorrigeAccelere*60};
+    let strategie = '';
+    if(resultatNetEstime<=0){
+      verdictVie = '🔴 CRITIQUE : Résultat Net estimé '+IA_fmt(resultatNetEstime)+' (négatif). Tu ne gagnes rien, tu perds.';
+      strategie = 'ARRÊTE les produits à marge <15%. Augmente les prix de 500 à 1 000 FC. Ne commande rien tant que tu n\'as pas vendu les dormants ('+IA_fmt(cashBloque)+'). Inventaire chaque dimanche, caisse chaque soir.';
+    } else if(repartPatron < besoinPatron * 0.5){
+      verdictVie = '🔴 SURVIE DANGEREUSE : Ta part Patron = '+IA_fmt(repartPatron)+' (45% du Net '+IA_fmt(resultatNetEstime)+'), alors qu\'il te faut '+IA_fmt(besoinPatron)+' pour vivre. Il te manque '+IA_fmt(deficitPatron)+' / mois. Tu perds ton temps, et tu fabriques le vol.';
+      strategie = '3 leviers en 30 jours : 1) +500 FC sur tous les produits à marge <30%. 2) Vide les dormants ('+IA_fmt(cashBloque)+') avec Pack Star + Dormant. 3) Contrôle : inventaire chaque dimanche, caisse comptée chaque soir, 1 seul vendeur à la caisse, chaque vente = reçu.';
+    } else if(repartPatron < besoinPatron){
+      verdictVie = '🟡 SURVIE : Ta part Patron = '+IA_fmt(repartPatron)+', il te faut '+IA_fmt(besoinPatron)+'. Il te manque '+IA_fmt(deficitPatron)+' / mois.';
+      strategie = 'Tu es à '+Math.round(repartPatron/besoinPatron*100)+'% du minimum. Il te faut '+IA_fmt(deficitPatron)+' de plus en part Patron, soit environ '+IA_fmt(Math.round(deficitPatron/(patronPct/100)))+' de plus en Résultat Net.';
+    } else {
+      verdictVie = '🟢 VIE CORRECTE : Ta part Patron = '+IA_fmt(repartPatron)+', tu couvres ton besoin vital '+IA_fmt(besoinPatron)+'.';
+      strategie = 'Sécurise : mets 10% de ta part de côté chaque mois. C\'est ton fonds pour Menkao3.';
+    }
+    let pGarde = {m6:repartPatron*6, m12:repartPatron*12, m36:repartPatron*36, m60:repartPatron*60};
+    let repartAccelere = Math.round(repartPatron*1.2);
+    let pAccelere = {m6:repartAccelere*6, m12:repartAccelere*12, m36:repartAccelere*36, m60:repartAccelere*60};
+    let repartCorrige = Math.round(Math.max(repartPatron, repartPatron - (perteParMois*(patronPct/100)))*1.2);
+    let pCorrige = {m6:repartCorrige*6, m12:repartCorrige*12, m36:repartCorrige*36, m60:repartCorrige*60};
     function fmtProj(v){ return IA_fmt(Math.round(v)); }
-    function salairesPour(montantCumul, mois){ return Math.floor(montantCumul / SMIG_REEL_MOIS); }
     let note = 10;
     if(nbPerte>0) note -= 4;
     if(nbDangereuse>0) note -= 2;
     if(evolMois.pct>5) note += 3; else if(evolMois.pct<-5) note -= 3;
     if(ruptures.length>0) note -= 2;
     if(dormants.length>5) note -= 2;
-    if(tauxDette>10) note -= 2;
+    if(dettesTotal>0 && tauxDette>10) note -= 2;
     if(dependanceStar>50) note -= 1;
-    if(benefMoisEstime >= SMIG_REEL_MOIS*2) note += 2;
+    if(repartPatron >= besoinPatron) note += 4;
+    else if(repartPatron >= besoinPatron*0.5) note += 1;
+    else note -= 2;
     note = Math.max(0, Math.min(20, note));
-    let mention = note>=16 ? '🟢 BON - Continue' : note>=10 ? '🟡 MOYEN - À corriger vite' : '🔴 DANGER - Il faut changer de rythme';
-    let html = '<h4>🧑‍✈️ AUDIT INSPECTEUR - VÉRITÉ DU TERRAIN</h4>'
-      +'<div style="background:#0f172a;color:#fff;padding:12px;border-radius:12px"><b>NOTE DE L\'INSPECTEUR : '+note+' / 20 - '+mention+'</b><br><span style="font-size:12px">Bénéfice brut estimé ce mois : '+IA_fmt(benefMoisEstime)+' (sur '+joursEcoules+' jours, estimé sur '+nbJoursMois+' jours) | CA mois : '+IA_fmt(caMois)+' (estimé '+IA_fmt(caMoisEstime)+')</span></div>';
-    html += '<h4>1️⃣ MARGES - Tu avances ou tu recules ?</h4>'
-      +'<p>🟢 Saine (+30%) : <b>'+nbSaine+'</b> produits | 🟡 Juste (15-30%) : <b>'+nbJuste+'</b> | 🔴 Dangereuse (&lt;15%) : <b>'+nbDangereuse+'</b> | ⚫ Perte : <b>'+nbPerte+'</b>'+(nbInconnu>0?' | ⚪ Inconnu : <b>'+nbInconnu+'</b>':'')+'</p>'
-      +'<div style="overflow:auto"><table><tr><th>Produit</th><th>PV réel</th><th>PA</th><th>Marge</th><th>Vendus</th><th>Bénéfice</th><th>Verdict</th></tr>'
-      + margeList.slice(0,15).map(function(x){
+    let mention = note>=16 ? '🟢 BON - Continue' : note>=10 ? '🟡 MOYEN - À corriger vite' : '🔴 DANGER - Survie, il faut changer de rythme';
+    let html = '<h4>🧑‍✈️ AUDIT INSPECTEUR - VÉRITÉ DU TERRAIN - BRANCHÉ SUR COMPTA</h4>'
+      +'<div style="background:#0f172a;color:#fff;padding:12px;border-radius:12px"><b>NOTE DE L\'INSPECTEUR : '+note+' / 20 - '+mention+'</b><br><span style="font-size:12px">Marge brute estimée ce mois : '+IA_fmt(benefMoisEstime)+' | Résultat Net estimé : '+IA_fmt(resultatNetEstime)+' | Ta part Patron ('+patronPct+'%) : <b>'+IA_fmt(repartPatron)+'</b> | Besoin vital Patron : '+IA_fmt(besoinPatron)+' | Vendeurs comptés ce mois : '+nbVendeurs+' ('+Object.keys(nomsVendeursMois).join(', ')+')</span></div>';
+    html += '<h4>1️⃣ MARGES - Tu avances ou tu recules ? ('+margeList.length+' produits, tous affichés)</h4>'
+      +'<p>🟢 Saine (+30%) : <b>'+nbSaine+'</b> | 🟡 Juste (15-30%) : <b>'+nbJuste+'</b> | 🔴 Dangereuse (&lt;15%) : <b>'+nbDangereuse+'</b> | ⚫ Perte : <b>'+nbPerte+'</b>'+(nbInconnu>0?' | ⚪ Inconnu : <b>'+nbInconnu+'</b>':'')+'</p>'
+      +'<div style="overflow:auto;max-height:400px;border:1px solid #ddd;border-radius:8px"><table><tr><th>Produit</th><th>PV réel</th><th>PA</th><th>Marge</th><th>Vendus</th><th>Bénéfice</th><th>Verdict</th></tr>'
+      + margeList.map(function(x){
           return '<tr><td><b>'+IA_esc(x.nom)+'</b></td><td>'+IA_fmt(x.pv)+'</td><td>'+IA_fmt(x.pa)+'</td><td style="color:'+(x.marge<0?'#000':x.marge<15?'#ef4444':x.marge<30?'#d97706':'#16a34a')+'"><b>'+Math.round(x.marge)+'%</b></td><td>'+x.qte+'</td><td>'+IA_fmt(x.benef)+'</td><td>'+x.catTxt+'</td></tr>';
         }).join('')
       + (margeList.length===0 ? '<tr><td colspan="7">Aucune vente analysée pour les marges.</td></tr>' : '')
       + '</table></div>'
-      + (nbPerte+nbDangereuse>0 ? '<p style="background:#fee2e2;padding:8px;border-radius:8px">⚠️ <b>Action urgente :</b> '+(nbPerte+nbDangereuse)+' produits te font perdre ou presque rien gagner. Augmente leur prix de 500 FC ou arrête de les vendre. Tu perds environ '+IA_fmt(Math.abs(perteParMois))+' / mois avec eux.</p>' : '<p style="background:#dcfce7;padding:8px;border-radius:8px">✅ Aucun produit en perte. Tes marges sont saines.</p>');
+      + '<p style="font-size:11px;color:#555">Fais défiler vers le bas pour voir tous les '+margeList.length+' produits. Les plus dangereux sont en haut.</p>'
+      + (nbPerte+nbDangereuse>0 ? '<p style="background:#fee2e2;padding:8px;border-radius:8px">⚠️ <b>Action urgente :</b> '+(nbPerte+nbDangereuse)+' produits te font perdre ou presque rien gagner. Augmente leur prix de 500 FC ou arrête de les vendre.</p>' : '<p style="background:#dcfce7;padding:8px;border-radius:8px">✅ Aucun produit en perte. Tes marges sont saines.</p>');
     html += '<h4>2️⃣ ÉVOLUTION DU CA - Tu progresses ?</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
       +'<div style="background:#f8fafc;padding:12px;border-radius:12px"><b>📅 CETTE SEMAINE vs SEMAINE DERNIÈRE</b><br>CA semaine : <b>'+IA_fmt(caSemaine)+'</b><br>CA semaine dernière : '+IA_fmt(caSemaineDerniere)+'<br><b>'+evolSemaine.sens+' '+evolSemaine.txt+'</b></div>'
       +'<div style="background:#f8fafc;padding:12px;border-radius:12px"><b>📅 CE MOIS vs MOIS DERNIER</b><br>CA mois : <b>'+IA_fmt(caMois)+'</b><br>CA mois dernier : '+IA_fmt(caMoisDernier)+'<br><b>'+evolMois.sens+' '+evolMois.txt+'</b></div>'
       +'</div>'
       +'<p>CA / jour moyen : <b>'+IA_fmt(Math.round(caJourMoyen))+'</b> | Panier moyen : <b>'+IA_fmt(Math.round(panierMoyen))+'</b> ('+nbVentesMois+' ventes ce mois) | Star : <b>'+IA_esc(nomStar)+'</b> = '+Math.round(dependanceStar)+'% du CA '+(dependanceStar>50?'⚠️ Tu dépends trop d\'un seul produit, c\'est fragile.':'✅ Pas trop dépendant.')+'</p>';
-    html += '<h4>3️⃣ LE BÉNÉFICE FAIT-IL VIVRE LA MAISON ?</h4><div style="background:#fffbeb;border:2px solid #f59e0b;padding:12px;border-radius:12px">'
-      +'<p><b>Bénéfice brut estimé ce mois : '+IA_fmt(benefMoisEstime)+'</b> (avant loyer, électricité, transport - c\'est le brut, pas le net)</p>'
-      +'<p>SMIG réel beaucoup appliqué : <b>11 500 FC / jour = 345 000 FC / mois</b> par travailleur<br>SMIG officiel : <b>21 000 FC / jour = 630 000 FC / mois</b> par travailleur</p>'
-      +'<p>Avec ce bénéfice, tu peux payer : <b>'+nbSalairesReel+' salaire(s) au SMIG réel</b> | <b>'+nbSalairesOfficiel+' salaire(s) au SMIG officiel</b></p>'
-      +'<p>Si tu paies 1 travailleur au SMIG réel (345 000 FC), il te reste : <b>'+IA_fmt(restePourPatronApres1Reel)+'</b> pour toi + loyer + charges.<br>Si tu paies 1 travailleur au SMIG officiel (630 000 FC), il te reste : <b>'+IA_fmt(restePourPatronApres1Officiel)+'</b></p>'
-      +'<p><b>'+verdictVie+'</b></p>'
+    html += '<h4>3️⃣ LE BÉNÉFICE FAIT-IL VIVRE LA MAISON ? - AVEC TON VRAI COMPTA</h4><div style="background:#fffbeb;border:2px solid #f59e0b;padding:12px;border-radius:12px">'
+      +'<p><b>Calcul Compta réel :</b><br>'
+      +'Marge brute estimée : <b>'+IA_fmt(benefMoisEstime)+'</b><br>'
+      +'- Dépenses : '+IA_fmt(Math.round(totalDepEstime))+' | - Loyer '+IA_fmt(loyer)+' | - Autres fixes '+IA_fmt(autreFixe)+' | - Emprunt '+IA_fmt(emprunt)+' | - Bases salaires ('+nbVendeurs+' x '+IA_fmt(base)+') = '+IA_fmt(totalBaseEstime)+' | - Commissions '+comPct+'% = '+IA_fmt(Math.round(totalComEstime))+'<br>'
+      +'=> <b>Résultat Net estimé : '+IA_fmt(resultatNetEstime)+'</b><br>'
+      +'=> Répartition : Prime '+primePct+'% = '+IA_fmt(repartPrime)+' | <b>Patron '+patronPct+'% = '+IA_fmt(repartPatron)+'</b> | Dev '+devPct+'% = '+IA_fmt(repartDev)+'</p>'
+      +'<p><b>Ce qu\'il te faut pour vivre décemment à Kinshasa :</b> Loyer maison 200 000 + Nourriture 300 000 + Transport 120 000 + Scolarité 100 000 + Santé 50 000 + Électricité/Eau 80 000 + Divers 50 000 = <b>'+IA_fmt(besoinPatron)+'</b></p>'
+      +'<p>Ta part Patron : <b>'+IA_fmt(repartPatron)+'</b> | Il te faut : <b>'+IA_fmt(besoinPatron)+'</b> | <b>Il te manque : '+IA_fmt(Math.max(0,deficitPatron))+' / mois</b></p>'
+      +'<p>SMIG réel : <b>345 000 FC / mois</b> | SMIG officiel : <b>630 000 FC / mois</b> | Ton vendeur touche : Base '+IA_fmt(base)+' + Com '+comPct+'% = environ '+IA_fmt(Math.round(base + (benefMoisEstime/Math.max(1,nbVendeurs))*(comPct/100)))+' / mois. Très loin du SMIG réel, il faut monter le bénéfice, pas baisser les salaires.</p>'
+      +'<p style="background:#fee2e2;padding:8px;border-radius:8px"><b>'+verdictVie+'</b></p>'
+      +'<p><b>🎯 STRATÉGIE ANTI-SURVIE :</b><br>'+strategie+'</p>'
+      +'<p><b>🔒 ANTI-VOL :</b><br>1) Inventaire chaque dimanche soir, tu comptes toi-même. 2) Caisse comptée chaque soir, écart = 0 toléré. 3) 1 seul vendeur à la caisse. 4) Chaque vente = reçu, même 500 FC. 5) Si le bénéfice monte, paie ton vendeur mieux. 6) Si l\'écart inventaire dépasse 2% du CA, tu changes de vendeur.</p>'
       +'</div>'
-      +'<p>💤 Cash bloqué dans dormants : <b>'+IA_fmt(cashBloque)+'</b> ('+dormants.length+' dormants) | 🚫 Ruptures vraies : <b>'+ruptures.length+'</b> | 💳 Dettes : <b>'+IA_fmt(dettesTotal)+'</b> = '+Math.round(tauxDette)+'% du CA mois '+(tauxDette>10?'🔴 Trop de dettes, récupère d\'abord.':'✅ Dettes sous contrôle.')+' | 📞 À relancer : <b>'+aRelancer.length+'</b></p>';
-    html += '<h4>4️⃣ PROJECTIONS - Où tu seras si tu gardes ou changes le rythme ?</h4>'
-      +'<p style="font-size:12px;color:#555">Projection sur le bénéfice brut mensuel estimé : '+IA_fmt(benefMoisEstime)+' / mois. Ce n\'est pas une promesse, c\'est : si tu continues comme ça, voilà où tu arrives.</p>'
-      +'<div style="overflow:auto"><table><tr><th>Scénario</th><th>Bénéfice / mois</th><th>6 mois</th><th>1 an</th><th>3 ans</th><th>5 ans</th><th>Ça paie combien de salaires réels ? (1 an)</th></tr>'
-      +'<tr><td><b>1. Tu gardes le rythme</b><br><small>Tu ne changes rien</small></td><td>'+IA_fmt(benefMoisEstime)+'</td><td>'+fmtProj(pGarde.m6)+'</td><td><b>'+fmtProj(pGarde.m12)+'</b></td><td>'+fmtProj(pGarde.m36)+'</td><td>'+fmtProj(pGarde.m60)+'</td><td>'+salairesPour(pGarde.m12,12)+' mois de salaire</td></tr>'
-      +'<tr><td><b>2. Tu accélères +20%</b><br><small>Plan Marketing appliqué</small></td><td>'+IA_fmt(benefAccelere)+'</td><td>'+fmtProj(pAccelere.m6)+'</td><td><b>'+fmtProj(pAccelere.m12)+'</b></td><td>'+fmtProj(pAccelere.m36)+'</td><td>'+fmtProj(pAccelere.m60)+'</td><td>'+salairesPour(pAccelere.m12,12)+' mois de salaire</td></tr>'
-      +'<tr style="background:#dcfce7"><td><b>3. Tu corriges + tu accélères</b><br><small>Tu enlèves les marges dangereuses + tu accélères</small></td><td><b>'+IA_fmt(benefCorrigeAccelere)+'</b></td><td>'+fmtProj(pCorrige.m6)+'</td><td><b>'+fmtProj(pCorrige.m12)+'</b></td><td>'+fmtProj(pCorrige.m36)+'</td><td>'+fmtProj(pCorrige.m60)+'</td><td>'+salairesPour(pCorrige.m12,12)+' mois de salaire</td></tr>'
-      +'</table></div>'
-      +'<p><b>Lecture du Directeur :</b> '
-      + (benefMoisEstime<=0 ? 'À ce rythme, dans 5 ans tu auras mangé ton capital. Il faut changer de rythme maintenant, pas dans 6 mois.' : 'Si tu gardes le rythme, en 5 ans tu cumules '+fmtProj(pGarde.m60)+'. Si tu corriges + accélères, tu cumules '+fmtProj(pCorrige.m60)+'. La différence = '+fmtProj(pCorrige.m60 - pGarde.m60)+'. C\'est le prix de ne pas corriger.')
-      +'</p>'
-      +'<p><b>Priorité n°1 de l\'Inspecteur :</b> '+(nbPerte+nbDangereuse>0 ? 'Corrige les '+(nbPerte+nbDangereuse)+' produits à marge dangereuse / perte, avant de chercher plus de clients.' : (dormants.length>0 ? 'Vide les dormants, '+IA_fmt(cashBloque)+' dort en stock.' : 'Pousse ton Star '+IA_esc(nomStar)+' et relance tes VIP.'))+'</p>';
+      +'<p>💤 Cash bloqué dans dormants : <b>'+IA_fmt(cashBloque)+'</b> ('+dormants.length+' dormants) - Top : '+(dormantsDetail[0]?IA_esc(dormantsDetail[0].nom)+' ('+IA_fmt(dormantsDetail[0].cash)+')':'-')+' | 🚫 Ruptures vraies : <b>'+ruptures.length+'</b> | 💳 Dettes : <b>'+IA_fmt(dettesTotal)+'</b> '+(dettesFiable ? ('= '+Math.round(tauxDette)+'% du CA mois '+(tauxDette>10?'🔴 Trop de dettes, récupère d\'abord.':'✅ Dettes sous contrôle.')) : '⚠️ NON TRANSMISES À AUDIT - va voir l\'onglet Dettes (ex : 2 200 FC). Ajoute totalDettes: totalDettes dans l\'appel IA_render_audit.')+' <small>(source : '+dettesSource+')</small> | 📞 À relancer : <b>'+aRelancer.length+'</b></p>';
+    html += '<h4>4️⃣ PROJECTIONS - Sur TA part Patron</h4>'
+      +'<p style="font-size:12px;color:#555">Projection sur ta part Patron : '+IA_fmt(repartPatron)+' / mois. Besoin vital : '+IA_fmt(besoinPatron)+' / mois.</p>'
+      +'<div style="overflow:auto"><table><tr><th>Scénario</th><th>Ta part / mois</th><th>6 mois</th><th>1 an</th><th>3 ans</th><th>5 ans</th></tr>'
+      +'<tr><td><b>1. Tu gardes le rythme</b></td><td>'+IA_fmt(repartPatron)+'</td><td>'+fmtProj(pGarde.m6)+'</td><td><b>'+fmtProj(pGarde.m12)+'</b></td><td>'+fmtProj(pGarde.m36)+'</td><td>'+fmtProj(pGarde.m60)+'</td></tr>'
+      +'<tr><td><b>2. Tu accélères +20%</b></td><td>'+IA_fmt(repartAccelere)+'</td><td>'+fmtProj(pAccelere.m6)+'</td><td><b>'+fmtProj(pAccelere.m12)+'</b></td><td>'+fmtProj(pAccelere.m36)+'</td><td>'+fmtProj(pAccelere.m60)+'</td></tr>'
+      +'<tr style="background:#dcfce7"><td><b>3. Tu corriges + tu accélères</b></td><td><b>'+IA_fmt(repartCorrige)+'</b></td><td>'+fmtProj(pCorrige.m6)+'</td><td><b>'+fmtProj(pCorrige.m12)+'</b></td><td>'+fmtProj(pCorrige.m36)+'</td><td>'+fmtProj(pCorrige.m60)+'</td></tr>'
+      +'</table></div>';
+    // ✅ V2.5 - SECTION 5 : FERMETURE OU THÉRAPIE DE CHOC
+    html += '<h4>5️⃣ DÉCISION : FERMER OU THÉRAPIE DE CHOC ? - 90 JOURS POUR VALIDER OU INVALIDER</h4><div style="background:#0f172a;color:#fff;padding:14px;border-radius:12px">'
+      +'<p><b>Verdict de l\'Inspecteur aujourd\'hui : NE FERME PAS TOUT DE SUITE, MAIS NE CONTINUE PAS COMME ÇA.</b><br>Avec '+IA_fmt(repartPatron)+' / mois de part Patron, tu es en survie. Mais fermer maintenant, c\'est jeter ton stock ('+IA_fmt(cashBloque)+' de dormants + stock actif), tes clients, et ta place à Menkao2, sans savoir si c\'est le produit, le prix, la concurrence ou l\'environnement qui te tue.</p>'
+      +'<p><b>🧪 THÉRAPIE DE CHOC - 90 JOURS, 3 HYPOTHÈSES À TESTER, 1 PAR MOIS :</b></p>'
+      +'<p><b>Mois 1 (Jour 1-30) - Hypothèse PRIX :</b> Tes prix sont trop bas. Test : +500 FC sur tous les produits à marge &lt;30%, +1 000 FC sur les Stars. Si le CA ne chute pas de plus de 15%, l\'hypothèse est VALIDÉE, le problème c\'était le prix, pas la clientèle.<br><b>Critère J30 :</b> Marge brute &gt; '+IA_fmt(Math.round(benefMoisEstime*1.3))+' OU on invalide l\'hypothèse prix.</p>'
+      +'<p><b>Mois 2 (Jour 31-60) - Hypothèse GAMME / ENVIRONNEMENT :</b> Tes produits ne sont pas adaptés à Menkao2. Test : tu arrêtes les 5 dormants qui ne se vendent jamais, tu mets à la place 5 produits que les gens de Menkao2 achètent tous les jours (demande à 20 clients : "Qu\'est-ce que tu achètes ailleurs parce que je n\'ai pas ?"). Tu vides les dormants avec Pack Star + Dormant.<br><b>Critère J60 :</b> Cash dormants divisé par 2 (de '+IA_fmt(cashBloque)+' à '+IA_fmt(Math.round(cashBloque/2))+') OU on invalide l\'hypothèse gamme.</p>'
+      +'<p><b>Mois 3 (Jour 61-90) - Hypothèse CONCURRENCE / VISIBILITÉ :</b> Les clients ne savent pas que tu existes, ou ils vont chez le concurrent moins cher. Test : tu fais le tour de 5 concurrents à Menkao2, tu notes leurs prix sur tes 10 Stars, tu t\'alignes ou tu expliques pourquoi tu es plus cher (garantie, qualité, disponibilité). Tu relances tes 20 meilleurs clients par WhatsApp.<br><b>Critère J90 :</b> CA mois &gt; '+IA_fmt(Math.round(caMoisEstime*1.5))+' ET Part Patron &gt; 300 000 FC.</p>'
+      +'<p><b>🚦 DÉCISION J90 - C\'est chiffré, pas émotionnel :</b><br>'
+      +'✅ <b>SI Part Patron &gt; 300 000 FC ET Marge &gt; 30% :</b> ON CONTINUE. Tu as validé une approche, on passe à 6 mois de consolidation.<br>'
+      +'🟡 <b>SI Part Patron entre 150 000 et 300 000 FC :</b> ON TRANSFORME. Tu changes de gamme ou tu passes en boutique plus petite, loyer moins cher, sans vendeur fixe.<br>'
+      +'🔴 <b>SI Part Patron &lt; 150 000 FC après 90 jours de choc :</b> ON FERME OU ON VEND LE STOCK. Tu as prouvé que ni le prix, ni la gamme, ni la visibilité ne suffisent à Menkao2. Fermer à ce moment-là, ce n\'est pas un échec, c\'est une décision de chef. Tu récupères ton cash, tu ne perds plus 90 jours de plus.</p>'
+      +'<p><b>⏱️ Combien de temps pour valider / invalider une approche ?</b><br>• Un prix : <b>30 jours</b> suffisent, les clients réagissent tout de suite.<br>• Une gamme : <b>60 jours</b>, il faut que les nouveaux produits tournent 2 fois.<br>• Une visibilité / concurrence : <b>90 jours</b>, il faut que les clients reviennent 3 fois pour te faire confiance.<br>Au-delà de 90 jours sans amélioration, tu ne testes plus, tu t\'entêtes.</p>'
+      +'<p><b>📋 Ce que tu dois me donner pour l\'analyse approfondie :</b><br>1) Les prix de 5 concurrents à Menkao2 sur tes 10 Stars.<br>2) La réponse de 20 clients : "Qu\'est-ce que tu achètes ailleurs ?"<br>3) Ton loyer réel boutique (ici '+IA_fmt(loyer)+') vs loyer d\'une boutique plus petite à Menkao2.<br>Avec ça, on saura si c\'est le prix, la gamme, ou l\'environnement qui te tue.</p>'
+      +'</div>';
     return html + (c.debug || '');
   };
 })();
