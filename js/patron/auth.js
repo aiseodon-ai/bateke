@@ -1,8 +1,60 @@
-// js/patron/auth.js - V8.1 FIX SECURE NO PIN LEAK + V8.0 STABLE
+// js/patron/auth.js - V8.2 STABLE PER-BOUTIQUE + MUSTCHANGEPIN PROTÉGÉ
+// RÈGLES SAAS RESPECTÉES :
+// 1. mustChangePin = SACRÉ. DG ne connait jamais le vrai PIN. On ne l'enlève pas.
+// 2. Abonnement = PAR BOUTIQUE. 4 boutiques = 4 expire séparés. Une bloquée ne bloque pas les autres.
+// 3. Badge et verrou regardent LA MÊME boutique : celle qu'on ouvre, pas la principale.
 import { STATE } from '../core/state.js';
 import { setPresenceOnline, setPresenceOffline } from '../core/presence.js';
 
 function hashPinV10(pin){ return btoa(pin+"|BATEKE_SALT_V10"); }
+
+// --- VERROU PAR BOUTIQUE - Utilisé au login + à chaque changement de boutique ---
+async function checkAboBoutique(boutique, patronData, patronId){
+  let expirePatron = 0;
+  try{ expirePatron = patronData.boutiques?.[boutique]?.expire || patronData.abonnement_fin || 0; }catch(e){}
+  let expireShop = 0;
+  try{
+    let snapShop = await window.db.ref('shops/'+boutique+'/abonnements/expire').once('value');
+    expireShop = snapShop.val() || 0;
+    if(typeof expireShop === 'string') expireShop = parseInt(expireShop,10) || new Date(expireShop).getTime() || 0;
+  }catch(e){}
+  let expireFinal = Math.max(expirePatron, expireShop);
+  return expireFinal;
+}
+
+function goAbonnement(boutique, pid, expireVal, joursRetard, msgEl){
+  let url = `/bateke/abonnement/?boutique=${encodeURIComponent(boutique)}&patron=${encodeURIComponent(pid)}&expire=${expireVal||0}`;
+  if(msgEl){
+    msgEl.style.color='red';
+    let title = !expireVal || expireVal===0 ? `🚫 ${boutique} JAMAIS PAYÉ` : `🚫 ${boutique} BLOQUÉ depuis ${joursRetard||0}j`;
+    msgEl.innerHTML = `${title}<br><small>Expire: ${expireVal?new Date(expireVal).toLocaleDateString():'JAMAIS'}</small><br><a href="${url}" style="display:block;margin-top:10px;background:#22c55e;color:#fff;padding:14px;border-radius:12px;text-align:center;text-decoration:none;font-weight:900;font-size:14px">💳 PAYER 15.000 FC - RÉACTIVER MAINTENANT</a><br><small style="color:#888">Redirection auto dans 3s...</small>`;
+  }
+  setTimeout(()=>{ location.href=url; }, 3500);
+}
+
+// Vérifie à chaque ouverture / changement de boutique - même boutique que le badge
+export async function checkAboCurrentBoutique(){
+  try{
+    let boutique = sessionStorage.getItem('BATEKE_BOUTIQUE') || localStorage.getItem('BATEKE_BOUTIQUE') || STATE.BOUTIQUE || STATE.CURRENT_SHOP;
+    let pin = sessionStorage.getItem('BATEKE_PIN') || localStorage.getItem('BATEKE_LAST_PIN');
+    if(!boutique || !pin) return true;
+    if(sessionStorage.getItem('DG_SUPPORT_MODE')==='1') return true; // Support DG = bypass volontaire
+    if(window.BATEKE_ABO_BYPASS) return true;
+    let snap = await window.db.ref('patrons/'+pin).once('value');
+    if(!snap.exists()) return true;
+    let patronData = snap.val();
+    let expireFinal = await checkAboBoutique(boutique, patronData, pin);
+    let now = Date.now();
+    if(!expireFinal || expireFinal < now){
+      let joursRetard = expireFinal ? Math.ceil((now - expireFinal)/86400000) : 0;
+      let msgEl = document.getElementById('msgPat');
+      goAbonnement(boutique, pin, expireFinal, joursRetard, msgEl);
+      return false;
+    }
+    return true;
+  }catch(e){ return true; }
+}
+window.checkAboCurrentBoutique = checkAboCurrentBoutique;
 
 export async function loginPat(){
   let pinEl = document.getElementById('pinPat');
@@ -99,7 +151,6 @@ export async function loginPat(){
 
   let pin = pinEl?.value?.trim();
   if(!pin){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText='PIN requis'; } return; }
-  // FIX SECURE V8.1 - PLUS DE PIN EN CLAIR DANS UI
   if(msgEl){ msgEl.style.color='#f59e0b'; msgEl.innerText='⏳ Vérification en cours...'; }
   try{ if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously(); }catch(e){}
   
@@ -124,7 +175,6 @@ export async function loginPat(){
     }
   }
   
-  // FIX SECURE V8.1 - NE PAS AFFICHER LE PIN SAISI
   if(!patronData){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText=`❌ PIN introuvable`; } sessionStorage.clear(); localStorage.removeItem('BATEKE_PIN'); if(pinEl) pinEl.value=''; return; }
 
   if(patronData.mustChangePin && patronData.tempPinExpire && Date.now() > patronData.tempPinExpire){
@@ -133,63 +183,81 @@ export async function loginPat(){
 
   if(patronData.actif===false){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ PIN bloqué - Abonnement expiré'; } return; }
   
-  let boutiquePrincipale = patronData.boutique || Object.keys(patronData.boutiques||{})[0];
-  if(!boutiquePrincipale){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ Aucune boutique assignée - Contact DG'; } return; }
-  
-  let expirePatron = 0;
-  try{ expirePatron = patronData.boutiques?.[boutiquePrincipale]?.expire || patronData.abonnement_fin || 0; }catch(e){}
-  let expireShop = 0;
-  try{
-    let snapShop = await window.db.ref('shops/'+boutiquePrincipale+'/abonnements/expire').once('value');
-    expireShop = snapShop.val() || 0;
-    if(typeof expireShop === 'string') expireShop = parseInt(expireShop,10) || new Date(expireShop).getTime() || 0;
-  }catch(e){}
-  let expireFinal = Math.max(expirePatron, expireShop);
-  if(expirePatron===0 && expireShop===0) expireFinal = 0;
-  let now = Date.now();
+  // CORRIGÉ V8.2 - BOUTIQUE À OUVRIR = celle choisie / en session, PAS toujours la principale
+  // Si le client a 4 boutiques, on contrôle celle qu'il veut ouvrir. Les autres ne le bloquent pas.
+  let boutiqueAOuvrir = sessionStorage.getItem('BATEKE_BOUTIQUE') || localStorage.getItem('BATEKE_BOUTIQUE') || patronData.boutique || Object.keys(patronData.boutiques||{})[0];
+  if(!boutiqueAOuvrir){ if(msgEl){ msgEl.style.color='red'; msgEl.innerText='❌ Aucune boutique assignée - Contact DG'; } return; }
 
-  function goAbonnement(boutique, pid, expireVal, joursRetard){
-    let url = `/bateke/abonnement/?boutique=${encodeURIComponent(boutique)}&patron=${encodeURIComponent(pid)}&expire=${expireVal||0}`;
-    if(msgEl){
-      msgEl.style.color='red';
-      let title = !expireVal || expireVal===0 ? `🚫 ${boutique} JAMAIS PAYÉ` : `🚫 ${boutique} BLOQUÉ depuis ${joursRetard||0}j`;
-      msgEl.innerHTML = `${title}<br><small>Expire: ${expireVal?new Date(expireVal).toLocaleDateString():'JAMAIS'}</small><br><a href="${url}" style="display:block;margin-top:10px;background:#22c55e;color:#fff;padding:14px;border-radius:12px;text-align:center;text-decoration:none;font-weight:900;font-size:14px">💳 PAYER 15.000 FC - RÉACTIVER MAINTENANT</a><br><small style="color:#888">Redirection auto dans 3s...</small>`;
-    }
-    setTimeout(()=>{ location.href=url; }, 3500);
-  }
-
+  // CORRIGÉ V8.2 - mustChangePin NE BYPASS PLUS LE BLOCAGE
+  // Si mustChangePin = true : on ouvre UNIQUEMENT l'écran changement PIN, PAS le dashboard.
+  // Le dashboard ne s'ouvre qu'après changement PIN + contrôle abonnement de CETTE boutique.
   if(patronData.mustChangePin === true){
     sessionStorage.setItem('BATEKE_MUST_CHANGE_PIN','1');
+    sessionStorage.setItem('BATEKE_PIN_PENDING', patronIdFound);
+    sessionStorage.setItem('BATEKE_BOUTIQUE_PENDING', boutiqueAOuvrir);
+    if(msgEl){
+      msgEl.style.color='#f59e0b';
+      msgEl.innerHTML = `🔑 PIN temporaire détecté.<br>Change ton PIN pour sécuriser <b>${boutiqueAOuvrir}</b>.<br><small>Personne, même pas DG, ne connaitra ton nouveau PIN.</small><br><button onclick="window.changePinForce()" style="display:block;margin-top:10px;background:#7c3aed;color:#fff;padding:12px;border-radius:12px;width:100%;border:0;font-weight:900;cursor:pointer">🔑 CHANGER MON PIN MAINTENANT</button>`;
+    }
+    // On ne rentre PAS dans le dashboard ici. On attend le changement de PIN.
+    return;
   }
 
+  let expireFinal = await checkAboBoutique(boutiqueAOuvrir, patronData, patronIdFound);
+  let now = Date.now();
+
+  // CORRIGÉ V8.2 - Bloque CETTE boutique, pas tout le compte
   if(!expireFinal || expireFinal===0){
-    if(patronData.mustChangePin === true){
-    } else {
-      goAbonnement(boutiquePrincipale, patronIdFound, 0, 0);
-      return;
-    }
+    goAbonnement(boutiqueAOuvrir, patronIdFound, 0, 0, msgEl);
+    return;
   }
-  if(expireFinal < now && patronData.mustChangePin !== true){
+  if(expireFinal < now){
     let joursRetard = Math.ceil((now - expireFinal)/86400000);
-    goAbonnement(boutiquePrincipale, patronIdFound, expireFinal, joursRetard);
+    goAbonnement(boutiqueAOuvrir, patronIdFound, expireFinal, joursRetard, msgEl);
     return;
   }
 
   let joursRestants = Math.ceil((expireFinal-now)/86400000);
-  STATE.CURRENT_VENDEUR = { pin: patronIdFound, nom:patronData.nom||'PATRON', ...patronData, isAdmin:true, boutique:boutiquePrincipale, expire:expireFinal, joursRestants };
+  STATE.CURRENT_VENDEUR = { pin: patronIdFound, nom:patronData.nom||'PATRON', ...patronData, isAdmin:true, boutique:boutiqueAOuvrir, expire:expireFinal, joursRestants };
   window.CURRENT_VENDEUR = STATE.CURRENT_VENDEUR;
   sessionStorage.setItem('BATEKE_PIN', patronIdFound);
   sessionStorage.setItem('BATEKE_ROLE','patron');
   sessionStorage.setItem('pin', patronIdFound);
-  sessionStorage.setItem('BATEKE_BOUTIQUE', boutiquePrincipale);
+  sessionStorage.setItem('BATEKE_BOUTIQUE', boutiqueAOuvrir);
   localStorage.setItem('BATEKE_LAST_PIN', patronIdFound);
-  localStorage.setItem('BATEKE_BOUTIQUE', boutiquePrincipale);
-  localStorage.setItem('patron_session', JSON.stringify({ pin: patronIdFound, nom:patronData.nom, ts:Date.now(), boutique:boutiquePrincipale, expire:expireFinal, joursRestants }));
+  localStorage.setItem('BATEKE_BOUTIQUE', boutiqueAOuvrir);
+  localStorage.setItem('patron_session', JSON.stringify({ pin: patronIdFound, nom:patronData.nom, ts:Date.now(), boutique:boutiqueAOuvrir, expire:expireFinal, joursRestants }));
   let loginDiv = document.getElementById('loginPat');
   if(loginDiv) loginDiv.style.display='none';
   try{ setPresenceOnline(); }catch(e){}
   location.reload();
 }
+
+// Changement PIN forcé - SANS ouvrir le dashboard avant
+window.changePinForce = async function(){
+  let pid = sessionStorage.getItem('BATEKE_PIN_PENDING');
+  let boutique = sessionStorage.getItem('BATEKE_BOUTIQUE_PENDING');
+  if(!pid){ alert('Session expirée, retape ton PIN temporaire'); return; }
+  let nouveau = prompt('🔑 Nouveau PIN secret (4 chiffres, personne ne le verra, même pas DG) :');
+  if(!nouveau || nouveau.length < 4){ alert('PIN trop court'); return; }
+  let confirmPin = prompt('Retape ton nouveau PIN :');
+  if(nouveau !== confirmPin){ alert('PIN différents'); return; }
+  try{
+    await window.db.ref('patrons/'+pid).update({
+      pin: nouveau,
+      pinHash: hashPinV10(nouveau),
+      mustChangePin: false,
+      tempPinExpire: null,
+      pinChangeLe: Date.now()
+    });
+    sessionStorage.removeItem('BATEKE_MUST_CHANGE_PIN');
+    sessionStorage.removeItem('BATEKE_PIN_PENDING');
+    sessionStorage.removeItem('BATEKE_BOUTIQUE_PENDING');
+    alert('✅ PIN changé. Retapе ton NOUVEAU PIN pour entrer.');
+    let pinEl = document.getElementById('pinPat'); if(pinEl){ pinEl.value=''; pinEl.focus(); }
+    let msgEl = document.getElementById('msgPat'); if(msgEl){ msgEl.style.color='#22c55e'; msgEl.innerText='✅ PIN changé. Retape ton nouveau PIN.'; }
+  }catch(e){ alert('❌ Erreur changement PIN: '+e.message); }
+};
 
 export function logoutPat(){
   try{ setPresenceOffline(); }catch(e){}
@@ -228,4 +296,4 @@ window.exitSupport = function(){
 
 window.loginPat = loginPat;
 window.logoutPat = logoutPat;
-console.log("✅ auth.js V8.1 SECURE NO PIN LEAK");
+console.log("✅ auth.js V8.2 STABLE PER-BOUTIQUE + MUSTCHANGEPIN PROTÉGÉ");
