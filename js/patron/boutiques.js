@@ -152,7 +152,42 @@ export function selectShop(shop){
     }
   }catch(e){ console.log('IA reload shop', e); }
 }
-export function switchShop(){ let sel=document.getElementById('shopSel'); if(!sel) return; selectShop(sel.value); }
+export async function switchShop(){
+  let sel = document.getElementById('shopSel');
+  if(!sel) return;
+  let nouvelleBoutique = sel.value;
+  let ancienneBoutique = sessionStorage.getItem('BATEKE_BOUTIQUE') || localStorage.getItem('BATEKE_BOUTIQUE') || nouvelleBoutique;
+
+  // Si c'est la même boutique, on ne re-contrôle pas
+  if(nouvelleBoutique === ancienneBoutique){
+    selectShop(nouvelleBoutique);
+    return;
+  }
+
+  // On met la nouvelle boutique en session TEMPORAIRE pour que le verrou la contrôle, elle, pas l'ancienne
+  sessionStorage.setItem('BATEKE_BOUTIQUE', nouvelleBoutique);
+  localStorage.setItem('BATEKE_BOUTIQUE', nouvelleBoutique);
+
+  // Verrou PAR BOUTIQUE - la même que le badge
+  let ok = true;
+  try{
+    if(window.checkAboCurrentBoutique){
+      ok = await window.checkAboCurrentBoutique();
+    }
+  }catch(e){ ok = true; }
+
+  if(!ok){
+    // Bloquée : on remet l'ancienne boutique dans le menu, on ne charge pas la nouvelle
+    // goAbonnement a déjà été lancé par checkAboCurrentBoutique
+    sel.value = ancienneBoutique;
+    sessionStorage.setItem('BATEKE_BOUTIQUE', ancienneBoutique);
+    localStorage.setItem('BATEKE_BOUTIQUE', ancienneBoutique);
+    return;
+  }
+
+  // Payée : on ouvre vraiment la boutique
+  selectShop(nouvelleBoutique);
+}
 export function createShop(){ let n=document.getElementById('newShop').value.trim(); if(!n) return; let sid=n.replace(/[^a-zA-Z0-9_-]/g,'')||n; if(window.ALL_DATA && window.ALL_DATA[sid]){ alert('Existe déjà'); return; } firebase.database().ref('shops/'+sid+'/config').set({nom:n,id:sid,created:new Date().toISOString(),owner:localStorage.getItem('BATEKE_PIN')||''}).then(()=> firebase.database().ref('shops/'+sid+'/abonnements').set({expire:0, statut:'bloqué'})).then(()=>{ alert('✅ Créée: '+n+' (à payer)'); location.reload(); }); }
 export function payerBoutique(shop){ let tx=prompt(`Payer pour ${shop} - TX ID:`); if(!tx) return; let phone=prompt('Numéro payeur:'); firebase.database().ref('paiements_abonnements').push({boutique:shop, transactionId:tx.trim(), phonePayer:phone||'', patronId:localStorage.getItem('BATEKE_PIN')||'', montant:10000, reseau:'à vérifier', statut:'en_attente', date:Date.now()}).then(()=> alert(`✅ Demande envoyée pour ${shop}.`)); }
 export function renommerBoutique(oldShop){ if(!oldShop) return; let newShop=prompt('Renommer "'+oldShop+'" en:', oldShop); if(!newShop||newShop.trim()===''||newShop===oldShop) return; newShop=newShop.trim(); if(!confirm('Confirmer "'+oldShop+'" → "'+newShop+'" ?')) return; firebase.database().ref('shops/'+oldShop).once('value').then(snap=>{ let data=snap.val(); if(!data){ alert('Vide'); return; } data.config.nom=newShop; data.config.id=newShop; return firebase.database().ref('shops/'+newShop).set(data).then(()=> firebase.database().ref('shops/'+oldShop).remove()).then(()=>{ selectShop(newShop); alert('✅ Renommé'); location.reload(); }); }); }
