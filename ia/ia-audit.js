@@ -3,7 +3,7 @@
 // V2.5 : On compte les vendeurs UNIQUEMENT sur les ventes du mois, on exclut Comptoir / Inconnu / Patron + exclus Compta.
 // V2.5 : Section 5 - Décision : Fermer ? Continuer ? Thérapie de choc 90 jours avec critères Go / No-Go chiffrés.
 // Pour Dettes = 0 : ajouter totalDettes: totalDettes dans l'appel IA_render_audit dans le fichier principal.
-(function(){ 
+(function(){  
   function IA_getValAudit(id, def){
     let el = document.getElementById(id);
     if(!el || el.value==null || el.value==='') return def;
