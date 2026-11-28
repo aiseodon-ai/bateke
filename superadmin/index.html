@@ -512,18 +512,50 @@ function creerPatron(){
    scanGlobal();
  });
 }
-function activer(b){ firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let fin=Date.now()+30*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=fin; up[`patrons/${pid}/boutiques/${b}/expire`]=fin; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='actif'; up[`shops/${b}/abonnements/expireISO`]=new Date(fin).toISOString(); firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
+function activer(b){
+  let nbMois = parseInt(prompt(`Activer ${b} - Combien de mois payés ?\n1 = 30j, 2 = 60j, 3 = 90j`, "1") || "1", 10);
+  if(!nbMois || nbMois < 1) nbMois = 1;
+  firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{
+    let pid = s.val() || trouverPatronDeShop(b,G_PATRONS) || '7832';
+    // CUMUL - On garde les jours restants, on n'écrase plus
+    let expireActuel = toTime(G_SHOPS[b]?.abonnements?.expire || G_PATRONS[pid]?.boutiques?.[b]?.expire || 0);
+    let base = Math.max(expireActuel, Date.now());
+    let fin = base + nbMois * 30 * 86400000;
+    let up = {};
+    up[`shops/${b}/abonnements/expire`] = fin;
+    up[`patrons/${pid}/boutiques/${b}/expire`] = fin;
+    up[`shops/${b}/abonnements/statut`] = up[`patrons/${pid}/boutiques/${b}/statut`] = 'actif';
+    up[`shops/${b}/abonnements/expireISO`] = new Date(fin).toISOString();
+    firebase.database().ref().update(up).then(()=>scanGlobal());
+  });
+}
 function bloquer(b){ if(!confirm(`Bloquer ${b}?`)) return; firebase.database().ref(`shops/${b}/patronId`).once('value').then(s=>{ let pid=s.val()||trouverPatronDeShop(b,G_PATRONS)||'7832'; let past=Date.now()-10*86400000; let up={}; up[`shops/${b}/abonnements/expire`]=past; up[`patrons/${pid}/boutiques/${b}/expire`]=past; up[`shops/${b}/abonnements/statut`]=up[`patrons/${pid}/boutiques/${b}/statut`]='bloqué'; firebase.database().ref().update(up).then(()=>scanGlobal()); }); }
 function activerPaiement(key,boutique,pid){
- if(!confirm(`Activer ${boutique} +30J?`)) return;
- let pidFinal=pid||trouverPatronDeShop(boutique,G_PATRONS)||'7832';
- if(!pidFinal || pidFinal==='—') pidFinal='7832';
- let fin=Date.now()+30*86400000;
- firebase.database().ref('paiements_abonnements/'+key).once('value').then(s=>{
-  let p=s.val()||{boutique, transactionId:key, patronId:pidFinal, montant:15000};
-  let archive={...p, statut:'valide', validePar:'DG', valideLe:Date.now(), expire:fin, expireISO:new Date(fin).toISOString()};
-  let up={}; up[`shops/${boutique}/abonnements/expire`]=fin; up[`shops/${boutique}/abonnements/expireISO`]=archive.expireISO; up[`shops/${boutique}/abonnements/statut`]='actif'; up[`patrons/${pidFinal}/boutiques/${boutique}/expire`]=fin; up[`patrons/${pidFinal}/boutiques/${boutique}/expireISO`]=archive.expireISO; up[`patrons/${pidFinal}/boutiques/${boutique}/statut`]='actif'; up[`paiements_abonnements/${key}/statut`]='valide'; up[`paiements_abonnements/${key}/validePar`]='DG'; up[`paiements_abonnements/${key}/valideLe`]=Date.now(); up[`historique_paiements/${key}`]=archive; up[`abonnements_demandes/${boutique}`]=null; firebase.database().ref().update(up).then(()=>{ alert(`✅ ${boutique} activée + archivée`); scanGlobal(); });
- });
+  let nbMois = parseInt(prompt(`Activer ${boutique} - Combien de mois payés ?\n1 = 30j, 2 = 60j, 3 = 90j`, "1") || "1", 10);
+  if(!nbMois || nbMois < 1) nbMois = 1;
+  if(!confirm(`Activer ${boutique} +${nbMois*30}J ?`)) return;
+  let pidFinal = pid || trouverPatronDeShop(boutique,G_PATRONS) || '7832';
+  if(!pidFinal || pidFinal==='—') pidFinal='7832';
+  let expireActuel = toTime(G_SHOPS[boutique]?.abonnements?.expire || G_PATRONS[pidFinal]?.boutiques?.[boutique]?.expire || 0);
+  let base = Math.max(expireActuel, Date.now());
+  let fin = base + nbMois * 30 * 86400000;
+  firebase.database().ref('paiements_abonnements/'+key).once('value').then(s=>{
+    let p = s.val() || {boutique, transactionId:key, patronId:pidFinal, montant:15000};
+    let archive = {...p, statut:'valide', validePar:'DG', valideLe:Date.now(), expire:fin, expireISO:new Date(fin).toISOString(), nbMois: nbMois};
+    let up = {};
+    up[`shops/${boutique}/abonnements/expire`] = fin;
+    up[`shops/${boutique}/abonnements/expireISO`] = archive.expireISO;
+    up[`shops/${boutique}/abonnements/statut`] = 'actif';
+    up[`patrons/${pidFinal}/boutiques/${boutique}/expire`] = fin;
+    up[`patrons/${pidFinal}/boutiques/${boutique}/expireISO`] = archive.expireISO;
+    up[`patrons/${pidFinal}/boutiques/${boutique}/statut`] = 'actif';
+    up[`paiements_abonnements/${key}/statut`] = 'valide';
+    up[`paiements_abonnements/${key}/validePar`] = 'DG';
+    up[`paiements_abonnements/${key}/valideLe`] = Date.now();
+    up[`historique_paiements/${key}`] = archive;
+    up[`abonnements_demandes/${boutique}`] = null;
+    firebase.database().ref().update(up).then(()=>{ alert(`✅ ${boutique} activée +${nbMois*30}J`); scanGlobal(); });
+  });
 }
 function rejeterPaiement(key){
  if(!confirm('Rejeter ce paiement?')) return;
